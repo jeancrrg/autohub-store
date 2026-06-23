@@ -1,0 +1,174 @@
+.wrapper {
+    display: flex;
+    gap: 48px;
+    align-items: flex-start;
+}
+
+.main {
+    flex: 1;
+}
+
+.stepIndicators {
+    display: flex;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.stepItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stepCircle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+
+.stepDone {
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+.stepActive {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.stepPending {
+    background: var(--color-gray-light);
+    border: 1px solid var(--color-gray-border);
+    color: var(--color-gray-500);
+}
+
+.stepLabel {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    margin-top: 4px;
+}
+
+.stepLabelActive {
+    color: var(--color-primary);
+}
+
+.stepLabelInactive {
+    color: var(--color-gray-500);
+}
+
+.connector {
+    height: 1px;
+    width: 80px;
+    margin: 0 8px;
+    margin-bottom: 16px;
+    transition: background 0.2s;
+}
+
+.connectorDone {
+    background: var(--color-success);
+}
+
+.connectorPending {
+    background: var(--color-gray-border);
+}
+
+.sidebar {
+    width: 288px;
+    background: var(--color-gray-light);
+    border: 1px solid var(--color-gray-border);
+    padding: 24px;
+}
+
+.sidebarTitle {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    color: var(--color-dark);
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+}
+
+.sidebarItems {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.sidebarItem {
+    display: flex;
+    justify-content: space-between;
+}
+
+.sidebarItemName {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-700);
+    flex: 1;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+}
+
+.sidebarItemPrice {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-dark);
+    font-size: 0.875rem;
+    margin-left: 8px;
+}
+
+.sidebarTotals {
+    border-top: 1px solid var(--color-gray-border);
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebarRow {
+    display: flex;
+    justify-content: space-between;
+}
+
+.sidebarLabel {
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: var(--color-gray-700);
+}
+
+.sidebarValue {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-dark);
+}
+
+.shippingFree {
+    color: var(--color-success-dark);
+}
+
+.sidebarTotal {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-gray-border);
+}
+
+.sidebarTotalLabel {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    color: var(--color-dark);
+}
+
+.sidebarTotalValue {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    color: var(--color-primary);
+}

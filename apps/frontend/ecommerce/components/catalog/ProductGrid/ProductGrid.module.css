@@ -1,0 +1,24 @@
+.wrapper {
+    display: flex;
+    gap: 32px;
+}
+
+.main {
+    flex: 1;
+}
+
+.empty {
+    padding: 80px 0;
+    text-align: center;
+}
+
+.emptyText {
+    font-family: var(--font-inter);
+    color: var(--color-gray-500);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}

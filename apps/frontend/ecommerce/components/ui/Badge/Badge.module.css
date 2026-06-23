@@ -1,0 +1,7 @@
+.base {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    padding: 2px 8px;
+}

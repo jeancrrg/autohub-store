@@ -1,0 +1,14 @@
+.title {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #ffffff;
+    margin-bottom: 32px;
+    letter-spacing: 0.05em;
+}
+
+.bottomGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+}

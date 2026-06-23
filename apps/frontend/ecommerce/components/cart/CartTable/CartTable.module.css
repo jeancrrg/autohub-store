@@ -1,0 +1,151 @@
+.emptyState {
+    padding: 80px 0;
+    text-align: center;
+}
+
+.emptyText {
+    font-family: var(--font-inter);
+    color: var(--color-gray-500);
+    margin-bottom: 16px;
+}
+
+.continueShopping {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-primary);
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.continueShopping:hover {
+    color: var(--color-primary-dark);
+}
+
+.tableHeader {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 16px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-gray-border);
+}
+
+.headerCell {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+    letter-spacing: 0.1em;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 16px;
+    padding: 24px 16px;
+    border-bottom: 1px solid var(--color-gray-border);
+    align-items: center;
+}
+
+.productCell {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.productImage {
+    width: 80px;
+    height: 80px;
+    background: var(--color-gray-light);
+    border: 1px solid var(--color-gray-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.productImageText {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+}
+
+.productBrand {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+    margin-bottom: 4px;
+}
+
+.productName {
+    font-family: var(--font-exo2);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-dark);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.productName:hover {
+    color: var(--color-primary);
+}
+
+.unitPrice {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-dark);
+}
+
+.qtyControl {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--color-gray-border);
+    width: fit-content;
+}
+
+.qtyBtn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.qtyBtn:hover {
+    background: var(--color-gray-light);
+}
+
+.qtyValue {
+    width: 40px;
+    text-align: center;
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-dark);
+    font-size: 0.875rem;
+}
+
+.subtotal {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.removeBtn {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.removeBtn:hover {
+    color: var(--color-error);
+}

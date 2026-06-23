@@ -1,0 +1,38 @@
+.container {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+.title {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--color-dark);
+    letter-spacing: 0.05em;
+    margin-bottom: 32px;
+}
+
+.layout {
+    display: flex;
+    gap: 40px;
+}
+
+.content {
+    flex: 1;
+}
+
+.tabTitle {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--color-dark);
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+}
+
+.tabText {
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: #6b7280;
+}

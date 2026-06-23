@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+
+@theme {
+    /* brand */
+    --color-primary: #e10600;
+    --color-primary-dark: #c50500;
+
+    /* dark scale */
+    --color-dark: #0b0b0b;
+    --color-dark-2: #111111;
+    --color-dark-3: #141414;
+    --color-dark-border: #1a1a1a;
+    --color-dark-4: #222222;
+    --color-dark-5: #252525;
+    --color-dark-6: #2a2a2a;
+    --color-dark-7: #333333;
+
+    /* light scale */
+    --color-white: #ffffff;
+    --color-gray-border: #ebebeb;
+    --color-gray-light: #f8f8f8;
+    --color-gray-img: #f4f4f4;
+    --color-gray-100: #eeeeee;
+    --color-gray-200: #e5e5e5;
+
+    /* gray text scale */
+    --color-gray-250: #d0d0d0;
+    --color-gray-300: #cccccc;
+    --color-gray-350: #bbbbbb;
+    --color-gray-400: #aaaaaa;
+    --color-gray-500: #9ca3af;
+    --color-gray-600: #888888;
+    --color-gray-700: #666666;
+    --color-gray-800: #555555;
+    --color-gray-900: #444444;
+
+    /* status: success */
+    --color-success: #22c55e;
+    --color-success-dark: #16a34a;
+    --color-success-darker: #15803d;
+    --color-success-light: #dcfce7;
+    --color-success-muted: #4ade80;
+    --color-success-muted-bg: rgba(74, 222, 128, 0.1);
+
+    /* status: error */
+    --color-error: #ef4444;
+    --color-error-dark: #dc2626;
+    --color-error-darker: #b91c1c;
+    --color-error-light: #fee2e2;
+    --color-error-muted: #f87171;
+    --color-error-muted-bg: rgba(248, 113, 113, 0.1);
+
+    /* status: info */
+    --color-info: #1d4ed8;
+    --color-info-mid: #2563eb;
+    --color-info-light: #dbeafe;
+
+    /* status: warning */
+    --color-warning: #a16207;
+    --color-warning-light: #fef9c3;
+
+    /* status: notice (orange) */
+    --color-notice: #c2410c;
+    --color-notice-light: #ffedd5;
+
+    /* semi-transparent overlays */
+    --color-primary-35: rgba(225, 6, 0, 0.35);
+    --color-primary-20: rgba(225, 6, 0, 0.2);
+    --color-primary-10: rgba(225, 6, 0, 0.1);
+    --color-primary-08: rgba(225, 6, 0, 0.08);
+    --color-primary-04: rgba(225, 6, 0, 0.04);
+    --color-primary-border: rgba(225, 6, 0, 0.2);
+    --color-dark-overlay-60: rgba(11, 11, 11, 0.6);
+    --color-dark-overlay-10: rgba(11, 11, 11, 0.1);
+    --color-white-grid: rgba(255, 255, 255, 0.012);
+
+}

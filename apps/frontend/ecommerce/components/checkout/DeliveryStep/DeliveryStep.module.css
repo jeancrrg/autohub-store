@@ -1,0 +1,79 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.title {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-dark);
+    letter-spacing: 0.1em;
+}
+
+.optionList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid;
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.optionSelected {
+    border-color: var(--color-primary);
+}
+
+.optionUnselected {
+    border-color: var(--color-gray-border);
+}
+
+.optionUnselected:hover {
+    border-color: var(--color-dark);
+}
+
+.optionInfo {
+    flex: 1;
+}
+
+.optionLabel {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-dark);
+    letter-spacing: 0.05em;
+}
+
+.optionEta {
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: var(--color-gray-500);
+}
+
+.optionPrice {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    color: var(--color-dark);
+}
+
+.nextBtn {
+    background: var(--color-primary);
+    color: var(--color-white);
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    padding: 16px;
+    letter-spacing: 0.1em;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.nextBtn:hover {
+    background: var(--color-primary-dark);
+}

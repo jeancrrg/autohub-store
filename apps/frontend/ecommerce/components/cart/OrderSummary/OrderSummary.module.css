@@ -1,0 +1,177 @@
+.wrapper {
+    background: var(--color-gray-light);
+    border: 1px solid var(--color-gray-border);
+    padding: 24px;
+    width: 360px;
+}
+
+.title {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--color-dark);
+    letter-spacing: 0.1em;
+    margin-bottom: 24px;
+}
+
+.couponGroup {
+    margin-bottom: 24px;
+}
+
+.couponRow {
+    display: flex;
+    gap: 8px;
+}
+
+.couponInput {
+    flex: 1;
+    border: 1px solid var(--color-gray-border);
+    padding: 8px 12px;
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.couponInput:focus {
+    border-color: var(--color-dark);
+}
+
+.couponBtn {
+    background: var(--color-dark);
+    color: var(--color-white);
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    padding: 0 16px;
+    font-size: 0.875rem;
+    letter-spacing: 0.1em;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.couponBtn:hover {
+    background: var(--color-primary);
+}
+
+.couponError {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    margin-top: 4px;
+}
+
+.couponSuccess {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-success-dark);
+    margin-top: 4px;
+}
+
+.totals {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+}
+
+.totalLabel {
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: var(--color-gray-700);
+}
+
+.totalValue {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-dark);
+}
+
+.shippingFree {
+    color: var(--color-success-dark);
+}
+
+.discountLabel {
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: var(--color-success-dark);
+}
+
+.discountValue {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-success-dark);
+}
+
+.grandTotal {
+    border-top: 1px solid var(--color-gray-border);
+    padding-top: 12px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.grandLabel {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    color: var(--color-dark);
+}
+
+.grandValueBox {
+    text-align: right;
+}
+
+.grandValue {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--color-primary);
+}
+
+.grandInstall {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+}
+
+.checkoutBtn {
+    display: block;
+    width: 100%;
+    background: var(--color-primary);
+    color: var(--color-white);
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    text-align: center;
+    padding: 16px;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    margin-bottom: 12px;
+    transition: background 0.2s;
+}
+
+.checkoutBtn:hover {
+    background: var(--color-primary-dark);
+}
+
+.continueBtn {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--color-gray-border);
+    color: var(--color-dark);
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    text-align: center;
+    padding: 12px;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
+}
+
+.continueBtn:hover {
+    border-color: var(--color-dark);
+}

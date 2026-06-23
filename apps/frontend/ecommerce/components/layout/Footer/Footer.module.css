@@ -1,0 +1,84 @@
+.footer {
+    background-color: var(--color-dark);
+    color: var(--color-white);
+    margin-top: auto;
+}
+
+.footerGrid {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+}
+
+.brandName {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: 0.1em;
+}
+
+.brandAccent {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: 0.875rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+}
+
+.brandDesc {
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: var(--color-gray-500);
+}
+
+.colTitle {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+}
+
+.footerLink {
+    display: block;
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: var(--color-gray-500);
+    margin-bottom: 8px;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footerLink:hover {
+    color: var(--color-primary);
+}
+
+.contactText {
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: var(--color-gray-500);
+    margin-bottom: 8px;
+}
+
+.footerBottom {
+    border-top: 1px solid var(--color-dark-border);
+}
+
+.footerBottomInner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.footerCopy {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-700);
+}

@@ -1,0 +1,98 @@
+.sidebar {
+    width: 224px;
+    flex-shrink: 0;
+}
+
+.group {
+    margin-bottom: 24px;
+}
+
+.groupTitle {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-dark);
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+}
+
+.btnList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filterBtn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    padding: 4px 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.filterBtnActive {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.filterBtnInactive {
+    color: var(--color-gray-700);
+}
+
+.filterBtnInactive:hover {
+    color: var(--color-dark);
+}
+
+.countLabel {
+    color: var(--color-gray-500);
+    margin-left: 4px;
+}
+
+.priceRow {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.priceInput {
+    width: 100%;
+    border: 1px solid var(--color-gray-border);
+    padding: 8px 12px;
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.priceInput:focus {
+    border-color: var(--color-dark);
+}
+
+.priceSep {
+    color: var(--color-gray-500);
+    font-size: 0.75rem;
+}
+
+.checkList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.checkText {
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: var(--color-gray-700);
+}

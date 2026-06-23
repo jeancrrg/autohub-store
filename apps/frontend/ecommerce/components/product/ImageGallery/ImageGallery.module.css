@@ -1,0 +1,59 @@
+.wrapper {
+    display: flex;
+    gap: 16px;
+}
+
+.thumbList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.thumb {
+    width: 64px;
+    height: 64px;
+    border-width: 2px;
+    border-style: solid;
+    background: var(--color-gray-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.thumbActive {
+    border-color: var(--color-primary);
+}
+
+.thumbInactive {
+    border-color: var(--color-gray-border);
+}
+
+.thumbInactive:hover {
+    border-color: var(--color-dark);
+}
+
+.thumbLabel {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+}
+
+.mainImage {
+    flex: 1;
+    aspect-ratio: 1 / 1;
+    background: var(--color-gray-light);
+    border: 1px solid var(--color-gray-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mainLabel {
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    color: var(--color-gray-500);
+    font-size: 0.875rem;
+    letter-spacing: 0.1em;
+}

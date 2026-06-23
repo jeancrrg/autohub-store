@@ -1,0 +1,143 @@
+.card {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-border);
+    transition: border-color 0.2s;
+}
+
+.card:hover {
+    border-color: var(--color-primary);
+}
+
+.imageArea {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: var(--color-gray-light);
+    border-bottom: 1px solid var(--color-gray-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tagBadge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    letter-spacing: 0.05em;
+}
+
+.soldOutBadge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    background: var(--color-gray-500);
+    color: var(--color-white);
+    letter-spacing: 0.05em;
+}
+
+.imagePlaceholder {
+    width: 112px;
+    height: 112px;
+    background: var(--color-dark-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-700);
+}
+
+.body {
+    padding: 16px;
+}
+
+.brand {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+    margin-bottom: 4px;
+}
+
+.name {
+    font-family: var(--font-exo2);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-dark);
+    line-height: 1.4;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: color 0.2s;
+}
+
+.name:hover {
+    color: var(--color-primary);
+}
+
+.stars {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 12px;
+    color: var(--color-primary);
+    font-size: 0.875rem;
+}
+
+.reviewCount {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+    margin-left: 4px;
+}
+
+.priceArea {
+    margin-bottom: 16px;
+}
+
+.oldPrice {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+    text-decoration: line-through;
+}
+
+.price {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--color-primary);
+}
+
+.installments {
+    font-family: var(--font-inter);
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+}
+
+.button {
+    display: block;
+    width: 100%;
+    background: var(--color-dark);
+    color: var(--color-white);
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 10px 0;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.button:hover {
+    background: var(--color-primary);
+}

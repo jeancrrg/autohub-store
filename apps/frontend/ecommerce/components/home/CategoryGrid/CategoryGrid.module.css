@@ -1,0 +1,109 @@
+.section {
+    padding: 64px 0;
+    background: var(--color-white);
+}
+
+.inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 40px;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 36px;
+}
+
+.labelRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.labelBar {
+    width: 3px;
+    height: 18px;
+    background: var(--color-primary);
+}
+
+.labelText {
+    font-family: var(--font-rajdhani);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.sectionTitle {
+    font-family: var(--font-rajdhani);
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--color-dark);
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+}
+
+.viewAll {
+    font-family: var(--font-rajdhani);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2px;
+}
+
+.categoryCard {
+    background: var(--color-dark);
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    display: block;
+    transition: background 0.2s;
+}
+
+.categoryCard:hover {
+    background: var(--color-dark-3);
+}
+
+.categoryTopBar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--color-primary);
+}
+
+.categoryIcon {
+    margin: 0 auto 12px;
+}
+
+.categoryName {
+    font-family: var(--font-rajdhani);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-white);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.categoryCount {
+    font-family: var(--font-inter);
+    font-size: 11px;
+    color: var(--color-gray-900);
+    margin-top: 4px;
+}

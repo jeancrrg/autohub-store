@@ -1,0 +1,85 @@
+.section {
+    padding: 64px 0;
+    background: var(--color-gray-light);
+    border-top: 1px solid var(--color-gray-border);
+    border-bottom: 1px solid var(--color-gray-border);
+}
+
+.inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 40px;
+}
+
+.headerCenter {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.labelRow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.labelBar {
+    width: 3px;
+    height: 18px;
+    background: var(--color-primary);
+}
+
+.labelText {
+    font-family: var(--font-rajdhani);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.sectionTitle {
+    font-family: var(--font-rajdhani);
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--color-dark);
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2px;
+}
+
+.brandCard {
+    background: var(--color-white);
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-gray-200);
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.brandCard:hover {
+    border-color: var(--color-primary);
+}
+
+.brandName {
+    font-family: var(--font-rajdhani);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-gray-600);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    transition: color 0.2s;
+}
+
+.brandCard:hover .brandName {
+    color: var(--color-dark);
+}

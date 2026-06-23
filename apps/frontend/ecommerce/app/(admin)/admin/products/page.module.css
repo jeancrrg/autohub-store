@@ -1,0 +1,31 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+}
+
+.title {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+}
+
+.addButton {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    font-family: var(--font-rajdhani);
+    font-weight: 600;
+    padding: 8px 24px;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.addButton:hover {
+    background-color: var(--color-primary-dark);
+}
