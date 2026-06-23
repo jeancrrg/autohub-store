@@ -1,6 +1,8 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
+:root {
     /* brand */
     --color-primary: #e10600;
     --color-primary-dark: #c50500;
@@ -59,7 +61,7 @@
     --color-warning: #a16207;
     --color-warning-light: #fef9c3;
 
-    /* status: notice (orange) */
+    /* status: notice */
     --color-notice: #c2410c;
     --color-notice-light: #ffedd5;
 
@@ -73,5 +75,4 @@
     --color-dark-overlay-60: rgba(11, 11, 11, 0.6);
     --color-dark-overlay-10: rgba(11, 11, 11, 0.1);
     --color-white-grid: rgba(255, 255, 255, 0.012);
-
 }
