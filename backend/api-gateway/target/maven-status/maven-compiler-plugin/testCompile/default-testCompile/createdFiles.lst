@@ -1,0 +1,3 @@
+com\autohubstore\gateway\domain\service\JwtValidationServiceTest.class
+com\autohubstore\gateway\GatewayIntegrationTest.class
+com\autohubstore\gateway\domain\service\RateLimitDomainServiceTest.class

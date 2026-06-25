@@ -1,0 +1,25 @@
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3Rpbmctb25seS0zMmJ5dGVz
+  expiration-ms: 3600000
+
+services:
+  auth:
+    url: http://localhost:19999
+  user:
+    url: http://localhost:19999
+  catalog:
+    url: http://localhost:19999
+  search:
+    url: http://localhost:19999
+  cart:
+    url: http://localhost:19999
+  order:
+    url: http://localhost:19999
+  payment:
+    url: http://localhost:19999
+  analytics:
+    url: http://localhost:19999
+
+logging:
+  level:
+    com.autohubstore.gateway: DEBUG

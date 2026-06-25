@@ -1,0 +1,15 @@
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\adapter\config\DomainConfig.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\adapter\in\web\CorsConfig.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\adapter\in\web\FallbackController.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\adapter\in\web\GatewayRoutesConfig.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\adapter\in\web\RateLimitFilter.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\adapter\in\web\SecurityConfig.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\adapter\out\redis\RateLimitRedisAdapter.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\adapter\out\web\GatewayExceptionHandler.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\domain\model\JwtClaims.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\domain\port\in\CheckRateLimitUseCase.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\domain\port\in\ValidateTokenUseCase.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\domain\port\out\RateLimitPort.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\domain\service\JwtValidationService.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\domain\service\RateLimitDomainService.java
+C:\Users\jeanc\Documents\dev\monorepo\autohub-store\backend\api-gateway\src\main\java\com\autohubstore\gateway\GatewayApplication.java
