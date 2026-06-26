@@ -6,6 +6,8 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @Configuration
 public class GatewayRoutesConfig {
 
@@ -33,73 +35,33 @@ public class GatewayRoutesConfig {
     @Value("${services.analytics.url:lb://analytics-service}")
     private String analyticsServiceUrl;
 
-    @Bean
-    public RouteLocator routeLocator(RouteLocatorBuilder builder) {
-        return builder.routes()
-                .route("auth-service",
-                        r -> r.path("/api/v1/auth/**")
-                                .filters(f -> f
-                                        .addResponseHeader("X-Gateway-Route", "auth-service")
-                                        .circuitBreaker(cb -> cb
-                                                .setName("auth-cb")
-                                                .setFallbackUri("forward:/fallback/auth")))
-                                .uri(authServiceUrl))
-                .route("user-service",
-                        r -> r.path("/api/v1/users/**")
-                                .filters(f -> f
-                                        .addResponseHeader("X-Gateway-Route", "user-service")
-                                        .circuitBreaker(cb -> cb
-                                                .setName("user-cb")
-                                                .setFallbackUri("forward:/fallback/user")))
-                                .uri(userServiceUrl))
-                .route("catalog-service",
-                        r -> r.path("/api/v1/catalog/**")
-                                .filters(f -> f
-                                        .addResponseHeader("X-Gateway-Route", "catalog-service")
-                                        .circuitBreaker(cb -> cb
-                                                .setName("catalog-cb")
-                                                .setFallbackUri("forward:/fallback/catalog")))
-                                .uri(catalogServiceUrl))
-                .route("search-service",
-                        r -> r.path("/api/v1/search/**")
-                                .filters(f -> f
-                                        .addResponseHeader("X-Gateway-Route", "search-service")
-                                        .circuitBreaker(cb -> cb
-                                                .setName("search-cb")
-                                                .setFallbackUri("forward:/fallback/search")))
-                                .uri(searchServiceUrl))
-                .route("cart-service",
-                        r -> r.path("/api/v1/cart/**")
-                                .filters(f -> f
-                                        .addResponseHeader("X-Gateway-Route", "cart-service")
-                                        .circuitBreaker(cb -> cb
-                                                .setName("cart-cb")
-                                                .setFallbackUri("forward:/fallback/cart")))
-                                .uri(cartServiceUrl))
-                .route("order-service",
-                        r -> r.path("/api/v1/orders/**")
-                                .filters(f -> f
-                                        .addResponseHeader("X-Gateway-Route", "order-service")
-                                        .circuitBreaker(cb -> cb
-                                                .setName("order-cb")
-                                                .setFallbackUri("forward:/fallback/order")))
-                                .uri(orderServiceUrl))
-                .route("payment-service",
-                        r -> r.path("/api/v1/payments/**")
-                                .filters(f -> f
-                                        .addResponseHeader("X-Gateway-Route", "payment-service")
-                                        .circuitBreaker(cb -> cb
-                                                .setName("payment-cb")
-                                                .setFallbackUri("forward:/fallback/payment")))
-                                .uri(paymentServiceUrl))
-                .route("analytics-service",
-                        r -> r.path("/api/v1/analytics/**")
-                                .filters(f -> f
-                                        .addResponseHeader("X-Gateway-Route", "analytics-service")
-                                        .circuitBreaker(cb -> cb
-                                                .setName("analytics-cb")
-                                                .setFallbackUri("forward:/fallback/analytics")))
-                                .uri(analyticsServiceUrl))
-                .build();
+    private final ServiceRouteFactory routeFactory;
+
+    public GatewayRoutesConfig(final ServiceRouteFactory routeFactory) {
+        this.routeFactory = routeFactory;
     }
+
+    @Bean
+    public RouteLocator routeLocator(final RouteLocatorBuilder builder) {
+        RouteLocatorBuilder.Builder routes = builder.routes();
+        final List<ServiceRouteDefinition> definitions = createRouteDefinitions();
+        for (final ServiceRouteDefinition definition : definitions) {
+            routes = routeFactory.apply(routes, definition);
+        }
+        return routes.build();
+    }
+
+    private List<ServiceRouteDefinition> createRouteDefinitions() {
+        return List.of(
+                new ServiceRouteDefinition("auth-service", "/api/v1/auth/**", authServiceUrl),
+                new ServiceRouteDefinition("user-service", "/api/v1/users/**", userServiceUrl),
+                new ServiceRouteDefinition("catalog-service", "/api/v1/catalog/**", catalogServiceUrl),
+                new ServiceRouteDefinition("search-service", "/api/v1/search/**", searchServiceUrl),
+                new ServiceRouteDefinition("cart-service", "/api/v1/cart/**", cartServiceUrl),
+                new ServiceRouteDefinition("order-service", "/api/v1/orders/**", orderServiceUrl),
+                new ServiceRouteDefinition("payment-service", "/api/v1/payments/**", paymentServiceUrl),
+                new ServiceRouteDefinition("analytics-service", "/api/v1/analytics/**", analyticsServiceUrl)
+        );
+    }
+
 }

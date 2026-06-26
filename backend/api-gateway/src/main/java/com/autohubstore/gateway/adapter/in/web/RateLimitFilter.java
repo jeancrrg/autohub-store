@@ -16,9 +16,13 @@ import java.util.Optional;
 @Component
 public class RateLimitFilter implements GlobalFilter, Ordered {
 
+    private static final String RETRY_AFTER_HEADER = "Retry-After";
+    private static final String RETRY_AFTER_SECONDS = "60";
+    private static final String UNKNOWN_CLIENT = "unknown";
+
     private final CheckRateLimitUseCase checkRateLimitUseCase;
 
-    public RateLimitFilter(CheckRateLimitUseCase checkRateLimitUseCase) {
+    public RateLimitFilter(final CheckRateLimitUseCase checkRateLimitUseCase) {
         this.checkRateLimitUseCase = checkRateLimitUseCase;
     }
 
@@ -28,32 +32,36 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String path = exchange.getRequest().getPath().value();
-        String clientIp = Optional.ofNullable(exchange.getRequest().getRemoteAddress())
-                .map(InetSocketAddress::getHostString)
-                .orElse("unknown");
+    public Mono<Void> filter(final ServerWebExchange exchange, final GatewayFilterChain chain) {
+        final String path = exchange.getRequest().getPath().value();
+        final String clientIp = resolveClientIp(exchange);
 
         return exchange.getPrincipal()
                 .cast(Authentication.class)
-                .map(auth -> {
-                    boolean authenticated = auth.isAuthenticated();
-                    String key = authenticated
-                            ? auth.getName() + ":" + path
-                            : clientIp + ":" + path;
-                    return new RateLimitKey(key, authenticated);
-                })
-                .defaultIfEmpty(new RateLimitKey(clientIp + ":" + path, false))
+                .map(auth -> buildAuthenticatedKey(auth, path))
+                .defaultIfEmpty(buildAnonymousKey(clientIp, path))
                 .flatMap(rlKey -> checkRateLimitUseCase.isAllowed(rlKey.key(), rlKey.authenticated()))
-                .flatMap(allowed -> {
-                    if (!allowed) {
-                        exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-                        exchange.getResponse().getHeaders().add("Retry-After", "60");
-                        return exchange.getResponse().setComplete();
-                    }
-                    return chain.filter(exchange);
-                });
+                .flatMap(allowed -> allowed ? chain.filter(exchange) : rejectRequest(exchange));
     }
 
-    private record RateLimitKey(String key, boolean authenticated) {}
+    private String resolveClientIp(final ServerWebExchange exchange) {
+        return Optional.ofNullable(exchange.getRequest().getRemoteAddress())
+                .map(InetSocketAddress::getHostString)
+                .orElse(UNKNOWN_CLIENT);
+    }
+
+    private RateLimitKey buildAuthenticatedKey(final Authentication auth, final String path) {
+        return new RateLimitKey(auth.getName() + ":" + path, auth.isAuthenticated());
+    }
+
+    private RateLimitKey buildAnonymousKey(final String clientIp, final String path) {
+        return new RateLimitKey(clientIp + ":" + path, false);
+    }
+
+    private Mono<Void> rejectRequest(final ServerWebExchange exchange) {
+        exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+        exchange.getResponse().getHeaders().add(RETRY_AFTER_HEADER, RETRY_AFTER_SECONDS);
+        return exchange.getResponse().setComplete();
+    }
+
 }

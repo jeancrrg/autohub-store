@@ -12,13 +12,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class DomainConfig {
 
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+
     @Bean
-    public ValidateTokenUseCase validateTokenUseCase(@Value("${jwt.secret}") String secret) {
-        return new JwtValidationService(secret);
+    public ValidateTokenUseCase validateTokenUseCase() {
+        return new JwtValidationService(jwtSecret);
     }
 
     @Bean
-    public CheckRateLimitUseCase checkRateLimitUseCase(RateLimitPort rateLimitPort) {
+    public CheckRateLimitUseCase checkRateLimitUseCase(final RateLimitPort rateLimitPort) {
         return new RateLimitDomainService(rateLimitPort);
     }
+
 }

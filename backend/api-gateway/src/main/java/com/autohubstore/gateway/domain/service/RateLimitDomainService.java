@@ -14,14 +14,14 @@ public class RateLimitDomainService implements CheckRateLimitUseCase {
 
     private final RateLimitPort rateLimitPort;
 
-    public RateLimitDomainService(RateLimitPort rateLimitPort) {
+    public RateLimitDomainService(final RateLimitPort rateLimitPort) {
         this.rateLimitPort = rateLimitPort;
     }
 
     @Override
-    public Mono<Boolean> isAllowed(String clientKey, boolean authenticated) {
-        int limit = authenticated ? AUTH_LIMIT : PUBLIC_LIMIT;
-        String redisKey = "ratelimit:" + clientKey;
+    public Mono<Boolean> isAllowed(final String clientKey, final boolean authenticated) {
+        final int limit = authenticated ? AUTH_LIMIT : PUBLIC_LIMIT;
+        final String redisKey = "ratelimit:" + clientKey;
 
         return rateLimitPort.increment(redisKey)
                 .flatMap(count -> {

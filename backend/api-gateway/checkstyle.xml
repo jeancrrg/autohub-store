@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<module name="Checker">
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
+
+    <!-- Máximo 150 caracteres por linha -->
+    <module name="LineLength">
+        <property name="max" value="150"/>
+        <property name="ignorePattern" value="^package.*|^import.*|^\s*\*.*"/>
+    </module>
+
+    <module name="TreeWalker">
+        <property name="severity" value="error"/>
+
+        <!-- Imports não utilizados -->
+        <module name="UnusedImports"/>
+
+        <!-- Variáveis locais e parâmetros não mutáveis devem ser final -->
+        <module name="FinalLocalVariable">
+            <property name="tokens" value="VARIABLE_DEF,PARAMETER_DEF"/>
+        </module>
+
+        <!-- Espaço obrigatório após palavras reservadas -->
+        <module name="WhitespaceAfter">
+            <property name="tokens" value="
+                LITERAL_IF, LITERAL_ELSE, LITERAL_FOR, LITERAL_WHILE,
+                LITERAL_DO, LITERAL_FINALLY, LITERAL_RETURN
+            "/>
+        </module>
+
+        <!-- Chaves obrigatórias nos métodos -->
+        <module name="NeedBraces">
+            <property name="allowSingleLineStatement" value="false"/>
+            <property name="severity" value="error"/>
+        </module>
+
+        <!-- Switch case com default -->
+        <module name="MissingSwitchDefault">
+            <property name="severity" value="error"/>
+        </module>
+
+        <!-- Máximo 30 linhas por método (blank lines excluídas) -->
+        <module name="MethodLength">
+            <property name="max" value="30"/>
+            <property name="countEmpty" value="false"/>
+        </module>
+
+        <!-- Máximo 3 if por método ou construtor -->
+        <module name="DescendantToken">
+            <property name="tokens" value="METHOD_DEF,CTOR_DEF"/>
+            <property name="limitedTokens" value="LITERAL_IF"/>
+            <property name="maximumNumber" value="3"/>
+            <property name="maximumMessage"
+                      value="Method contains more than 3 ''if'' statements. Extract logic into separate methods."/>
+        </module>
+
+        <!-- Complexidade ciclomática máxima 10 -->
+        <module name="CyclomaticComplexity">
+            <property name="max" value="10"/>
+        </module>
+
+    </module>
+</module>

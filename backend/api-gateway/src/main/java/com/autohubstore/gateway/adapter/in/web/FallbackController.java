@@ -12,7 +12,7 @@ import java.util.Map;
 public class FallbackController {
 
     @RequestMapping("/fallback/{service}")
-    public ResponseEntity<Map<String, String>> serviceFallback(@PathVariable String service) {
+    public ResponseEntity<Map<String, String>> serviceFallback(@PathVariable final String service) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(Map.of(
                         "status", "503",
@@ -31,4 +31,5 @@ public class FallbackController {
                         "message", "The requested service is temporarily unavailable. Please try again later."
                 ));
     }
+
 }

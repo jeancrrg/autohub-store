@@ -14,32 +14,42 @@ public class JwtValidationService implements ValidateTokenUseCase {
 
     private final SecretKey signingKey;
 
-    public JwtValidationService(String secret) {
+    public JwtValidationService(final String secret) {
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
     @Override
-    public JwtClaims validate(String token) {
-        Claims claims = Jwts.parser()
+    public JwtClaims validate(final String token) {
+        final Claims claims = Jwts.parser()
                 .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
 
-        String userId = claims.getSubject();
-        String email = claims.get("email", String.class);
-        @SuppressWarnings("unchecked")
-        List<String> roles = claims.get("roles", List.class);
+        final String userId = claims.getSubject();
+        final String email = claims.get("email", String.class);
+        final List<String> roles = extractRoles(claims);
 
-        return new JwtClaims(userId, email, roles != null ? roles : List.of());
+        return new JwtClaims(userId, email, roles);
+    }
+
+    private List<String> extractRoles(final Claims claims) {
+        final Object rolesClaim = claims.get("roles");
+        if (rolesClaim instanceof List<?> roles) {
+            return roles.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .toList();
+        }
+        return List.of();
     }
 
     @Override
-    public boolean isValid(String token) {
+    public boolean isValid(final String token) {
         try {
             validate(token);
             return true;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return false;
         }
     }
