@@ -24,4 +24,5 @@ public class JwtServerAuthenticationConverter implements ServerAuthenticationCon
     private boolean hasBearerToken(final String authHeader) {
         return authHeader != null && authHeader.startsWith(BEARER_PREFIX);
     }
+
 }

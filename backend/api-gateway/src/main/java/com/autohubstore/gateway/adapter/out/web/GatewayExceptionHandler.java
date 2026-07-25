@@ -92,4 +92,5 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
         }
         return MSG_INTERNAL;
     }
+
 }

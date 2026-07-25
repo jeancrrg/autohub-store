@@ -25,4 +25,5 @@ public class RateLimitRedisAdapter implements RateLimitPort {
     public Mono<Boolean> setExpiry(final String key, final Duration ttl) {
         return redisTemplate.expire(key, ttl);
     }
+
 }
