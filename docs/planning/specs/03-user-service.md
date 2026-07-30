@@ -203,6 +203,44 @@ EXPOSE 8003
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 
+## Checkstyle
+
+Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adicionar nas `<properties>` e em `<build><plugins>` do `pom.xml`:
+
+```xml
+<!-- <properties> -->
+<checkstyle.version>10.21.0</checkstyle.version>
+<maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
+<checkstyle.config.location>${project.basedir}/../../infra/checkstyle/checkstyle.xml</checkstyle.config.location>
+
+<!-- <build><plugins> -->
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-checkstyle-plugin</artifactId>
+    <version>${maven-checkstyle-plugin.version}</version>
+    <dependencies>
+        <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${checkstyle.version}</version>
+        </dependency>
+    </dependencies>
+    <configuration>
+        <configLocation>${checkstyle.config.location}</configLocation>
+        <failsOnError>true</failsOnError>
+        <consoleOutput>true</consoleOutput>
+        <includeTestSourceDirectory>false</includeTestSourceDirectory>
+    </configuration>
+    <executions>
+        <execution>
+            <id>checkstyle-validate</id>
+            <phase>validate</phase>
+            <goals><goal>check</goal></goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
 ## Estratégia de Testes
 
 - **Unitários:** `UserService` (cadastro, e-mail único, hash de senha), `AddressService`

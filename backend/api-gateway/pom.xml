@@ -26,6 +26,8 @@
         <checkstyle.version>10.21.0</checkstyle.version>
         <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
         <maven-failsafe-plugin.version>3.5.3</maven-failsafe-plugin.version>
+        <!-- Caminho para o checkstyle compartilhado em infra/checkstyle/ -->
+        <checkstyle.config.location>${project.basedir}/../../infra/checkstyle/checkstyle.xml</checkstyle.config.location>
     </properties>
 
     <dependencies>
@@ -170,7 +172,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <configLocation>checkstyle.xml</configLocation>
+                    <configLocation>${checkstyle.config.location}</configLocation>
                     <failsOnError>true</failsOnError>
                     <consoleOutput>true</consoleOutput>
                     <includeTestSourceDirectory>false</includeTestSourceDirectory>

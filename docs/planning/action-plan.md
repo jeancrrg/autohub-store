@@ -39,6 +39,79 @@ São **10 microsserviços** em **Java 25** (LTS), seguindo diferentes arquitetur
 
 ---
 
+## Qualidade de Código — Checkstyle
+
+Todos os microsserviços do monorepo **devem** apontar para o arquivo de regras compartilhado em:
+
+```
+infra/checkstyle/checkstyle.xml
+```
+
+O arquivo contém regras universais de estilo (limite de linha, imports, complexidade, nomenclatura, boas práticas) que se aplicam igualmente a todas as arquiteturas (MVC, Clean, Hexagonal) e ambos os build tools. O build **falha** em qualquer violação (`failsOnError = true`).
+
+### Configuração obrigatória — Maven (api-gateway, auth-service, user-service, order-service, payment-service)
+
+Adicionar nas `<properties>` e no bloco `<build><plugins>` do `pom.xml`:
+
+```xml
+<!-- Em <properties> -->
+<checkstyle.version>10.21.0</checkstyle.version>
+<maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
+<checkstyle.config.location>${project.basedir}/../../infra/checkstyle/checkstyle.xml</checkstyle.config.location>
+
+<!-- Em <build><plugins> -->
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-checkstyle-plugin</artifactId>
+    <version>${maven-checkstyle-plugin.version}</version>
+    <dependencies>
+        <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${checkstyle.version}</version>
+        </dependency>
+    </dependencies>
+    <configuration>
+        <configLocation>${checkstyle.config.location}</configLocation>
+        <failsOnError>true</failsOnError>
+        <consoleOutput>true</consoleOutput>
+        <includeTestSourceDirectory>false</includeTestSourceDirectory>
+    </configuration>
+    <executions>
+        <execution>
+            <id>checkstyle-validate</id>
+            <phase>validate</phase>
+            <goals>
+                <goal>check</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### Configuração obrigatória — Gradle (catalog-service, search-service, cart-service, notification-service, analytics-service)
+
+Adicionar no `build.gradle`:
+
+```groovy
+plugins {
+    // adicionar ao bloco de plugins existente
+    id 'checkstyle'
+}
+
+checkstyle {
+    toolVersion = '10.21.0'
+    configFile = rootProject.file('infra/checkstyle/checkstyle.xml')
+    ignoreFailures = false
+    showViolations = true
+    sourceSets = [sourceSets.main] // não aplica nos testes
+}
+```
+
+> **Regra:** nenhum microsserviço deve ter seu próprio `checkstyle.xml` local. Toda alteração nas regras de qualidade deve ser feita exclusivamente em `infra/checkstyle/checkstyle.xml` e propagará automaticamente para todos os serviços.
+
+---
+
 ## Distribuição de Build Tools e Arquiteturas
 
 | # | Serviço | Build Tool | Arquitetura |

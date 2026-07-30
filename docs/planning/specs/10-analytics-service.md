@@ -183,6 +183,25 @@ EXPOSE 8010
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 
+## Checkstyle
+
+Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adicionar no `build.gradle`:
+
+```groovy
+plugins {
+    // adicionar ao bloco de plugins existente
+    id 'checkstyle'
+}
+
+checkstyle {
+    toolVersion = '10.21.0'
+    configFile = rootProject.file('infra/checkstyle/checkstyle.xml')
+    ignoreFailures = false
+    showViolations = true
+    sourceSets = [sourceSets.main] // não aplica nos testes
+}
+```
+
 ## Estratégia de Testes
 
 - **Unitários:** `AnalyticsService` (cálculo correto de período diário e mensal a partir de timestamp), montagem do `DashboardResponse`

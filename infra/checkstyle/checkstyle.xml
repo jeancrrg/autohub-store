@@ -1,0 +1,535 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+
+    <!-- Nível padrão: error — toda violação quebra o build -->
+    <property name="severity" value="error"/>
+
+    <!-- Aplicar somente a arquivos .java -->
+    <property name="fileExtensions" value="java"/>
+
+    <!-- =========================================================
+         1. VERIFICAÇÕES DE ARQUIVO
+         ========================================================= -->
+
+    <!--
+        Limite máximo de caracteres por linha.
+        Linhas de package, import e Javadoc (começando com *) são ignoradas
+        porque não há como quebrá-las sem prejudicar a legibilidade.
+    -->
+    <module name="LineLength">
+        <property name="max" value="130"/>
+        <property name="ignorePattern" value="^package.*|^import.*|^\s*\*.*|^\s*//.*"/>
+    </module>
+
+    <!--
+        Arquivo deve terminar com uma linha em branco no final.
+    -->
+    <module name="NewlineAtEndOfFile">
+        <property name="lineSeparator" value="lf, crlf"/>
+    </module>
+
+    <!--
+        Proíbe caracteres de tab (\t) no arquivo.
+        Todo recuo deve usar espaços — 4 por nível de indentação
+    -->
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
+    </module>
+
+    <!-- =========================================================
+         2. IMPORTS
+         ========================================================= -->
+    <module name="TreeWalker">
+
+        <!--
+            Proíbe imports não utilizados no arquivo.
+        -->
+        <module name="UnusedImports"/>
+
+        <!--
+            Proíbe imports curinga, ex: import java.util.*
+        -->
+        <module name="AvoidStarImport"/>
+
+        <!--
+            Proíbe imports duplicados do mesmo tipo no mesmo arquivo.
+        -->
+        <module name="RedundantImport"/>
+
+        <!--
+            Proíbe importar classes do pacote java.lang (ex: java.lang.String),
+            pois são importadas automaticamente pelo compilador.
+        -->
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="java.lang"/>
+        </module>
+
+        <!-- =========================================================
+             3. ESPAÇAMENTO E FORMATAÇÃO
+             ========================================================= -->
+
+        <!--
+            Exige espaço após palavras-chave de controle de fluxo.
+            Ex: "if (" e não "if(", "for (" e não "for(", "while (" e não "while("
+        -->
+        <module name="WhitespaceAfter">
+            <property name="tokens" value="
+                LITERAL_IF, LITERAL_ELSE, LITERAL_FOR, LITERAL_WHILE,
+                LITERAL_DO, LITERAL_FINALLY, LITERAL_RETURN,
+                LITERAL_SWITCH, LITERAL_SYNCHRONIZED, LITERAL_TRY,
+                LITERAL_CATCH, TYPECAST, COMMA, SEMI
+            "/>
+        </module>
+
+        <!--
+            Exige espaços ao redor de operadores e tokens estruturais.
+            Ex: "a = b + c" e não "a=b+c", "{ " e não "{".
+        -->
+        <module name="WhitespaceAround">
+            <property name="tokens" value="
+                ASSIGN, BAND, BAND_ASSIGN, BOR, BOR_ASSIGN, BSR, BSR_ASSIGN,
+                BXOR, BXOR_ASSIGN, COLON, DIV, DIV_ASSIGN, DO_WHILE,
+                EQUAL, GE, GT, LAND, LCURLY, LE, LITERAL_CATCH,
+                LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_FOR,
+                LITERAL_IF, LITERAL_RETURN, LITERAL_SWITCH, LITERAL_SYNCHRONIZED,
+                LITERAL_TRY, LITERAL_WHILE, LOR, LT, MINUS, MINUS_ASSIGN,
+                MOD, MOD_ASSIGN, NOT_EQUAL, PLUS, PLUS_ASSIGN, QUESTION,
+                RCURLY, SL, SLIST, SL_ASSIGN, SR, SR_ASSIGN, STAR, STAR_ASSIGN,
+                TYPE_EXTENSION_AND
+            "/>
+            <!-- Permite blocos vazios: void run() {} -->
+            <property name="allowEmptyConstructors" value="true"/>
+            <property name="allowEmptyMethods" value="true"/>
+            <property name="allowEmptyTypes" value="true"/>
+            <property name="allowEmptyLoops" value="false"/>
+            <property name="allowEmptyLambdas" value="true"/>
+        </module>
+
+        <!--
+            Valida que o recuo de cada nível de indentação usa exatamente 4 espaços.
+        -->
+        <module name="Indentation">
+            <property name="basicOffset" value="4"/>
+            <property name="caseIndent" value="4"/>
+            <property name="lineWrappingIndentation" value="8"/>
+            <property name="throwsIndent" value="4"/>
+            <property name="arrayInitIndent" value="4"/>
+            <property name="forceStrictCondition" value="false"/>
+        </module>
+
+        <!--
+            Proíbe espaços em branco antes de parênteses.
+            Ex: "método ()" é inválido; deve ser "método()".
+        -->
+        <module name="MethodParamPad"/>
+
+        <!--
+            Proíbe espaço em branco após parêntese de abertura e antes de fechamento.
+            Ex: "( a + b )" é inválido; deve ser "(a + b)".
+        -->
+        <module name="ParenPad"/>
+
+        <!--
+            Proíbe espaços em branco desnecessários no início e fim de linhas.
+        -->
+        <module name="Regexp">
+            <property name="format" value="[ \t]+$"/>
+            <property name="illegalPattern" value="true"/>
+            <property name="message" value="Linha não pode terminar com espaços em branco."/>
+        </module>
+
+        <!--
+            Exige que operadores sejam colocados no início da linha quando
+            uma expressão é quebrada em várias linhas (wrap antes do operador).
+            Ex:
+              String s = "abc"
+                  + "def"; // correto
+              String s = "abc" +
+                  "def";   // violação
+        -->
+        <module name="OperatorWrap">
+            <property name="option" value="nl"/>
+            <property name="tokens" value="
+                BAND, BOR, BSR, BXOR, COLON, DIV,
+                EQUAL, GE, GT, LAND, LE, LITERAL_INSTANCEOF,
+                LOR, LT, MINUS, MOD, NOT_EQUAL, PLUS,
+                QUESTION, SL, SR, STAR, METHOD_REF
+            "/>
+        </module>
+
+        <!-- =========================================================
+             4. CHAVES E BLOCOS
+             ========================================================= -->
+
+        <!--
+            Exige chaves {} em todas as estruturas de controle, mesmo de uma linha.
+            Ex: "if (x) return;" é inválido; deve ser "if (x) { return; }".
+        -->
+        <module name="NeedBraces">
+            <property name="allowSingleLineStatement" value="false"/>
+            <property name="tokens" value="
+                LITERAL_DO, LITERAL_ELSE, LITERAL_FOR,
+                LITERAL_IF, LITERAL_WHILE, LITERAL_CASE, LITERAL_DEFAULT
+            "/>
+        </module>
+
+        <!--
+            Garante posicionamento consistente das chaves de abertura e fechamento.
+            Chave de abertura: mesma linha do statement (estilo K&R / Java padrão).
+            Chave de fechamento: própria linha.
+        -->
+        <module name="LeftCurly">
+            <property name="option" value="eol"/>
+        </module>
+        <module name="RightCurly">
+            <property name="option" value="alone"/>
+        </module>
+
+        <!--
+            Proíbe blocos vazios sem nenhuma lógica ou comentário.
+            Ex: "catch (Exception e) {}" é inválido.
+            Se o bloco vazio é intencional, exige ao menos um comentário explicando por quê.
+        -->
+        <module name="EmptyBlock">
+            <property name="option" value="text"/>
+            <property name="tokens" value="
+                LITERAL_WHILE, LITERAL_TRY, LITERAL_FINALLY,
+                LITERAL_DO, LITERAL_IF, LITERAL_ELSE, LITERAL_FOR,
+                INSTANCE_INIT, STATIC_INIT, LITERAL_SWITCH, LITERAL_SYNCHRONIZED
+            "/>
+        </module>
+
+        <!--
+            Proíbe blocos catch completamente vazios (sem código e sem comentário).
+            Exceção: permite catch com comentário que explique a supressão.
+        -->
+        <module name="EmptyCatchBlock">
+            <property name="exceptionVariableName" value="ignored|expected"/>
+        </module>
+
+        <!--
+            Todo switch deve ter um bloco default.
+        -->
+        <module name="MissingSwitchDefault"/>
+
+        <!--
+            Proíbe fall-through implícito entre cases de switch
+            (um case sem break/return/throw que cai no próximo).
+            Fall-through é fonte frequente de bugs. Se for intencional, deve ser
+            documentado com comentário "// falls through".
+        -->
+        <module name="FallThrough"/>
+
+        <!-- =========================================================
+             5. NOMENCLATURA
+             ========================================================= -->
+
+        <!--
+            Nomes de classes e interfaces devem seguir UpperCamelCase.
+            Padrão Java: "UserService", "OrderRepository", "PaymentController".
+        -->
+        <module name="TypeName">
+            <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <!--
+            Nomes de métodos devem seguir lowerCamelCase.
+            Padrão Java: "createUser()", "findByEmail()", "validateCredentials()".
+        -->
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <!--
+            Nomes de campos de instância devem seguir lowerCamelCase.
+            Ex: "userRepository", "passwordEncoder", "kafkaTemplate".
+        -->
+        <module name="MemberName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <!--
+            Nomes de variáveis locais devem seguir lowerCamelCase.
+            Ex: "userId", "existingUser", "refreshToken".
+        -->
+        <module name="LocalVariableName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <!--
+            Nomes de parâmetros de métodos devem seguir lowerCamelCase.
+            Ex: "userId", "request", "email".
+        -->
+        <module name="ParameterName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <!--
+            Constantes (static final) devem seguir UPPER_SNAKE_CASE.
+            Ex: "MAX_RETRY_COUNT", "DEFAULT_PAGE_SIZE", "TOKEN_PREFIX".
+        -->
+        <module name="ConstantName">
+            <property name="format" value="^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
+
+        <!--
+            Nomes de pacotes devem estar completamente em minúsculas, sem underscores.
+            Ex: "com.autohubstore.authservice.domain.model" — correto.
+            Ex: "com.autohubstore.authService.domain" — violação.
+        -->
+        <module name="PackageName">
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+        </module>
+
+        <!-- =========================================================
+             6. COMPLEXIDADE E TAMANHO
+             ========================================================= -->
+
+        <!--
+            Limite máximo de 50 linhas por método (excluindo linhas em branco).
+        -->
+        <module name="MethodLength">
+            <property name="max" value="50"/>
+            <property name="countEmpty" value="false"/>
+        </module>
+
+        <!--
+            Limite máximo de parâmetros por método ou construtor.
+            Muitos parâmetros indicam que o método faz coisas demais.
+            Limite: 7 parâmetros.
+        -->
+        <module name="ParameterNumber">
+            <property name="max" value="7"/>
+            <property name="tokens" value="METHOD_DEF, CTOR_DEF"/>
+        </module>
+
+        <!--
+            Complexidade ciclomática máxima por método.
+            Cada if/else/for/while/case/catch/&&/|| adiciona +1 ao contador.
+            Limite: 10 — padrão da indústria para código testável.
+        -->
+        <module name="CyclomaticComplexity">
+            <property name="max" value="10"/>
+            <property name="switchBlockAsSingleDecision" value="true"/>
+        </module>
+
+        <!--
+            Limite de estruturas if/else if aninhadas por método.
+            Múltiplos ifs indicam lógica complexa que deve ser dividida em métodos menores.
+            Limite: 5 ifs por método.
+        -->
+        <module name="DescendantToken">
+            <property name="tokens" value="METHOD_DEF, CTOR_DEF"/>
+            <property name="limitedTokens" value="LITERAL_IF"/>
+            <property name="maximumNumber" value="5"/>
+            <property name="maximumMessage"
+                      value="Método contém mais de 5 estruturas ''if''. Extraia a lógica em métodos menores."/>
+        </module>
+
+        <!--
+            Profundidade máxima de blocos aninhados (if dentro de for dentro de if, etc.).
+            Aninhamento profundo é sinal de código difícil de acompanhar.
+            Limite: 4 níveis de aninhamento.
+        -->
+        <module name="NestedIfDepth">
+            <property name="max" value="4"/>
+        </module>
+
+        <!--
+            Profundidade máxima de try-catch aninhados.
+            try dentro de catch dentro de try é raro e quase sempre indica
+            lógica de erro que deveria ser refatorada.
+            Limite: 2 níveis.
+        -->
+        <module name="NestedTryDepth">
+            <property name="max" value="2"/>
+        </module>
+
+        <!--
+            Máximo de declarações return por método.
+            Múltiplos returns podem dificultar o acompanhamento do fluxo.
+            Limite: 4.
+        -->
+        <module name="ReturnCount">
+            <property name="max" value="4"/>
+            <property name="maxForVoid" value="3"/>
+        </module>
+
+        <!--
+            Limite máximo de exceções declaradas em throws por método.
+            Limite: 3 tipos de exceção.
+        -->
+        <module name="ThrowsCount">
+            <property name="max" value="3"/>
+        </module>
+
+        <!-- =========================================================
+             7. BOAS PRÁTICAS E ARMADILHAS COMUNS
+             ========================================================= -->
+
+        <!--
+            Proíbe magic numbers — literais numéricos sem nome semântico.
+            Ex: "if (status == 3)" é inválido; deve ser uma constante nomeada.
+            Exceções: 0, 1, 2 e -1 são permitidos por serem convencionalmente
+            compreendidos (índices, offsets, sentinelas comuns).
+        -->
+        <module name="MagicNumber">
+            <property name="ignoreNumbers" value="-1, 0, 1, 2"/>
+            <property name="ignoreAnnotation" value="true"/>
+            <property name="ignoreHashCodeMethod" value="true"/>
+        </module>
+
+        <!--
+            Exige o sufixo L (maiúsculo) em literais long.
+            Ex: "long x = 100l" é inválido; deve ser "long x = 100L".
+        -->
+        <module name="UpperEll"/>
+
+        <!--
+            Proíbe atribuição dentro de uma expressão (inner assignment).
+            Ex: "if ((x = getValue()) != null)" é inválido.
+            Esse padrão dificulta a leitura e esconde a mutação de variável.
+        -->
+        <module name="InnerAssignment"/>
+
+        <!--
+            Proíbe comparação de Strings com == ou !=.
+            Em Java, == compara referências, não conteúdo.
+            Deve-se usar ".equals()" ou Objects.equals() para strings.
+        -->
+        <module name="StringLiteralEquality"/>
+
+        <!--
+            Encoraja "literal".equals(variavel) em vez de "variavel.equals(literal)".
+            Colocar o literal primeiro evita NullPointerException quando a variável é null.
+        -->
+        <module name="EqualsAvoidNull"/>
+
+        <!--
+            Simplifica expressões booleanas desnecessariamente complexas.
+            Ex: "if (x == true)" deve ser "if (x)".
+            Ex: "if (x == false)" deve ser "if (!x)".
+        -->
+        <module name="SimplifyBooleanExpression"/>
+
+        <!--
+            Simplifica retornos booleanos redundantes.
+            Ex: "if (condicao) { return true; } else { return false; }"
+            deve ser substituído por "return condicao;".
+        -->
+        <module name="SimplifyBooleanReturn"/>
+
+        <!--
+            Proíbe lançar tipos genéricos de exceção (RuntimeException, Exception, Throwable, Error).
+            O lançamento de tipos genéricos perde informação sobre o erro.
+            Crie exceções de domínio específicas (ex: UserNotFoundException, InvalidTokenException).
+        -->
+        <module name="IllegalThrows">
+            <property name="illegalClassNames"
+                      value="java.lang.RuntimeException, java.lang.Exception,
+                             java.lang.Throwable, java.lang.Error"/>
+        </module>
+
+        <!--
+            Proíbe múltiplas declarações de variável na mesma linha.
+            Ex: "int a, b, c = 0;" é inválido.
+            Cada variável deve ser declarada em sua própria linha para clareza.
+        -->
+        <module name="MultipleVariableDeclarations"/>
+
+        <!--
+            Exige uma única instrução por linha.
+            Ex: "a = 1; b = 2;" em uma linha é inválido.
+            Cada instrução na própria linha melhora legibilidade e facilita debugging.
+        -->
+        <module name="OneStatementPerLine"/>
+
+        <!--
+            Proíbe a modificação da variável de controle de um loop for dentro do corpo do loop.
+            Ex: modificar "i" dentro de "for (int i = 0; i < n; i++)" é ambíguo e perigoso.
+        -->
+        <module name="ModifiedControlVariable"/>
+
+        <!--
+            Proíbe declaração de classes de exceção genéricas que capturam Exception ou Throwable
+            quando tipos específicos seriam mais adequados.
+            Nota: Esta regra complementa IllegalThrows verificando o catch.
+        -->
+        <module name="IllegalCatch">
+            <property name="illegalClassNames"
+                      value="java.lang.RuntimeException, java.lang.Error, java.lang.Throwable"/>
+        </module>
+
+        <!--
+            Proíbe usar o mesmo nome para variável local e campo da classe.
+            Ex: ter um campo "name" e declarar "String name = ..." dentro de um método
+            oculta silenciosamente o campo, causando comportamento inesperado.
+        -->
+        <module name="HiddenField">
+            <property name="ignoreConstructorParameter" value="true"/>
+            <property name="ignoreSetter" value="true"/>
+            <property name="ignoreAbstractMethods" value="true"/>
+            <property name="setterCanReturnIItsClass" value="true"/>
+        </module>
+
+        <!-- =========================================================
+             8. DESIGN DE CLASSES
+             ========================================================= -->
+
+        <!--
+            Classes utilitárias (apenas métodos static) devem ter construtor privado.
+            Evita instanciação acidental de classes que só contêm métodos estáticos.
+            Ex: uma classe "StringUtils" com apenas static methods deve ter
+            "private StringUtils() {}" para impedir "new StringUtils()".
+        -->
+        <module name="HideUtilityClassConstructor"/>
+
+        <!--
+            Campos de instância devem ser privados (encapsulamento).
+            Acesso externo deve ocorrer via getters/setters ou métodos de domínio.
+            Exceção: constantes (static final) podem ser públicas.
+        -->
+        <module name="VisibilityModifier">
+            <property name="packageAllowed" value="false"/>
+            <property name="protectedAllowed" value="false"/>
+            <property name="publicMemberPattern" value="^serialVersionUID$"/>
+            <property name="ignoreAnnotationCanonicalNames"
+                      value="com.fasterxml.jackson.annotation.JsonProperty,
+                             lombok.Getter,
+                             lombok.Setter,
+                             jakarta.persistence.Column,
+                             jakarta.persistence.Id"/>
+        </module>
+
+        <!--
+            Proíbe clone() — o padrão clone() do Java é quebrado por design.
+            Use construtores de cópia, factory methods ou record para imutabilidade.
+        -->
+        <module name="NoClone"/>
+
+        <!--
+            Proíbe finalize() — o método finalize() é deprecated no Java 9+
+            e removido no Java 18+. Use try-with-resources ou Cleaner.
+        -->
+        <module name="NoFinalizer"/>
+
+        <!--
+            Classes que sobrescrevem equals() devem também sobrescrever hashCode().
+            O contrato Java exige que objetos equals() tenham o mesmo hashCode(),
+            garantindo comportamento correto em HashMap, HashSet, etc.
+        -->
+        <module name="EqualsHashCode"/>
+
+        <!--
+            Interfaces não devem ser usadas apenas para definir constantes.
+            O padrão "Constant Interface" é considerado um anti-pattern em Java.
+            Use classes com membros static final ou enums.
+        -->
+        <module name="InterfaceIsType"/>
+
+    </module>
+</module>

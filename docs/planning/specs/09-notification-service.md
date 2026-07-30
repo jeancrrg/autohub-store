@@ -149,6 +149,25 @@ EXPOSE 8009
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 
+## Checkstyle
+
+Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adicionar no `build.gradle`:
+
+```groovy
+plugins {
+    // adicionar ao bloco de plugins existente
+    id 'checkstyle'
+}
+
+checkstyle {
+    toolVersion = '10.21.0'
+    configFile = rootProject.file('infra/checkstyle/checkstyle.xml')
+    ignoreFailures = false
+    showViolations = true
+    sourceSets = [sourceSets.main] // não aplica nos testes
+}
+```
+
 ## Estratégia de Testes
 
 - **Unitários:** `EmailService` com mock do `JavaMailSender`; verificar template correto selecionado por tipo de evento
