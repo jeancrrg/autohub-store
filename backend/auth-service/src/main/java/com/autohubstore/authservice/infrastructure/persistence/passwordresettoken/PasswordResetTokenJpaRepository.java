@@ -1,4 +1,4 @@
-package com.autohubstore.authservice.infrastructure.persistence;
+package com.autohubstore.authservice.infrastructure.persistence.passwordresettoken;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

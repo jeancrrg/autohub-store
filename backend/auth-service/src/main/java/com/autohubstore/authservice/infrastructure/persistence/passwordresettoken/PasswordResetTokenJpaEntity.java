@@ -1,4 +1,4 @@
-package com.autohubstore.authservice.infrastructure.persistence;
+package com.autohubstore.authservice.infrastructure.persistence.passwordresettoken;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -21,17 +21,17 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "refresh_tokens")
-public class RefreshTokenJpaEntity {
+@Table(name = "password_reset_tokens")
+public class PasswordResetTokenJpaEntity {
 
     @Id
-    @Column(nullable = false)
+    @Column(name = "id", nullable = false)
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(nullable = false, unique = true, length = 512)
+    @Column(name = "token", nullable = false, unique = true, length = 128)
     private String token;
 
     @Column(name = "expires_at", nullable = false)
@@ -40,8 +40,8 @@ public class RefreshTokenJpaEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(nullable = false)
-    private boolean revoked;
+    @Column(name = "used", nullable = false)
+    private boolean used;
 
     @PrePersist
     public void prePersist() {

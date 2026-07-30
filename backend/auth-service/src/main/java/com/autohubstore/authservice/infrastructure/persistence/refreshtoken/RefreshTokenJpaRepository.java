@@ -1,4 +1,4 @@
-package com.autohubstore.authservice.infrastructure.persistence;
+package com.autohubstore.authservice.infrastructure.persistence.refreshtoken;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

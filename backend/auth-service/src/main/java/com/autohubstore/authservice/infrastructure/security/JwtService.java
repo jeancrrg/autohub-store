@@ -1,7 +1,10 @@
 package com.autohubstore.authservice.infrastructure.security;
 
+import com.autohubstore.authservice.application.dto.TokenClaims;
 import com.autohubstore.authservice.application.port.JwtPort;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

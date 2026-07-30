@@ -2,21 +2,19 @@ package com.autohubstore.authservice.infrastructure.messaging;
 
 import com.autohubstore.authservice.application.port.EventPublisherPort;
 import com.autohubstore.authservice.domain.event.PasswordResetRequestedEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class PasswordResetEventPublisher implements EventPublisherPort {
 
     private static final String TOPIC = "auth.password-reset";
 
     private final KafkaTemplate<String, PasswordResetRequestedEvent> kafkaTemplate;
-
-    public PasswordResetEventPublisher(KafkaTemplate<String, PasswordResetRequestedEvent> kafkaTemplate) {
-        this.kafkaTemplate = kafkaTemplate;
-    }
 
     @Override
     public void publishPasswordResetRequested(PasswordResetRequestedEvent event) {

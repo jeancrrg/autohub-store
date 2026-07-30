@@ -1,20 +1,18 @@
-package com.autohubstore.authservice.infrastructure.persistence;
+package com.autohubstore.authservice.infrastructure.persistence.passwordresettoken;
 
 import com.autohubstore.authservice.domain.model.PasswordResetToken;
 import com.autohubstore.authservice.domain.repository.PasswordResetTokenRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 @Repository
+@RequiredArgsConstructor
 public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepository {
 
     private final PasswordResetTokenJpaRepository jpa;
-
-    public PasswordResetTokenRepositoryImpl(PasswordResetTokenJpaRepository jpa) {
-        this.jpa = jpa;
-    }
 
     @Override
     @Transactional

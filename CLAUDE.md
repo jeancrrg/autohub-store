@@ -161,6 +161,7 @@ com.autohubstore.<servicename>/
 - **Sem @Service no domínio** — instanciado via `@Configuration` (ex: `DomainConfig.java`)
 - **Variáveis de ambiente com default local:** `${VARIAVEL:valor-default}` no `application.yml`
 - **Virtual Threads:** `spring.threads.virtual.enabled=true` em todos os serviços (Java 25)
+- **Log:** sempre `@Slf4j` (Lombok, `lombok.extern.slf4j.Slf4j`) — nunca instanciar `Logger`/`LoggerFactory` manualmente. Usar campo `log` gerado pela anotação (ex: `log.info(...)`, `log.error(...)`). **Nunca usar `@Log4j`/`@Log4j2`** — projeto roda em SLF4J + Logback (padrão Spring Boot), não Log4j.
 
 ### Checkstyle — obrigatório em todo código gerado
 

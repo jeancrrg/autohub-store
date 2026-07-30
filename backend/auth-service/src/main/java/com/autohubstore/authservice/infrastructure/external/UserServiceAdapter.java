@@ -1,18 +1,16 @@
 package com.autohubstore.authservice.infrastructure.external;
 
 import com.autohubstore.authservice.application.port.UserServicePort;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class UserServiceAdapter implements UserServicePort {
 
     private final UserServiceClient client;
-
-    public UserServiceAdapter(UserServiceClient client) {
-        this.client = client;
-    }
 
     @Override
     public UserCredentials validateCredentials(String email, String rawPassword) {

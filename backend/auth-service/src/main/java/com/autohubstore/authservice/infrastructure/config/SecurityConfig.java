@@ -1,6 +1,7 @@
 package com.autohubstore.authservice.infrastructure.config;
 
 import com.autohubstore.authservice.infrastructure.security.JwtAuthenticationFilter;
+import com.autohubstore.authservice.infrastructure.security.SecurityInitializationException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -32,17 +33,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+        try {
+            return http
+                    .csrf(AbstractHttpConfigurer::disable)
+                    .sessionManagement(session ->
+                            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .authorizeHttpRequests(auth -> auth
+                            .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                            .anyRequest().authenticated()
+                    )
+                    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                    .build();
+        } catch (Exception e) {
+            throw new SecurityInitializationException("Falha ao construir a cadeia de filtros de segurança", e);
+        }
     }
 
 }
