@@ -65,4 +65,5 @@ public class OpenApiConfig {
                 .bearerFormat("JWT")
                 .description("JWT Bearer token emitido pelo Auth Service. Formato: `Bearer <token>`");
     }
+
 }

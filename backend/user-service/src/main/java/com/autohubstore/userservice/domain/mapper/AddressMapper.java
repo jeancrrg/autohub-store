@@ -13,4 +13,5 @@ public interface AddressMapper {
 
     @Mapping(target = "userId", ignore = true)
     Address toEntity(AddressRequest request);
+
 }

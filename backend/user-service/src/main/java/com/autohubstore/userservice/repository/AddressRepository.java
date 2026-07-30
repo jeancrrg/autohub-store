@@ -16,4 +16,5 @@ public interface AddressRepository extends JpaRepository<Address, UUID> {
     @Modifying
     @Query("UPDATE Address a SET a.isDefault = false WHERE a.userId = :userId")
     void clearDefaultByUserId(@Param("userId") UUID userId);
+
 }

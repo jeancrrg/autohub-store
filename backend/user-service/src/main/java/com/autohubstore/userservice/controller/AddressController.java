@@ -5,6 +5,7 @@ import com.autohubstore.userservice.domain.dto.request.AddressRequest;
 import com.autohubstore.userservice.domain.dto.response.AddressResponse;
 import com.autohubstore.userservice.service.AddressService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,13 +21,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users/{userId}/addresses")
+@RequiredArgsConstructor
 public class AddressController implements AddressControllerDocs {
 
     private final AddressService addressService;
-
-    public AddressController(AddressService addressService) {
-        this.addressService = addressService;
-    }
 
     @Override
     @GetMapping
@@ -49,4 +47,5 @@ public class AddressController implements AddressControllerDocs {
         addressService.deleteAddress(userId, addressId);
         return ResponseEntity.noContent().build();
     }
+
 }

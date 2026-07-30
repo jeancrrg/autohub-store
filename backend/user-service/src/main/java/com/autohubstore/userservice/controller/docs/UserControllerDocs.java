@@ -55,8 +55,6 @@ public interface UserControllerDocs {
     )
     ResponseEntity<UserResponse> createUser(CreateUserRequest request);
 
-    // -------------------------------------------------------------------------
-
     @Operation(
             summary = "Buscar perfil por ID",
             description = "Retorna os dados do perfil de um usuário pelo seu UUID."
@@ -77,8 +75,6 @@ public interface UserControllerDocs {
     ResponseEntity<UserResponse> getUser(
             @Parameter(description = "UUID do usuário", required = true) UUID id
     );
-
-    // -------------------------------------------------------------------------
 
     @Operation(
             summary = "Atualizar perfil",
@@ -112,8 +108,6 @@ public interface UserControllerDocs {
             UpdateUserRequest request
     );
 
-    // -------------------------------------------------------------------------
-
     @Operation(
             summary = "Buscar usuário por e-mail",
             description = "Endpoint de uso interno — chamado pelo Auth Service via OpenFeign. "
@@ -136,8 +130,6 @@ public interface UserControllerDocs {
             String email
     );
 
-    // -------------------------------------------------------------------------
-
     @Operation(
             summary = "Verificar existência de e-mail",
             description = "Endpoint de uso interno — chamado pelo Auth Service para verificar "
@@ -154,8 +146,6 @@ public interface UserControllerDocs {
             @Parameter(description = "E-mail a verificar", required = true, example = "user@example.com")
             String email
     );
-
-    // -------------------------------------------------------------------------
 
     @Operation(
             summary = "Validar credenciais",
@@ -186,8 +176,6 @@ public interface UserControllerDocs {
     )
     ResponseEntity<UserResponse> validateCredentials(ValidateCredentialsRequest request);
 
-    // -------------------------------------------------------------------------
-
     @Operation(
             summary = "Atualizar senha",
             description = "Endpoint de uso interno — chamado pelo Auth Service após o usuário "
@@ -215,4 +203,5 @@ public interface UserControllerDocs {
             @Parameter(description = "UUID do usuário", required = true) UUID id,
             UpdatePasswordRequest request
     );
+
 }

@@ -95,4 +95,5 @@ public interface AddressControllerDocs {
             @Parameter(description = "UUID do usuário", required = true) UUID userId,
             @Parameter(description = "UUID do endereço", required = true) UUID addressId
     );
+
 }
