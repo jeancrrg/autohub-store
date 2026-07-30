@@ -4,7 +4,11 @@ import com.autohubstore.authservice.application.port.EventPublisherPort;
 import com.autohubstore.authservice.application.port.JwtPort;
 import com.autohubstore.authservice.application.port.TokenBlacklistPort;
 import com.autohubstore.authservice.application.port.UserServicePort;
-import com.autohubstore.authservice.application.usecase.*;
+import com.autohubstore.authservice.application.usecase.LoginUseCase;
+import com.autohubstore.authservice.application.usecase.LogoutUseCase;
+import com.autohubstore.authservice.application.usecase.RefreshTokenUseCase;
+import com.autohubstore.authservice.application.usecase.ForgotPasswordUseCase;
+import com.autohubstore.authservice.application.usecase.ResetPasswordUseCase;
 import com.autohubstore.authservice.domain.repository.PasswordResetTokenRepository;
 import com.autohubstore.authservice.domain.repository.RefreshTokenRepository;
 import com.autohubstore.authservice.domain.service.TokenDomainService;
@@ -19,13 +23,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ApplicationConfig {
 
+    private static final long MILLIS_PER_SECOND = 1000L;
+
     @Bean
     public TokenDomainService tokenDomainService(
             RefreshTokenRepository refreshTokenRepository,
             PasswordResetTokenRepository passwordResetTokenRepository,
             @Value("${jwt.refresh-expiration-ms:604800000}") long refreshTokenTtlMs,
             @Value("${auth.password-reset-ttl-minutes:15}") long passwordResetTtlMinutes) {
-        long refreshTokenTtlSeconds = refreshTokenTtlMs / 1000;
+        final long refreshTokenTtlSeconds = refreshTokenTtlMs / MILLIS_PER_SECOND;
         return new TokenDomainService(
                 refreshTokenRepository,
                 passwordResetTokenRepository,
@@ -40,7 +46,7 @@ public class ApplicationConfig {
             TokenDomainService tokenDomainService,
             JwtPort jwtPort,
             @Value("${jwt.expiration-ms:3600000}") long accessTokenTtlMs) {
-        return new LoginUseCase(userServicePort, tokenDomainService, jwtPort, accessTokenTtlMs / 1000);
+        return new LoginUseCase(userServicePort, tokenDomainService, jwtPort, accessTokenTtlMs / MILLIS_PER_SECOND);
     }
 
     @Bean
@@ -57,7 +63,7 @@ public class ApplicationConfig {
             UserServicePort userServicePort,
             JwtPort jwtPort,
             @Value("${jwt.expiration-ms:3600000}") long accessTokenTtlMs) {
-        return new RefreshTokenUseCase(tokenDomainService, userServicePort, jwtPort, accessTokenTtlMs / 1000);
+        return new RefreshTokenUseCase(tokenDomainService, userServicePort, jwtPort, accessTokenTtlMs / MILLIS_PER_SECOND);
     }
 
     @Bean
@@ -74,4 +80,5 @@ public class ApplicationConfig {
             UserServicePort userServicePort) {
         return new ResetPasswordUseCase(tokenDomainService, userServicePort);
     }
+
 }

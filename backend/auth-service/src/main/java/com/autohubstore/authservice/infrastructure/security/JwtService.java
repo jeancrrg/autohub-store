@@ -16,6 +16,8 @@ import java.util.UUID;
 @Service
 public class JwtService implements JwtPort {
 
+    private static final long MILLIS_PER_SECOND = 1000L;
+
     private final SecretKey secretKey;
     private final long accessTokenTtlMs;
 
@@ -67,7 +69,7 @@ public class JwtService implements JwtPort {
         try {
             Date expiration = parseClaims(token).getExpiration();
             long remaining = expiration.getTime() - System.currentTimeMillis();
-            return Math.max(0, remaining / 1000);
+            return Math.max(0, remaining / MILLIS_PER_SECOND);
         } catch (ExpiredJwtException e) {
             return 0;
         }
@@ -80,4 +82,5 @@ public class JwtService implements JwtPort {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
 }

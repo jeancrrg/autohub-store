@@ -30,4 +30,5 @@ public interface UserServicePort {
     UserCredentials findByEmail(String email);
 
     record UserCredentials(UUID userId, String email, List<String> roles) {}
+
 }

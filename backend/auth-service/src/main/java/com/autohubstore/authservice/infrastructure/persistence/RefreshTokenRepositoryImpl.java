@@ -57,4 +57,5 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
                 entity.isRevoked()
         );
     }
+
 }

@@ -6,24 +6,18 @@ import com.autohubstore.authservice.application.port.UserServicePort;
 import com.autohubstore.authservice.domain.event.PasswordResetRequestedEvent;
 import com.autohubstore.authservice.domain.model.PasswordResetToken;
 import com.autohubstore.authservice.domain.service.TokenDomainService;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Input boundary: solicita reset de senha — gera token e publica evento Kafka.
  * Retorna sempre 200 para não vazar informações sobre e-mails cadastrados.
  */
+@RequiredArgsConstructor
 public class ForgotPasswordUseCase {
 
     private final UserServicePort userServicePort;
     private final TokenDomainService tokenDomainService;
     private final EventPublisherPort eventPublisherPort;
-
-    public ForgotPasswordUseCase(UserServicePort userServicePort,
-                                 TokenDomainService tokenDomainService,
-                                 EventPublisherPort eventPublisherPort) {
-        this.userServicePort = userServicePort;
-        this.tokenDomainService = tokenDomainService;
-        this.eventPublisherPort = eventPublisherPort;
-    }
 
     public void execute(ForgotPasswordRequest request) {
         if (!userServicePort.existsByEmail(request.email())) {
@@ -43,4 +37,5 @@ public class ForgotPasswordUseCase {
                 )
         );
     }
+
 }

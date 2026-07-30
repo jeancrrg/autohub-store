@@ -15,4 +15,5 @@ public interface RefreshTokenRepository {
     Optional<RefreshToken> findByToken(String token);
 
     void revokeAllByUserId(UUID userId);
+
 }

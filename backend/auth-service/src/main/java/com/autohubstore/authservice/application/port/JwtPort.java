@@ -1,5 +1,7 @@
 package com.autohubstore.authservice.application.port;
 
+import com.autohubstore.authservice.application.dto.TokenClaims;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -19,5 +21,4 @@ public interface JwtPort {
      */
     long getRemainingTtlSeconds(String token);
 
-    record TokenClaims(String jti, UUID userId, String email, List<String> roles) {}
 }

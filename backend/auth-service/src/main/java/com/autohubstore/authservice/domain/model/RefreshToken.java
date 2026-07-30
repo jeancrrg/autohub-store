@@ -48,4 +48,5 @@ public class RefreshToken {
     public Instant getExpiresAt() { return expiresAt; }
     public Instant getCreatedAt() { return createdAt; }
     public boolean isRevoked() { return revoked; }
+
 }

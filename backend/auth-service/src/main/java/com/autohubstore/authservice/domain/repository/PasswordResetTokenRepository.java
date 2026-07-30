@@ -12,4 +12,5 @@ public interface PasswordResetTokenRepository {
     PasswordResetToken save(PasswordResetToken token);
 
     Optional<PasswordResetToken> findByToken(String token);
+
 }

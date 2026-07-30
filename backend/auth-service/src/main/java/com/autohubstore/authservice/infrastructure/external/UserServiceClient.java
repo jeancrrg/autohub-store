@@ -33,4 +33,5 @@ public interface UserServiceClient {
     record ExistsResponse(boolean exists) {}
 
     record UserCredentialsResponse(UUID userId, String email, List<String> roles) {}
+
 }

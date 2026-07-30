@@ -36,4 +36,5 @@ public class UserServiceAdapter implements UserServicePort {
         UserServiceClient.UserCredentialsResponse response = client.findByEmail(email);
         return new UserCredentials(response.userId(), response.email(), response.roles());
     }
+
 }

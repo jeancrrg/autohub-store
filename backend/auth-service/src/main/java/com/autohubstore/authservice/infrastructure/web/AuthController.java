@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Auth", description = "Autenticação e gerenciamento de tokens")
 public class AuthController {
 
+    private static final String BEARER_PREFIX = "Bearer ";
+
     private final LoginUseCase loginUseCase;
     private final LogoutUseCase logoutUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
@@ -44,8 +46,8 @@ public class AuthController {
     public ResponseEntity<Void> logout(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @RequestParam(required = false) String refreshToken) {
-        String accessToken = authHeader != null && authHeader.startsWith("Bearer ")
-                ? authHeader.substring(7)
+        String accessToken = authHeader != null && authHeader.startsWith(BEARER_PREFIX)
+                ? authHeader.substring(BEARER_PREFIX.length())
                 : null;
         logoutUseCase.execute(accessToken, refreshToken);
         return ResponseEntity.noContent().build();
@@ -70,4 +72,5 @@ public class AuthController {
         resetPasswordUseCase.execute(request);
         return ResponseEntity.noContent().build();
     }
+
 }

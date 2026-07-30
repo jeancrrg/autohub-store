@@ -49,4 +49,5 @@ public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepos
                 entity.isUsed()
         );
     }
+
 }

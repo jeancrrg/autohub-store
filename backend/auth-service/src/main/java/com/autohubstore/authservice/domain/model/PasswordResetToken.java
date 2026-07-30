@@ -9,6 +9,8 @@ import java.util.UUID;
  */
 public class PasswordResetToken {
 
+    private static final int SECONDS_PER_MINUTE = 60;
+
     private final UUID id;
     private final UUID userId;
     private final String token;
@@ -31,7 +33,7 @@ public class PasswordResetToken {
                 UUID.randomUUID(),
                 userId,
                 token,
-                Instant.now().plusSeconds(ttlMinutes * 60),
+                Instant.now().plusSeconds(ttlMinutes * SECONDS_PER_MINUTE),
                 Instant.now(),
                 false
         );
@@ -55,4 +57,5 @@ public class PasswordResetToken {
     public Instant getExpiresAt() { return expiresAt; }
     public Instant getCreatedAt() { return createdAt; }
     public boolean isUsed() { return used; }
+
 }
