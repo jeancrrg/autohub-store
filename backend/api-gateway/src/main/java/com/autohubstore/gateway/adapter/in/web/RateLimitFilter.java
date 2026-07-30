@@ -19,6 +19,7 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     private static final String RETRY_AFTER_HEADER = "Retry-After";
     private static final String RETRY_AFTER_SECONDS = "60";
     private static final String UNKNOWN_CLIENT = "unknown";
+    private static final int FILTER_ORDER_OFFSET = 10;
 
     private final CheckRateLimitUseCase checkRateLimitUseCase;
 
@@ -28,7 +29,7 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE + 10;
+        return Ordered.HIGHEST_PRECEDENCE + FILTER_ORDER_OFFSET;
     }
 
     @Override

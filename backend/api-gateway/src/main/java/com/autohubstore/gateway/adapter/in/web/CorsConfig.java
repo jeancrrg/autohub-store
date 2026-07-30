@@ -13,6 +13,8 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
+    private static final long CORS_MAX_AGE_SECONDS = 3600L;
+
     @Value("${cors.allowed-origins:http://localhost:3000}")
     private String allowedOriginsRaw;
 
@@ -27,7 +29,7 @@ public class CorsConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L);
+        config.setMaxAge(CORS_MAX_AGE_SECONDS);
 
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
