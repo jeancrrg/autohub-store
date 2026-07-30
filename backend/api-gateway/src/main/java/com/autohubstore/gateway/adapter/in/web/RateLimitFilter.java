@@ -1,6 +1,7 @@
 package com.autohubstore.gateway.adapter.in.web;
 
 import com.autohubstore.gateway.domain.port.in.CheckRateLimitUseCase;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -14,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.util.Optional;
 
 @Component
+@RequiredArgsConstructor
 public class RateLimitFilter implements GlobalFilter, Ordered {
 
     private static final String RETRY_AFTER_HEADER = "Retry-After";
@@ -22,10 +24,6 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     private static final int FILTER_ORDER_OFFSET = 10;
 
     private final CheckRateLimitUseCase checkRateLimitUseCase;
-
-    public RateLimitFilter(final CheckRateLimitUseCase checkRateLimitUseCase) {
-        this.checkRateLimitUseCase = checkRateLimitUseCase;
-    }
 
     @Override
     public int getOrder() {

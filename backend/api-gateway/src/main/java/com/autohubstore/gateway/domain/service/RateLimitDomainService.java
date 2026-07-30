@@ -2,10 +2,12 @@ package com.autohubstore.gateway.domain.service;
 
 import com.autohubstore.gateway.domain.port.in.CheckRateLimitUseCase;
 import com.autohubstore.gateway.domain.port.out.RateLimitPort;
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
+@RequiredArgsConstructor
 public class RateLimitDomainService implements CheckRateLimitUseCase {
 
     private static final int PUBLIC_LIMIT = 100;
@@ -13,10 +15,6 @@ public class RateLimitDomainService implements CheckRateLimitUseCase {
     private static final Duration TTL = Duration.ofSeconds(60);
 
     private final RateLimitPort rateLimitPort;
-
-    public RateLimitDomainService(final RateLimitPort rateLimitPort) {
-        this.rateLimitPort = rateLimitPort;
-    }
 
     @Override
     public Mono<Boolean> isAllowed(final String clientKey, final boolean authenticated) {

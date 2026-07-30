@@ -2,6 +2,7 @@ package com.autohubstore.gateway.adapter.out.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.JwtException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 @Component
 @Order(-1)
+@RequiredArgsConstructor
 public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
 
     private static final String FIELD_STATUS = "status";
@@ -30,10 +32,6 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
     private static final String MSG_INTERNAL = "An unexpected error occurred. Please try again later.";
 
     private final ObjectMapper objectMapper;
-
-    public GatewayExceptionHandler(final ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     @SuppressWarnings("NullableProblems")

@@ -2,6 +2,7 @@ package com.autohubstore.gateway.adapter.in.web;
 
 import com.autohubstore.gateway.domain.model.JwtClaims;
 import com.autohubstore.gateway.domain.port.in.ValidateTokenUseCase;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -11,13 +12,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationManager {
 
     private final ValidateTokenUseCase validateTokenUseCase;
-
-    public JwtReactiveAuthenticationManager(final ValidateTokenUseCase validateTokenUseCase) {
-        this.validateTokenUseCase = validateTokenUseCase;
-    }
 
     @Override
     public Mono<Authentication> authenticate(final Authentication authentication) {

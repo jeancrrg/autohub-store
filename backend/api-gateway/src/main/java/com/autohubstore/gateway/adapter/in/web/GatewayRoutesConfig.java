@@ -1,5 +1,6 @@
 package com.autohubstore.gateway.adapter.in.web;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
@@ -9,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class GatewayRoutesConfig {
 
     @Value("${services.auth.url:lb://auth-service}")
@@ -36,10 +38,6 @@ public class GatewayRoutesConfig {
     private String analyticsServiceUrl;
 
     private final ServiceRouteFactory routeFactory;
-
-    public GatewayRoutesConfig(final ServiceRouteFactory routeFactory) {
-        this.routeFactory = routeFactory;
-    }
 
     @Bean
     public RouteLocator routeLocator(final RouteLocatorBuilder builder) {

@@ -1,6 +1,7 @@
 package com.autohubstore.gateway.adapter.in.web;
 
 import com.autohubstore.gateway.domain.port.in.ValidateTokenUseCase;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 @Configuration
 @EnableWebFluxSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -35,10 +37,6 @@ public class SecurityConfig {
     };
 
     private final ValidateTokenUseCase validateTokenUseCase;
-
-    public SecurityConfig(final ValidateTokenUseCase validateTokenUseCase) {
-        this.validateTokenUseCase = validateTokenUseCase;
-    }
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(final ServerHttpSecurity http) {
