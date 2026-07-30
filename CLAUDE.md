@@ -189,6 +189,18 @@ corrigir depois — aplicar direto ao escrever. Regras principais:
 Antes de considerar uma classe pronta, revisar mentalmente contra essa lista —
 a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml`.
 
+### Padrões de Implementação — obrigatórios em todo código gerado
+
+- **Entities JPA:**
+  - Todo campo mapeia coluna explícita via `@Column(name = "...")` — nunca depender do nome inferido pelo Hibernate.
+  - Sempre implementar `@PrePersist` e `@PreUpdate` para timestamps de auditoria (`createdAt`, `updatedAt`) — nunca delegar isso à aplicação/service.
+- **Services:**
+  - Injeção de dependência sempre via `@RequiredArgsConstructor` (Lombok) com campos `private final` — nunca `@Autowired` em campo ou construtor manual.
+  - Um `Service` só pode chamar outro `Service` (ou `Repository` do próprio domínio) — nunca acessar `Repository` de outro serviço/domínio diretamente, e nunca acessar `Controller`.
+- **Lombok:** usar para reduzir boilerplate (`@Getter`, `@Setter`, `@RequiredArgsConstructor`, `@Builder`, `@Slf4j`, etc.) em entities, DTOs e services — nunca escrever getters/setters/construtores manuais quando Lombok resolve.
+- **MapStruct:** toda conversão Entity ↔ DTO usa `@Mapper` de MapStruct — nunca mapeamento manual campo a campo em service ou controller.
+- **Validações em Request DTOs:** toda anotação Bean Validation (`@NotNull`, `@NotBlank`, `@Size`, `@Email`, etc.) sempre com `message` explícita — nunca deixar mensagem default do framework.
+
 ---
 
 ## Tópicos Kafka
