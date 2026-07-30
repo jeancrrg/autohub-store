@@ -1,10 +1,25 @@
 package com.autohubstore.authservice.infrastructure.persistence;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.PrePersist;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "refresh_tokens")
 public class RefreshTokenJpaEntity {
@@ -28,23 +43,9 @@ public class RefreshTokenJpaEntity {
     @Column(nullable = false)
     private boolean revoked;
 
-    protected RefreshTokenJpaEntity() {}
-
-    public RefreshTokenJpaEntity(UUID id, UUID userId, String token,
-                                 Instant expiresAt, Instant createdAt, boolean revoked) {
-        this.id = id;
-        this.userId = userId;
-        this.token = token;
-        this.expiresAt = expiresAt;
-        this.createdAt = createdAt;
-        this.revoked = revoked;
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
     }
 
-    public UUID getId() { return id; }
-    public UUID getUserId() { return userId; }
-    public String getToken() { return token; }
-    public Instant getExpiresAt() { return expiresAt; }
-    public Instant getCreatedAt() { return createdAt; }
-    public boolean isRevoked() { return revoked; }
-    public void setRevoked(boolean revoked) { this.revoked = revoked; }
 }

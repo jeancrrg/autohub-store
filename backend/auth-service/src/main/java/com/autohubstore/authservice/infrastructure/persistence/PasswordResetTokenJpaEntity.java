@@ -1,10 +1,25 @@
 package com.autohubstore.authservice.infrastructure.persistence;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.PrePersist;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "password_reset_tokens")
 public class PasswordResetTokenJpaEntity {
@@ -28,23 +43,9 @@ public class PasswordResetTokenJpaEntity {
     @Column(nullable = false)
     private boolean used;
 
-    protected PasswordResetTokenJpaEntity() {}
-
-    public PasswordResetTokenJpaEntity(UUID id, UUID userId, String token,
-                                       Instant expiresAt, Instant createdAt, boolean used) {
-        this.id = id;
-        this.userId = userId;
-        this.token = token;
-        this.expiresAt = expiresAt;
-        this.createdAt = createdAt;
-        this.used = used;
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
     }
 
-    public UUID getId() { return id; }
-    public UUID getUserId() { return userId; }
-    public String getToken() { return token; }
-    public Instant getExpiresAt() { return expiresAt; }
-    public Instant getCreatedAt() { return createdAt; }
-    public boolean isUsed() { return used; }
-    public void setUsed(boolean used) { this.used = used; }
 }
