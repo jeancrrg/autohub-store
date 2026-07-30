@@ -10,6 +10,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import com.autohubstore.userservice.exception.SecurityInitializationException;
+
 /**
  * O User Service não faz autenticação própria — o API Gateway já valida o JWT.
  * Spring Security é incluído apenas para o BCryptPasswordEncoder.
@@ -19,16 +21,21 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .build();
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+        try {
+            return http
+                    .csrf(AbstractHttpConfigurer::disable)
+                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                    .build();
+        } catch (Exception e) {
+            throw new SecurityInitializationException("Falha ao construir a cadeia de filtros de segurança", e);
+        }
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
 }

@@ -28,8 +28,8 @@ public interface UserControllerDocs {
 
     @Operation(
             summary = "Cadastrar usuário",
-            description = "Cria uma nova conta de usuário. A senha é armazenada com hash BCrypt. " +
-                          "Após o cadastro, o evento `user.created` é publicado no Kafka."
+            description = "Cria uma nova conta de usuário. A senha é armazenada com hash BCrypt. "
+                    + "Após o cadastro, o evento `user.created` é publicado no Kafka."
     )
     @ApiResponses({
             @ApiResponse(
@@ -116,8 +116,8 @@ public interface UserControllerDocs {
 
     @Operation(
             summary = "Buscar usuário por e-mail",
-            description = "Endpoint de uso interno — chamado pelo Auth Service via OpenFeign. " +
-                          "Retorna os dados completos do usuário, incluindo roles."
+            description = "Endpoint de uso interno — chamado pelo Auth Service via OpenFeign. "
+                    + "Retorna os dados completos do usuário, incluindo roles."
     )
     @ApiResponses({
             @ApiResponse(
@@ -140,8 +140,8 @@ public interface UserControllerDocs {
 
     @Operation(
             summary = "Verificar existência de e-mail",
-            description = "Endpoint de uso interno — chamado pelo Auth Service para verificar " +
-                          "se um e-mail existe antes de iniciar o fluxo de reset de senha."
+            description = "Endpoint de uso interno — chamado pelo Auth Service para verificar "
+                    + "se um e-mail existe antes de iniciar o fluxo de reset de senha."
     )
     @ApiResponses({
             @ApiResponse(
@@ -159,8 +159,8 @@ public interface UserControllerDocs {
 
     @Operation(
             summary = "Validar credenciais",
-            description = "Endpoint de uso interno — chamado pelo Auth Service no fluxo de login. " +
-                          "Verifica e-mail e senha (BCrypt). Retorna os dados do usuário se válidos."
+            description = "Endpoint de uso interno — chamado pelo Auth Service no fluxo de login. "
+                    + "Verifica e-mail e senha (BCrypt). Retorna os dados do usuário se válidos."
     )
     @ApiResponses({
             @ApiResponse(
@@ -190,8 +190,8 @@ public interface UserControllerDocs {
 
     @Operation(
             summary = "Atualizar senha",
-            description = "Endpoint de uso interno — chamado pelo Auth Service após o usuário " +
-                          "confirmar o reset de senha. A nova senha é armazenada com hash BCrypt."
+            description = "Endpoint de uso interno — chamado pelo Auth Service após o usuário "
+                    + "confirmar o reset de senha. A nova senha é armazenada com hash BCrypt."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Senha atualizada com sucesso"),

@@ -14,6 +14,6 @@ public interface AddressRepository extends JpaRepository<Address, UUID> {
     List<Address> findAllByUserId(UUID userId);
 
     @Modifying
-    @Query("UPDATE Address a SET a.isDefault = false WHERE a.user.id = :userId")
+    @Query("UPDATE Address a SET a.isDefault = false WHERE a.userId = :userId")
     void clearDefaultByUserId(@Param("userId") UUID userId);
 }

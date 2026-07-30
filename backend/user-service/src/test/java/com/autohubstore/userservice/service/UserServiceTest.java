@@ -8,10 +8,12 @@ import com.autohubstore.userservice.domain.entity.User;
 import com.autohubstore.userservice.domain.enums.UserStatus;
 import com.autohubstore.userservice.domain.dto.request.CreateUserRequest;
 import com.autohubstore.userservice.domain.dto.response.UserResponse;
+import com.autohubstore.userservice.domain.mapper.UserMapper;
 import com.autohubstore.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,7 +42,8 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder();
-        userService = new UserService(userRepository, passwordEncoder, eventPublisher);
+        UserMapper userMapper = Mappers.getMapper(UserMapper.class);
+        userService = new UserService(userRepository, passwordEncoder, eventPublisher, userMapper);
     }
 
     @Test
@@ -104,7 +107,12 @@ class UserServiceTest {
     @Test
     void validateCredentials_shouldThrowOnWrongPassword() {
         String rawPassword = "correta";
-        User user = new User("cred@test.com", "Cred User", passwordEncoder.encode(rawPassword));
+        User user = User.builder()
+                .email("cred@test.com")
+                .fullName("Cred User")
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .status(UserStatus.ACTIVE)
+                .build();
         when(userRepository.findByEmail("cred@test.com")).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> userService.validateCredentials("cred@test.com", "errada"))
@@ -115,7 +123,12 @@ class UserServiceTest {
     @Test
     void validateCredentials_shouldReturnUserOnValidCredentials() {
         String rawPassword = "senha_certa";
-        User user = new User("ok@test.com", "OK User", passwordEncoder.encode(rawPassword));
+        User user = User.builder()
+                .email("ok@test.com")
+                .fullName("OK User")
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .status(UserStatus.ACTIVE)
+                .build();
         when(userRepository.findByEmail("ok@test.com")).thenReturn(Optional.of(user));
 
         UserResponse response = userService.validateCredentials("ok@test.com", rawPassword);
@@ -125,7 +138,11 @@ class UserServiceTest {
 
     @Test
     void validateCredentials_shouldThrowWhenUserInactive() {
-        User user = new User("blocked@test.com", "Blocked", passwordEncoder.encode("pass"));
+        User user = User.builder()
+                .email("blocked@test.com")
+                .fullName("Blocked")
+                .passwordHash(passwordEncoder.encode("pass"))
+                .build();
         user.setStatus(UserStatus.BLOCKED);
         when(userRepository.findByEmail("blocked@test.com")).thenReturn(Optional.of(user));
 
@@ -137,7 +154,11 @@ class UserServiceTest {
     @Test
     void updatePassword_shouldHashAndSaveNewPassword() {
         UUID userId = UUID.randomUUID();
-        User user = new User("pw@test.com", "PW User", passwordEncoder.encode("old_pass"));
+        User user = User.builder()
+                .email("pw@test.com")
+                .fullName("PW User")
+                .passwordHash(passwordEncoder.encode("old_pass"))
+                .build();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 

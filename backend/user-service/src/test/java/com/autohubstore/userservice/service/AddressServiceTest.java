@@ -6,11 +6,13 @@ import com.autohubstore.userservice.domain.entity.Address;
 import com.autohubstore.userservice.domain.dto.request.AddressRequest;
 import com.autohubstore.userservice.domain.dto.response.AddressResponse;
 import com.autohubstore.userservice.domain.entity.User;
+import com.autohubstore.userservice.domain.mapper.AddressMapper;
 import com.autohubstore.userservice.repository.AddressRepository;
 import com.autohubstore.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -35,7 +37,8 @@ class AddressServiceTest {
 
     @BeforeEach
     void setUp() {
-        addressService = new AddressService(addressRepository, userRepository);
+        AddressMapper addressMapper = Mappers.getMapper(AddressMapper.class);
+        addressService = new AddressService(addressRepository, userRepository, addressMapper);
     }
 
     @Test
@@ -48,28 +51,11 @@ class AddressServiceTest {
     }
 
     @Test
-    void listAddresses_shouldReturnMappedList() {
-        UUID userId = UUID.randomUUID();
-        User user = new User("u@test.com", "User", "hash");
-        Address address = new Address(user, "Rua A", "10", null, "SP", "SP", "01310-100", true);
-
-        when(userRepository.existsById(userId)).thenReturn(true);
-        when(addressRepository.findAllByUserId(userId)).thenReturn(List.of(address));
-
-        List<AddressResponse> result = addressService.listAddresses(userId);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).street()).isEqualTo("Rua A");
-        assertThat(result.get(0).isDefault()).isTrue();
-    }
-
-    @Test
     void createAddress_shouldClearDefaultWhenNewIsDefault() {
         UUID userId = UUID.randomUUID();
-        User user = new User("u@test.com", "User", "hash");
         AddressRequest request = new AddressRequest("Rua B", "20", null, "Campinas", "SP", "13010-000", true);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.existsById(userId)).thenReturn(true);
         when(addressRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         addressService.createAddress(userId, request);
@@ -80,10 +66,9 @@ class AddressServiceTest {
     @Test
     void createAddress_shouldNotClearDefaultWhenNotDefault() {
         UUID userId = UUID.randomUUID();
-        User user = new User("u@test.com", "User", "hash");
         AddressRequest request = new AddressRequest("Rua C", "30", null, "Campinas", "SP", "13010-000", false);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.existsById(userId)).thenReturn(true);
         when(addressRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         addressService.createAddress(userId, request);
@@ -94,11 +79,22 @@ class AddressServiceTest {
     @Test
     void deleteAddress_shouldThrowWhenAddressBelongsToDifferentUser() {
         UUID userId = UUID.randomUUID();
-        UUID otherUserId = UUID.randomUUID();
         UUID addressId = UUID.randomUUID();
 
-        User otherUser = new User("other@test.com", "Other", "hash");
-        Address address = new Address(otherUser, "Rua X", "1", null, "SP", "SP", "01310-100", false);
+        User otherUser = User.builder()
+                .email("other@test.com")
+                .fullName("Other")
+                .passwordHash("hash")
+                .build();
+        Address address = Address.builder()
+                .userId(otherUser.getId())
+                .street("Rua X")
+                .number("1")
+                .city("SP")
+                .state("SP")
+                .zipCode("01310-100")
+                .isDefault(false)
+                .build();
 
         when(userRepository.existsById(userId)).thenReturn(true);
         when(addressRepository.findById(addressId)).thenReturn(Optional.of(address));

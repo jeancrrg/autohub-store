@@ -17,6 +17,8 @@ import java.util.Map;
 @Configuration
 public class KafkaProducerConfig {
 
+    private static final int PRODUCER_RETRIES = 3;
+
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
 
@@ -27,7 +29,7 @@ public class KafkaProducerConfig {
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         config.put(ProducerConfig.ACKS_CONFIG, "all");
-        config.put(ProducerConfig.RETRIES_CONFIG, 3);
+        config.put(ProducerConfig.RETRIES_CONFIG, PRODUCER_RETRIES);
         return new DefaultKafkaProducerFactory<>(config);
     }
 

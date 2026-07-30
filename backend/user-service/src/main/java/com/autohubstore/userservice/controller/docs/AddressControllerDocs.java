@@ -45,12 +45,10 @@ public interface AddressControllerDocs {
             @Parameter(description = "UUID do usuário", required = true) UUID userId
     );
 
-    // -------------------------------------------------------------------------
-
     @Operation(
             summary = "Criar endereço de entrega",
-            description = "Adiciona um novo endereço ao usuário. " +
-                          "Se `isDefault = true`, o endereço padrão anterior é automaticamente desmarcado."
+            description = "Adiciona um novo endereço ao usuário. "
+                    + "Se `isDefault = true`, o endereço padrão anterior é automaticamente desmarcado."
     )
     @ApiResponses({
             @ApiResponse(
@@ -79,19 +77,17 @@ public interface AddressControllerDocs {
             AddressRequest request
     );
 
-    // -------------------------------------------------------------------------
-
     @Operation(
             summary = "Remover endereço",
-            description = "Remove um endereço de entrega do usuário. " +
-                          "O endereço deve pertencer ao usuário informado."
+            description = "Remove um endereço de entrega do usuário. "
+                    + "O endereço deve pertencer ao usuário informado."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Endereço removido com sucesso"),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Usuário ou endereço não encontrado, " +
-                                  "ou o endereço não pertence ao usuário",
+                    description = "Usuário ou endereço não encontrado, "
+                            + "ou o endereço não pertence ao usuário",
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             )
     })

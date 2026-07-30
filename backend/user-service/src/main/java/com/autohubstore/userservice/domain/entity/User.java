@@ -1,22 +1,43 @@
 package com.autohubstore.userservice.domain.entity;
 
+import com.autohubstore.userservice.domain.enums.UserRole;
 import com.autohubstore.userservice.domain.enums.UserStatus;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Id;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "users")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Column(name = "full_name", nullable = false)
@@ -26,27 +47,25 @@ public class User {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private UserStatus status = UserStatus.ACTIVE;
+    @Column(name = "status", nullable = false, length = 20)
+    private UserStatus status;
 
-    @Column(nullable = false, length = 20)
-    private String role = "USER";
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 20)
+    private UserRole role;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
+    private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt = Instant.now();
+    private Instant updatedAt;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Address> addresses = new ArrayList<>();
-
-    protected User() {}
-
-    public User(String email, String fullName, String passwordHash) {
-        this.email = email;
-        this.fullName = fullName;
-        this.passwordHash = passwordHash;
+    @PrePersist
+    public void prePersist() {
+        this.status = UserStatus.ACTIVE;
+        this.role = UserRole.USER;
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
     }
 
     @PreUpdate
@@ -54,20 +73,4 @@ public class User {
         this.updatedAt = Instant.now();
     }
 
-    // Getters
-    public UUID getId() { return id; }
-    public String getEmail() { return email; }
-    public String getFullName() { return fullName; }
-    public String getPasswordHash() { return passwordHash; }
-    public UserStatus getStatus() { return status; }
-    public String getRole() { return role; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public List<Address> getAddresses() { return addresses; }
-
-    // Setters
-    public void setFullName(String fullName) { this.fullName = fullName; }
-    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
-    public void setStatus(UserStatus status) { this.status = status; }
-    public void setRole(String role) { this.role = role; }
 }

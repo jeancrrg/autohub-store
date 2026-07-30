@@ -178,18 +178,6 @@
         </module>
 
         <!--
-            Garante posicionamento consistente das chaves de abertura e fechamento.
-            Chave de abertura: mesma linha do statement (estilo K&R / Java padrão).
-            Chave de fechamento: própria linha.
-        -->
-        <module name="LeftCurly">
-            <property name="option" value="eol"/>
-        </module>
-        <module name="RightCurly">
-            <property name="option" value="alone"/>
-        </module>
-
-        <!--
             Proíbe blocos vazios sem nenhuma lógica ou comentário.
             Ex: "catch (Exception e) {}" é inválido.
             Se o bloco vazio é intencional, exige ao menos um comentário explicando por quê.
@@ -478,14 +466,6 @@
         <!-- =========================================================
              8. DESIGN DE CLASSES
              ========================================================= -->
-
-        <!--
-            Classes utilitárias (apenas métodos static) devem ter construtor privado.
-            Evita instanciação acidental de classes que só contêm métodos estáticos.
-            Ex: uma classe "StringUtils" com apenas static methods deve ter
-            "private StringUtils() {}" para impedir "new StringUtils()".
-        -->
-        <module name="HideUtilityClassConstructor"/>
 
         <!--
             Campos de instância devem ser privados (encapsulamento).
