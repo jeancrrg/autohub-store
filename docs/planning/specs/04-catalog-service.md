@@ -219,6 +219,12 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 
 ## Checkstyle
 
+> **Código deve nascer conforme:** escrever classes já seguindo `infra/checkstyle/checkstyle.xml`
+> (linha em branco após `{` de abertura e antes do `}` de fechamento da classe, sem números mágicos,
+> sem exceções/catches genéricos, campos `private`, etc. — resumo em
+> [CLAUDE.md § Checkstyle](../../../CLAUDE.md#checkstyle--obrigatório-em-todo-código-gerado)).
+> Não gerar código e corrigir depois.
+
 Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adicionar no `build.gradle`:
 
 ```groovy

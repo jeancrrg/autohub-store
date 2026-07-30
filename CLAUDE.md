@@ -162,6 +162,32 @@ com.autohubstore.<servicename>/
 - **Variáveis de ambiente com default local:** `${VARIAVEL:valor-default}` no `application.yml`
 - **Virtual Threads:** `spring.threads.virtual.enabled=true` em todos os serviços (Java 25)
 
+### Checkstyle — obrigatório em todo código gerado
+
+Todo código Java gerado (novo ou alterado) **deve nascer em conformidade** com
+`infra/checkstyle/checkstyle.xml`, compartilhado por todos os microsserviços via
+`maven-checkstyle-plugin` (fase `validate`, `failsOnError=true`). Não gerar código e
+corrigir depois — aplicar direto ao escrever. Regras principais:
+
+- **Formatação de classes:**
+  - Linha em branco logo após a chave `{` de abertura da declaração da classe (antes do primeiro membro).
+  - Linha em branco antes da chave `}` de fechamento final da classe.
+  - Indentação: 4 espaços por nível, nunca tab (`FileTabCharacter`).
+  - Sem espaços em branco no fim de linha; arquivo termina com newline.
+  - Linhas com no máximo 130 caracteres.
+- **Sem números mágicos:** todo literal numérico fora de `-1, 0, 1, 2` vira `private static final` nomeado (`MagicNumber`).
+- **Exceções:**
+  - Nunca lançar tipos genéricos (`RuntimeException`, `Exception`, `Throwable`, `Error`) — criar exceção de domínio específica (`IllegalThrows`).
+  - Nunca capturar `RuntimeException`, `Error` ou `Throwable` (`IllegalCatch`); catch vazio exige comentário explicando (`EmptyCatchBlock`).
+- **Design de classes:** campos de instância sempre `private` (`VisibilityModifier`, exceto `serialVersionUID` e DTOs com Lombok/Jackson/JPA); nunca usar `clone()`/`finalize()`; `equals()` sempre acompanhado de `hashCode()`.
+- **Nomenclatura:** classes/interfaces `UpperCamelCase`; métodos, campos, variáveis e parâmetros `lowerCamelCase`; constantes `UPPER_SNAKE_CASE`; pacotes `minúsculo.sem.underscore`.
+- **Estruturas de controle:** sempre com chaves `{}`, mesmo de uma linha (`NeedBraces`); sem blocos vazios sem comentário; `switch` sempre com `default` e sem fall-through implícito.
+- **Complexidade:** métodos com no máximo 50 linhas, complexidade ciclomática ≤ 10, ≤ 5 `if` aninhados, ≤ 4 níveis de aninhamento, ≤ 4 `return` (≤ 3 se `void`), ≤ 3 exceções em `throws`, ≤ 7 parâmetros.
+- **Boas práticas:** sem comparação de String com `==`; usar `"literal".equals(var)`; sem atribuição dentro de expressão (`InnerAssignment`); sem variável local com mesmo nome de campo (`HiddenField`); sem import `*` ou não usado.
+
+Antes de considerar uma classe pronta, revisar mentalmente contra essa lista —
+a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml`.
+
 ---
 
 ## Tópicos Kafka

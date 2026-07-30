@@ -110,6 +110,8 @@ checkstyle {
 
 > **Regra:** nenhum microsserviço deve ter seu próprio `checkstyle.xml` local. Toda alteração nas regras de qualidade deve ser feita exclusivamente em `infra/checkstyle/checkstyle.xml` e propagará automaticamente para todos os serviços.
 
+> **Código gerado deve nascer em conformidade:** todo código Java (classes, controllers, entidades, exceções, etc.) já deve ser escrito seguindo `infra/checkstyle/checkstyle.xml` desde a primeira versão — sem números mágicos, com linha em branco após abertura e antes do fechamento de cada classe, sem exceções genéricas, campos sempre `private`, etc. Ver resumo em [CLAUDE.md § Checkstyle](../../CLAUDE.md#checkstyle--obrigatório-em-todo-código-gerado). Corrigir depois gera retrabalho e não é o padrão aceito.
+
 ---
 
 ## Distribuição de Build Tools e Arquiteturas
