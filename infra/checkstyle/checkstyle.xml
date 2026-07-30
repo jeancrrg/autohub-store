@@ -40,6 +40,43 @@
         <property name="eachLine" value="true"/>
     </module>
 
+    <!--
+        Exige uma linha em branco antes da chave de fechamento final da classe.
+        Ex. inválido:
+            return ResponseEntity.noContent().build();
+                }
+            }
+        Ex. válido:
+            return ResponseEntity.noContent().build();
+                }
+
+            }
+    -->
+    <module name="RegexpMultiline">
+        <property name="format" value="\S\r?\n\}\s*\z"/>
+        <property name="message"
+                  value="Deve haver uma linha em branco antes da chave de fechamento final da classe."/>
+        <property name="fileExtensions" value="java"/>
+    </module>
+
+    <!--
+        Exige uma linha em branco logo após a abertura da chave da declaração da classe.
+        Ex. inválido:
+            public class AddressNotFoundException extends RuntimeException {
+                public AddressNotFoundException(String identifier) {
+        Ex. válido:
+            public class AddressNotFoundException extends RuntimeException {
+
+                public AddressNotFoundException(String identifier) {
+    -->
+    <module name="RegexpMultiline">
+        <property name="format"
+                  value="(?m)^\s*(?:public\s+|private\s+|protected\s+)?(?:abstract\s+|final\s+)?class\s+\S[^{]*\{\r?\n[ \t]*\S"/>
+        <property name="message"
+                  value="Deve haver uma linha em branco após a abertura da chave da declaração da classe."/>
+        <property name="fileExtensions" value="java"/>
+    </module>
+
     <!-- =========================================================
          2. IMPORTS
          ========================================================= -->

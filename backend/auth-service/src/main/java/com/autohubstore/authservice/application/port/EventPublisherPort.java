@@ -8,4 +8,5 @@ import com.autohubstore.authservice.domain.event.PasswordResetRequestedEvent;
 public interface EventPublisherPort {
 
     void publishPasswordResetRequested(PasswordResetRequestedEvent event);
+
 }

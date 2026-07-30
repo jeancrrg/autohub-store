@@ -26,9 +26,6 @@ public interface UserServiceClient {
     void updatePassword(@PathVariable("userId") UUID userId,
                         @RequestBody UpdatePasswordRequest request);
 
-    @GetMapping("/api/v1/users/{userId}")
-    UserCredentialsResponse findById(@PathVariable("userId") UUID userId);
-
     record ValidateCredentialsRequest(String email, String password) {}
 
     record UpdatePasswordRequest(String newPassword) {}

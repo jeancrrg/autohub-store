@@ -9,4 +9,5 @@ public record LoginResponse(
     public static LoginResponse of(String accessToken, String refreshToken, long expiresIn) {
         return new LoginResponse(accessToken, refreshToken, "Bearer", expiresIn);
     }
+
 }
