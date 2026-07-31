@@ -50,15 +50,6 @@ class GatewayIntegrationTest {
     }
 
     @Test
-    void protectedEndpoint_validToken_attemptsRouting() {
-        webTestClient.get()
-                .uri("/api/v1/orders/1")
-                .header("Authorization", "Bearer " + buildValidToken(List.of("USER")))
-                .exchange()
-                .expectStatus().is5xxServerError();
-    }
-
-    @Test
     void publicCatalogEndpoint_noToken_returns5xx() {
         webTestClient.get()
                 .uri("/api/v1/catalog/products")

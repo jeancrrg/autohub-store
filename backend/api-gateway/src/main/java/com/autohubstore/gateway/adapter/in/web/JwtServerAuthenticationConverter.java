@@ -1,6 +1,6 @@
 package com.autohubstore.gateway.adapter.in.web;
 
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
@@ -9,20 +9,16 @@ import reactor.core.publisher.Mono;
 
 public class JwtServerAuthenticationConverter implements ServerAuthenticationConverter {
 
-    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String ACCESS_TOKEN_COOKIE = "access_token";
 
     @Override
     public Mono<Authentication> convert(final ServerWebExchange exchange) {
-        final String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (!hasBearerToken(authHeader)) {
+        final HttpCookie cookie = exchange.getRequest().getCookies().getFirst(ACCESS_TOKEN_COOKIE);
+        if (cookie == null || cookie.getValue().isBlank()) {
             return Mono.empty();
         }
-        final String token = authHeader.substring(BEARER_PREFIX.length());
+        final String token = cookie.getValue();
         return Mono.just(new UsernamePasswordAuthenticationToken(token, token));
-    }
-
-    private boolean hasBearerToken(final String authHeader) {
-        return authHeader != null && authHeader.startsWith(BEARER_PREFIX);
     }
 
 }
