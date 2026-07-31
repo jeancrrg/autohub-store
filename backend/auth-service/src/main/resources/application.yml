@@ -6,7 +6,7 @@ spring:
       enabled: true
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/autohubstore_auth}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/auth_db}
     username: ${DB_USERNAME:auth_user}
     password: ${DB_PASSWORD:auth_pass}
     driver-class-name: org.postgresql.Driver

@@ -1,12 +1,12 @@
 # Catalog Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8004
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8004 | **Status:** Em implementação
 
 ## Objetivo
 
 Gerenciar produtos e categorias com cache Redis para reduzir latência e publicação de eventos Kafka para sincronizar o Search Service e alimentar o Analytics Service.
 
-## Banco de Dados: PostgreSQL (`autohubstore_catalog`) + Redis (cache)
+## Banco de Dados: PostgreSQL (`catalog_db`) + Redis (cache)
 
 ## Responsabilidades
 
@@ -200,8 +200,8 @@ com.autohubstore.catalogservice/
 ## Variáveis de Ambiente
 
 ```
-DB_URL=jdbc:postgresql://postgres-catalog:5434/autohubstore_catalog
-DB_USERNAME=catalog_svc
+DB_URL=jdbc:postgresql://postgres-catalog:5434/catalog_db
+DB_USERNAME=catalog_user
 DB_PASSWORD=<secret>
 REDIS_HOST=redis
 REDIS_PORT=6379

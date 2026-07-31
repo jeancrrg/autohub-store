@@ -1,12 +1,12 @@
 # Auth Service
 
-**Build Tool:** Maven | **Arquitetura:** Clean Architecture | **Porta:** 8002
+**Build Tool:** Maven | **Arquitetura:** Clean Architecture | **Porta:** 8002 | **Status:** Em implementação
 
 ## Objetivo
 
 Gerenciar autenticação: emissão e validação de JWT, refresh token com rotation, blacklist de tokens revogados no Redis e fluxo de reset de senha via e-mail.
 
-## Banco de Dados: PostgreSQL (`autohubstore_auth`) + Redis
+## Banco de Dados: PostgreSQL (`auth_db`) + Redis
 
 ## Responsabilidades
 
@@ -234,7 +234,7 @@ com.autohubstore.authservice/
 ## Variáveis de Ambiente
 
 ```
-DB_URL=jdbc:postgresql://postgres-auth:5432/autohubstore_auth
+DB_URL=jdbc:postgresql://postgres-auth:5432/auth_db
 DB_USERNAME=auth_user
 DB_PASSWORD=<secret>
 REDIS_HOST=redis

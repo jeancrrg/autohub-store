@@ -1,12 +1,12 @@
 # Payment Service
 
-**Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8008
+**Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8008 | **Status:** Planejado
 
 ## Objetivo
 
 Simular processamento de pagamentos com distribuição 70% aprovado / 30% rejeitado. Garante idempotência por `orderId` e publica o resultado via eventos Kafka para o Order Service e Notification Service.
 
-## Banco de Dados: PostgreSQL (`autohubstore_payments`)
+## Banco de Dados: PostgreSQL (`payment_db`)
 
 ## Responsabilidades
 
@@ -199,8 +199,8 @@ com.autohubstore.paymentservice/
 ## Variáveis de Ambiente
 
 ```
-DB_URL=jdbc:postgresql://postgres-payment:5436/autohubstore_payments
-DB_USERNAME=payment_svc
+DB_URL=jdbc:postgresql://postgres-payment:5436/payment_db
+DB_USERNAME=payment_user
 DB_PASSWORD=<secret>
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 PAYMENT_APPROVAL_RATE=0.70

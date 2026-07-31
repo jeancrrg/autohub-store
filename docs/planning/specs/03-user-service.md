@@ -1,12 +1,12 @@
 # User Service
 
-**Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8003
+**Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8003 | **Status:** Em implementação
 
 ## Objetivo
 
 Gerenciar cadastro, perfil e endereços de usuários. Publica `user.created` no Kafka após cadastro bem-sucedido. Expõe endpoint interno para o Auth Service validar credenciais.
 
-## Banco de Dados: PostgreSQL (`autohubstore_users`)
+## Banco de Dados: PostgreSQL (`user_db`)
 
 ## Responsabilidades
 
@@ -188,8 +188,8 @@ com.autohubstore.userservice/
 ## Variáveis de Ambiente
 
 ```
-DB_URL=jdbc:postgresql://postgres-user:5433/autohubstore_users
-DB_USERNAME=user_svc
+DB_URL=jdbc:postgresql://postgres-user:5433/user_db
+DB_USERNAME=user_user
 DB_PASSWORD=<secret>
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 ```

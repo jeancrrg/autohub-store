@@ -1,6 +1,6 @@
 # Analytics Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8010
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8010 | **Status:** Planejado
 
 ## Objetivo
 

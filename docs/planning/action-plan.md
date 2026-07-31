@@ -210,18 +210,20 @@ com.autohubstore.orderservice/
 
 ## Mapa de Microsserviços
 
-| # | Serviço | Porta | Banco | Kafka |
-|---|---|---|---|---|
-| 0 | API Gateway | 8001 | Redis (rate limit) | — |
-| 1 | Auth Service | 8002 | PostgreSQL + Redis | Producer |
-| 2 | User Service | 8003 | PostgreSQL | Producer |
-| 3 | Catalog Service | 8004 | PostgreSQL + Redis | Producer |
-| 4 | Search Service | 8005 | Elasticsearch | Consumer |
-| 5 | Cart Service | 8006 | Redis | — |
-| 6 | Order Service | 8007 | PostgreSQL | Producer + Consumer |
-| 7 | Payment Service | 8008 | PostgreSQL | Producer |
-| 8 | Notification Service | 8009 | — (stateless) | Consumer |
-| 9 | Analytics Service | 8010 | Cassandra | Consumer |
+| # | Serviço | Porta | Banco | Kafka | Status |
+|---|---|---|---|---|---|
+| 0 | API Gateway | 8001 | Redis (rate limit) | — | Implementado |
+| 1 | Auth Service | 8002 | PostgreSQL (`auth_db`) + Redis | Producer | Em implementação |
+| 2 | User Service | 8003 | PostgreSQL (`user_db`) | Producer | Em implementação |
+| 3 | Catalog Service | 8004 | PostgreSQL (`catalog_db`) + Redis | Producer | Em implementação |
+| 4 | Search Service | 8005 | Elasticsearch | Consumer | Planejado |
+| 5 | Cart Service | 8006 | Redis | — | Planejado |
+| 6 | Order Service | 8007 | PostgreSQL (`order_db`) | Producer + Consumer | Planejado |
+| 7 | Payment Service | 8008 | PostgreSQL (`payment_db`) | Producer | Planejado |
+| 8 | Notification Service | 8009 | — (stateless) | Consumer | Planejado |
+| 9 | Analytics Service | 8010 | Cassandra | Consumer | Planejado |
+
+> **Nomes de banco:** seguem exatamente `POSTGRES_DB` já definido em `infra/docker-compose.yml` (`auth_db`, `user_db`, `catalog_db`, `order_db`, `payment_db`) — evita erro `FATAL: database "..." does not exist` no Flyway ao subir serviço local contra a infra do compose.
 
 ---
 

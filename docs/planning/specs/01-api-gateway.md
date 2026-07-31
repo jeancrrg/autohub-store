@@ -1,6 +1,6 @@
 # API Gateway
 
-**Build Tool:** Maven | **Arquitetura:** Hexagonal (Ports & Adapters) | **Porta:** 8001
+**Build Tool:** Maven | **Arquitetura:** Hexagonal (Ports & Adapters) | **Porta:** 8001 | **Status:** Implementado
 
 ## Objetivo
 

@@ -1,6 +1,6 @@
 # Cart Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8006
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8006 | **Status:** Planejado
 
 ## Objetivo
 

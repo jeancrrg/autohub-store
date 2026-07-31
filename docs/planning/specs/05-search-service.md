@@ -1,6 +1,6 @@
 # Search Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8005
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8005 | **Status:** Planejado
 
 ## Objetivo
 

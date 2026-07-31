@@ -1,12 +1,12 @@
 # Order Service
 
-**Build Tool:** Maven | **Arquitetura:** Hexagonal (Ports & Adapters) | **Porta:** 8007
+**Build Tool:** Maven | **Arquitetura:** Hexagonal (Ports & Adapters) | **Porta:** 8007 | **Status:** Planejado
 
 ## Objetivo
 
 Gerenciar o ciclo de vida completo de pedidos com máquina de estados. A arquitetura Hexagonal isola o domínio de pedidos dos detalhes de infraestrutura (REST, Kafka, JPA), tornando a lógica de negócio testável de forma independente.
 
-## Banco de Dados: PostgreSQL (`autohubstore_orders`)
+## Banco de Dados: PostgreSQL (`order_db`)
 
 ## Responsabilidades
 
@@ -249,8 +249,8 @@ com.autohubstore.orderservice/
 ## Variáveis de Ambiente
 
 ```
-DB_URL=jdbc:postgresql://postgres-order:5435/autohubstore_orders
-DB_USERNAME=order_svc
+DB_URL=jdbc:postgresql://postgres-order:5435/order_db
+DB_USERNAME=order_user
 DB_PASSWORD=<secret>
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 KAFKA_GROUP_ID=order-service-group
