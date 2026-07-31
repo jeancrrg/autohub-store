@@ -1,7 +1,8 @@
 package com.autohubstore.authservice.application.usecase;
 
-import com.autohubstore.authservice.application.dto.LoginRequest;
-import com.autohubstore.authservice.application.dto.LoginResponse;
+import com.autohubstore.authservice.application.dto.request.LoginRequest;
+import com.autohubstore.authservice.application.dto.response.LoginResponse;
+import com.autohubstore.authservice.application.dto.UserCredentials;
 import com.autohubstore.authservice.application.port.JwtPort;
 import com.autohubstore.authservice.application.port.UserServicePort;
 import com.autohubstore.authservice.domain.model.RefreshToken;
@@ -20,7 +21,7 @@ public class LoginUseCase {
     private final long accessTokenTtlSeconds;
 
     public LoginResponse execute(LoginRequest request) {
-        UserServicePort.UserCredentials credentials =
+        UserCredentials credentials =
                 userServicePort.validateCredentials(request.email(), request.password());
 
         String accessToken = jwtPort.generateAccessToken(

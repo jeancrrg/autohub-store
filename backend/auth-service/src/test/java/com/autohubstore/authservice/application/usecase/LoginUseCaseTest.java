@@ -1,7 +1,8 @@
 package com.autohubstore.authservice.application.usecase;
 
-import com.autohubstore.authservice.application.dto.LoginRequest;
-import com.autohubstore.authservice.application.dto.LoginResponse;
+import com.autohubstore.authservice.application.dto.request.LoginRequest;
+import com.autohubstore.authservice.application.dto.response.LoginResponse;
+import com.autohubstore.authservice.application.dto.UserCredentials;
 import com.autohubstore.authservice.application.port.JwtPort;
 import com.autohubstore.authservice.application.port.UserServicePort;
 import com.autohubstore.authservice.domain.model.RefreshToken;
@@ -46,7 +47,7 @@ class LoginUseCaseTest {
         List<String> roles = List.of("USER");
 
         when(userServicePort.validateCredentials(email, "secret"))
-                .thenReturn(new UserServicePort.UserCredentials(userId, email, roles));
+                .thenReturn(new UserCredentials(userId, email, roles));
 
         when(jwtPort.generateAccessToken(userId, email, roles))
                 .thenReturn("access-token-value");

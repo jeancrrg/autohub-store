@@ -1,6 +1,7 @@
 package com.autohubstore.authservice.application.usecase;
 
-import com.autohubstore.authservice.application.dto.ForgotPasswordRequest;
+import com.autohubstore.authservice.application.dto.request.ForgotPasswordRequest;
+import com.autohubstore.authservice.application.dto.UserCredentials;
 import com.autohubstore.authservice.application.port.EventPublisherPort;
 import com.autohubstore.authservice.application.port.UserServicePort;
 import com.autohubstore.authservice.domain.event.PasswordResetRequestedEvent;
@@ -25,7 +26,7 @@ public class ForgotPasswordUseCase {
             return;
         }
 
-        UserServicePort.UserCredentials user = userServicePort.findByEmail(request.email());
+        UserCredentials user = userServicePort.findByEmail(request.email());
         PasswordResetToken resetToken = tokenDomainService.createPasswordResetToken(user.userId());
 
         eventPublisherPort.publishPasswordResetRequested(

@@ -1,4 +1,4 @@
-package com.autohubstore.authservice.application.dto;
+package com.autohubstore.authservice.application.dto.response;
 
 public record LoginResponse(
         String accessToken,

@@ -1,7 +1,8 @@
 package com.autohubstore.authservice.application.usecase;
 
-import com.autohubstore.authservice.application.dto.LoginResponse;
-import com.autohubstore.authservice.application.dto.RefreshRequest;
+import com.autohubstore.authservice.application.dto.response.LoginResponse;
+import com.autohubstore.authservice.application.dto.request.RefreshRequest;
+import com.autohubstore.authservice.application.dto.UserCredentials;
 import com.autohubstore.authservice.application.port.JwtPort;
 import com.autohubstore.authservice.application.port.UserServicePort;
 import com.autohubstore.authservice.domain.model.RefreshToken;
@@ -22,7 +23,7 @@ public class RefreshTokenUseCase {
     public LoginResponse execute(RefreshRequest request) {
         RefreshToken newToken = tokenDomainService.rotateRefreshToken(request.refreshToken());
 
-        UserServicePort.UserCredentials credentials =
+        UserCredentials credentials =
                 userServicePort.findByEmail(findEmailByUserId(newToken));
 
         String accessToken = jwtPort.generateAccessToken(

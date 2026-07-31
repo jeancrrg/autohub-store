@@ -1,6 +1,7 @@
 package com.autohubstore.authservice.application.port;
 
-import java.util.List;
+import com.autohubstore.authservice.application.dto.UserCredentials;
+
 import java.util.UUID;
 
 /**
@@ -28,7 +29,5 @@ public interface UserServicePort {
      * Retorna dados básicos do usuário pelo e-mail.
      */
     UserCredentials findByEmail(String email);
-
-    record UserCredentials(UUID userId, String email, List<String> roles) {}
 
 }

@@ -1,6 +1,6 @@
 package com.autohubstore.authservice.application.usecase;
 
-import com.autohubstore.authservice.application.dto.ResetPasswordRequest;
+import com.autohubstore.authservice.application.dto.request.ResetPasswordRequest;
 import com.autohubstore.authservice.application.port.UserServicePort;
 import com.autohubstore.authservice.domain.model.PasswordResetToken;
 import com.autohubstore.authservice.domain.service.TokenDomainService;

@@ -1,5 +1,9 @@
 package com.autohubstore.authservice.infrastructure.external;
 
+import com.autohubstore.authservice.application.dto.request.UpdatePasswordRequest;
+import com.autohubstore.authservice.application.dto.request.ValidateCredentialsRequest;
+import com.autohubstore.authservice.application.dto.response.ExistsResponse;
+import com.autohubstore.authservice.application.dto.response.UserCredentialsResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -7,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -29,13 +32,5 @@ public interface UserServiceClient {
     @PutMapping("/api/v1/users/{userId}/password")
     void updatePassword(@PathVariable("userId") UUID userId,
                         @RequestBody UpdatePasswordRequest request);
-
-    record ValidateCredentialsRequest(String email, String password) {}
-
-    record UpdatePasswordRequest(String newPassword) {}
-
-    record ExistsResponse(boolean exists) {}
-
-    record UserCredentialsResponse(UUID userId, String email, List<String> roles) {}
 
 }
