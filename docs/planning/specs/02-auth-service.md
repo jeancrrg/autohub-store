@@ -136,12 +136,25 @@ Gerenciar autenticação: emissão e validação de JWT, refresh token com rotat
 ## Endpoints
 
 ```
-POST /api/v1/auth/login              # Login → retorna access_token + refresh_token
-POST /api/v1/auth/logout             # Logout → revoga tokens (requer Authorization)
-POST /api/v1/auth/refresh            # Refresh token rotation
+POST /api/v1/auth/login              # Login → seta cookies httpOnly (ver Estratégia de Token)
+POST /api/v1/auth/logout             # Logout → revoga tokens + limpa cookies
+POST /api/v1/auth/refresh            # Refresh token rotation → re-seta cookies
 POST /api/v1/auth/forgot-password    # Solicitar reset de senha
 POST /api/v1/auth/reset-password     # Confirmar reset com token temporário
 ```
+
+## Estratégia de Token — httpOnly Cookie
+
+Frontend nunca lê/armazena o JWT diretamente (proteção contra XSS). Fluxo:
+
+- `login`/`refresh` respondem **sem token no body** — o Gateway repassa o `Set-Cookie` do Auth
+  Service pro cliente: `access_token` (httpOnly, Secure, SameSite=Lax, maxAge=1h) e `refresh_token`
+  (httpOnly, Secure, SameSite=Lax, path=`/api/v1/auth/refresh`, maxAge=7d).
+- Requests subsequentes do front usam `withCredentials:true` — cookie vai automático, sem header
+  `Authorization` manual.
+- `logout` responde `Set-Cookie` com `maxAge=0` pra ambos os cookies.
+- Contrato completo (CORS, client HTTP do front) em
+  [docs/integration/frontend-backend-integration.md](../../integration/frontend-backend-integration.md).
 
 ## Schema do Banco (Flyway)
 

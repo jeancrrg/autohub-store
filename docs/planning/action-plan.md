@@ -323,12 +323,35 @@ Arquivo: `infra/docker-compose.yml`
 
 ---
 
+### Fase 2.5 — Integração Frontend ↔ Backend (GATE — bloqueia Fase 3 em diante)
+
+**Objetivo:** Frontend deixa de ser mock e passa a consumir Auth Service, User Service e API
+Gateway reais, com todos os contratos de integração definidos e implementados.
+
+> **Regra:** nenhum microsserviço novo (Fase 3 em diante) deve ser criado antes desta fase estar
+> concluída. Detalhes completos, decisões e contrato de integração em
+> [docs/integration/frontend-backend-integration.md](../integration/frontend-backend-integration.md).
+
+**Entregas:**
+1. MinIO na infra (`infra/docker-compose.yml`) + bucket `catalog-images`
+2. Client HTTP central no frontend (axios + interceptor de refresh + `withCredentials`)
+3. React Query adotado para estado server-side (`useAuth`, `useProducts`, etc.)
+4. Login/logout/refresh reais substituindo `authStore` mock (cookie httpOnly)
+5. CORS com credentials configurado no Gateway
+6. `types/product.ts` migrado de `id: number` para `id: string` (UUID) em todo o frontend
+7. Contrato de erro (RFC 7807) e paginação (Spring `Page`) padronizados e documentados
+
+**Critério de conclusão:** login/logout/refresh funcionando fim a fim via UI real; nenhuma
+referência a `id: number` de produto restante no frontend.
+
+---
+
 ### Fase 3 — Catálogo e Busca
 
 **Objetivo:** CRUD de produtos com cache e busca full-text.
 
 **Entregas:**
-1. **Catalog Service** (Gradle + MVC) — CRUD admin + listagem pública + cache Redis
+1. **Catalog Service** (Gradle + MVC) — CRUD admin + listagem pública + cache Redis + upload de imagens (MinIO)
 2. **Search Service** (Gradle + MVC) — Elasticsearch + Kafka consumer para re-indexação
 
 **Specs:**

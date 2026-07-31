@@ -9,11 +9,15 @@ Ponto de entrada único do AutoHubStore. Roteia requisições para os microsserv
 ## Responsabilidades
 
 - Roteamento de requisições para todos os 9 microsserviços
-- Validação centralizada de JWT (sem delegar aos serviços downstream)
+- Validação centralizada de JWT lido do cookie httpOnly `access_token` (sem delegar aos serviços downstream)
+- Repasse transparente do `Set-Cookie` retornado por Auth Service (login/refresh/logout)
 - Rate Limiting por IP e por usuário autenticado (Redis)
-- Configuração de CORS para o frontend Next.js
+- Configuração de CORS com credentials para o frontend Next.js
 - Headers de segurança (X-Content-Type-Options, X-Frame-Options)
 - Load balancing via Spring Cloud LoadBalancer
+
+> Estratégia de token (cookie httpOnly), CORS com credentials e contrato de erro/paginação
+> detalhados em [docs/integration/frontend-backend-integration.md](../../integration/frontend-backend-integration.md).
 
 ## Tecnologias
 
@@ -192,7 +196,14 @@ GET  /api/v1/search/**                # Busca
 
 ## Endpoints Protegidos
 
-Todos os demais endpoints exigem header `Authorization: Bearer <token>`.
+Todos os demais endpoints exigem cookie `access_token` httpOnly (setado no login/refresh) —
+Gateway extrai o JWT do cookie, não de header `Authorization`.
+
+## CORS
+
+- `Access-Control-Allow-Origin`: origin explícita da lista `ALLOWED_ORIGINS` (nunca `*`, incompatível com credentials)
+- `Access-Control-Allow-Credentials: true`
+- Frontend faz requests com `withCredentials:true`/`credentials:'include'`
 
 ## Rate Limiting
 

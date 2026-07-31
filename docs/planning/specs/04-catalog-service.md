@@ -6,16 +6,20 @@
 
 Gerenciar produtos e categorias com cache Redis para reduzir latência e publicação de eventos Kafka para sincronizar o Search Service e alimentar o Analytics Service.
 
-## Banco de Dados: PostgreSQL (`catalog_db`) + Redis (cache)
+## Banco de Dados: PostgreSQL (`catalog_db`) + Redis (cache) + MinIO (imagens)
 
 ## Responsabilidades
 
 - CRUD completo de produtos (admin)
 - CRUD de categorias (hierarquia pai/filho)
+- Upload/remoção de imagens de produto (MinIO) — ver [Upload de Imagens](#upload-de-imagens-minio)
 - Listagem paginada de produtos com filtro por categoria
 - Cache de produtos no Redis (TTL 5 minutos)
 - Controle básico de estoque (quantidade)
 - Publicar: `catalog.product-created`, `catalog.product-updated`, `catalog.product-viewed`
+
+> Contrato completo de integração com o frontend (paginação, erros, fluxo de upload) está
+> detalhado em [docs/integration/frontend-backend-integration.md](../../integration/frontend-backend-integration.md).
 
 ## Tecnologias
 
@@ -62,6 +66,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.flywaydb:flyway-core'
+    implementation 'io.minio:minio:8.5.11'
     runtimeOnly 'org.postgresql:postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
@@ -88,11 +93,39 @@ GET    /api/v1/catalog/categories                     # Lista categorias
 GET    /api/v1/catalog/categories/{id}/products       # Produtos por categoria
 
 # Admin (requer role ADMIN via JWT)
-POST   /api/v1/catalog/products                       # Criar produto
+POST   /api/v1/catalog/products                       # Criar produto (sem imagem)
 PUT    /api/v1/catalog/products/{id}                  # Atualizar produto
 DELETE /api/v1/catalog/products/{id}                  # Remover produto
 POST   /api/v1/catalog/categories                     # Criar categoria
+
+# Admin — imagens (fluxo em 2 passos, ver seção Upload de Imagens)
+POST   /api/v1/catalog/products/{id}/images           # Upload multipart (1..N arquivos)
+DELETE /api/v1/catalog/products/{id}/images/{imageId} # Remove imagem específica
 ```
+
+## Upload de Imagens (MinIO)
+
+Fluxo de cadastro é sempre em **2 passos**: cria produto primeiro (sem imagem), depois faz upload
+das imagens usando o `id` retornado. Evita transação mista multipart+JSON.
+
+1. `POST /products` → cria produto, retorna `id`.
+2. `POST /products/{id}/images` (multipart/form-data, campo `files`, 1..N arquivos, `ADMIN`) →
+   Catalog Service envia cada arquivo pro MinIO (bucket `catalog-images`, chave `{productId}/{uuid}.{ext}`),
+   grava `url` pública do objeto em `product_images` (primeira imagem enviada vira `is_primary=true`).
+3. Bucket configurado com policy de leitura anônima (download público) — front consome a `url`
+   direto, sem passar pelo Catalog Service.
+
+**Variáveis de ambiente adicionais:**
+
+```
+MINIO_ENDPOINT=http://minio:9000
+MINIO_ACCESS_KEY=minio_admin
+MINIO_SECRET_KEY=<secret>
+MINIO_BUCKET=catalog-images
+```
+
+**Validação de upload:** tipos aceitos `image/jpeg`, `image/png`, `image/webp`; tamanho máx. 5MB
+por arquivo — rejeitar com `413`/`415` (Problem Details) fora disso.
 
 ## Schema do Banco (Flyway)
 
