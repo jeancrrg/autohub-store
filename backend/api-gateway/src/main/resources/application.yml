@@ -18,11 +18,11 @@ cors:
 
 services:
   auth:
-    url: ${AUTH_SERVICE_URL:lb://auth-service}
+    url: ${AUTH_SERVICE_URL:http://localhost:8002}
   user:
-    url: ${USER_SERVICE_URL:lb://user-service}
+    url: ${USER_SERVICE_URL:http://localhost:8003}
   catalog:
-    url: ${CATALOG_SERVICE_URL:lb://catalog-service}
+    url: ${CATALOG_SERVICE_URL:http://localhost:8004}
   search:
     url: ${SEARCH_SERVICE_URL:lb://search-service}
   cart:
