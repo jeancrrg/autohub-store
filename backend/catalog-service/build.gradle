@@ -28,7 +28,7 @@ checkstyle {
     configFile = rootProject.file('../../infra/checkstyle/checkstyle.xml')
     ignoreFailures = false
     showViolations = true
-    sourceSets = [sourceSets.main]
+    sourceSets = [sourceSets.main, sourceSets.test]
 }
 
 repositories {
