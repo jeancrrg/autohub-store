@@ -21,39 +21,6 @@
     margin-bottom: 20px;
 }
 
-.logo {
-    flex-shrink: 0;
-    user-select: none;
-    text-decoration: none;
-    display: inline-flex;
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.logoName {
-    font-family: var(--font-rajdhani);
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--color-white);
-    letter-spacing: -1px;
-    line-height: 1;
-}
-
-.logoAccent {
-    color: var(--color-primary);
-}
-
-.logoSub {
-    font-family: var(--font-rajdhani);
-    font-size: 9px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    display: flex;
-    justify-content: space-between;
-    letter-spacing: 0;
-}
-
 .brandTag {
     font-family: var(--font-mono);
     font-size: 9px;

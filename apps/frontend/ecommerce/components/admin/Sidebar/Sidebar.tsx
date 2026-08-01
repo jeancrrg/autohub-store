@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BagIcon, BoxIcon, FilterIcon, GridIcon, LogoutIcon, UsersIcon } from '../icons/Icons'
+import { Logo } from '../../layout/Logo/Logo'
 import styles from './Sidebar.module.css'
 
 const NAV_ITEMS = [
@@ -19,16 +20,7 @@ export function Sidebar() {
     return (
         <aside className={styles.sidebar}>
             <div className={styles.brand}>
-                <Link href="/" className={styles.logo}>
-                    <div className={styles.logoName}>
-                        AUTO<span className={styles.logoAccent}>HUB</span>
-                    </div>
-                    <div className={styles.logoSub}>
-                        {'STORE'.split('').map((c, i) => (
-                            <span key={i}>{c}</span>
-                        ))}
-                    </div>
-                </Link>
+                <Logo size="sm" />
                 <span className={styles.brandTag}>ADMIN</span>
             </div>
 

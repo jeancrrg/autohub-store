@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useCartStore } from '@/store/cartStore'
 import { useSession } from '@/hooks/useSession'
+import { Logo } from '../Logo/Logo'
 import styles from './Header.module.css'
 
 export function Header() {
@@ -36,16 +37,7 @@ export function Header() {
             <header className={styles.mainHeader}>
                 <div className={styles.headerInner}>
                     {/* Logo */}
-                    <Link href="/" className={styles.logo}>
-                        <div className={styles.logoName}>
-                            AUTO<span className={styles.logoAccent}>HUB</span>
-                        </div>
-                        <div className={styles.logoSub}>
-                            {'STORE'.split('').map((c, i) => (
-                                <span key={i}>{c}</span>
-                            ))}
-                        </div>
-                    </Link>
+                    <Logo className={styles.logo} />
 
                     {/* Search */}
                     <form onSubmit={handleSearch} className={styles.searchForm}>
