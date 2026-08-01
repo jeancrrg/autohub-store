@@ -1,0 +1,42 @@
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+}
+
+.name {
+    color: var(--text-primary);
+}
+
+.sold {
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+}
+
+.track {
+    height: 7px;
+    border-radius: var(--r-pill);
+    background: var(--carbon-700);
+    overflow: hidden;
+}
+
+.fill {
+    height: 100%;
+    border-radius: var(--r-pill);
+}
+
+.fillFirst {
+    background: var(--gradient-redline);
+}
+
+.fillRest {
+    background: var(--info);
+}

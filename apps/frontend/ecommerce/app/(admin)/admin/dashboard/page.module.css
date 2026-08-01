@@ -1,14 +1,33 @@
-.title {
-    font-family: var(--font-rajdhani);
-    font-weight: 700;
-    font-size: 1.5rem;
-    color: #ffffff;
-    margin-bottom: 32px;
-    letter-spacing: 0.05em;
+.page {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
 }
 
-.bottomGrid {
+.kpiGrid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 32px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.mainGrid {
+    display: grid;
+    grid-template-columns: 1.9fr 1fr;
+    gap: 18px;
+}
+
+.actionLink {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--info);
+    cursor: pointer;
+}
+
+.periodLabel {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
 }

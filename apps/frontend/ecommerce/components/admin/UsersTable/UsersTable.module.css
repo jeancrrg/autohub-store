@@ -1,117 +1,61 @@
-.wrapper {
-    background: var(--color-dark-2);
-    border: 1px solid var(--color-dark-border);
-}
-
-.tableHeader {
-    display: grid;
-    grid-template-columns: auto 2fr 2fr 1fr 1fr auto;
-    gap: 16px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--color-dark-border);
-}
-
-.headerCell {
-    font-family: var(--font-rajdhani);
-    font-weight: 600;
-    font-size: 0.75rem;
-    color: var(--color-gray-500);
-    letter-spacing: 0.1em;
-}
-
-.row {
-    display: grid;
-    grid-template-columns: auto 2fr 2fr 1fr 1fr auto;
-    gap: 16px;
-    padding: 16px;
-    border-bottom: 1px solid var(--color-dark-border);
+.customer {
+    display: flex;
     align-items: center;
-}
-
-.row:last-child {
-    border-bottom: none;
+    gap: 11px;
 }
 
 .avatar {
-    width: 36px;
-    height: 36px;
-    background: var(--color-primary);
+    width: 32px;
+    height: 32px;
+    flex: none;
     border-radius: 50%;
+    background: var(--carbon-700);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-white);
-    font-family: var(--font-rajdhani);
+    font-family: var(--font-display);
     font-weight: 700;
-    font-size: 0.875rem;
+    font-size: 12px;
+    color: var(--text-primary);
 }
 
 .name {
-    font-family: var(--font-inter);
-    font-size: 0.875rem;
-    color: var(--color-white);
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 .email {
-    font-family: var(--font-inter);
-    font-size: 0.875rem;
-    color: var(--color-gray-400);
-}
-
-.registeredAt {
-    font-family: var(--font-inter);
-    font-size: 0.875rem;
-    color: var(--color-gray-500);
-}
-
-.statusBadge {
-    font-family: var(--font-inter);
-    font-size: 0.75rem;
-    padding: 4px 8px;
-}
-
-.statusActive {
-    color: var(--color-success-muted);
-    background: var(--color-success-muted-bg);
-}
-
-.statusInactive {
-    color: var(--color-error-muted);
-    background: var(--color-error-muted-bg);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
 }
 
 .toggle {
-    position: relative;
     width: 40px;
-    height: 20px;
-    border-radius: 9999px;
+    height: 22px;
+    border-radius: var(--r-pill);
     border: none;
     cursor: pointer;
-    transition: background 0.2s;
+    padding: 2px;
+    display: inline-flex;
+    align-items: center;
+    transition: background var(--dur-fast);
 }
 
 .toggleOn {
-    background: var(--color-primary);
+    background: var(--success);
+    justify-content: flex-end;
 }
 
 .toggleOff {
-    background: var(--color-dark-border);
+    background: var(--carbon-700);
+    justify-content: flex-start;
 }
 
 .toggleKnob {
-    position: absolute;
-    top: 2px;
-    width: 16px;
-    height: 16px;
-    background: var(--color-white);
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    transition: transform 0.2s;
-}
-
-.toggleKnobOn {
-    transform: translateX(20px);
-}
-
-.toggleKnobOff {
-    transform: translateX(2px);
+    background: var(--pure-white);
 }

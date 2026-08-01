@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useUploadProductImages } from '@/hooks/useUploadProductImages'
+import { Button } from '../Button/Button'
+import { UploadIcon } from '../icons/Icons'
 import styles from './ProductImageUpload.module.css'
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024
@@ -36,13 +38,13 @@ export function ProductImageUpload({ productId, onDone }: { productId: string; o
                 className={styles.fileInput}
             />
             {errorMessage && <p className={styles.error}>{errorMessage}</p>}
-            <button
+            <Button
                 onClick={handleUpload}
                 disabled={files.length === 0 || uploadMutation.isPending}
-                className={styles.uploadButton}
+                iconLeft={<UploadIcon size={16} />}
             >
                 {uploadMutation.isPending ? 'ENVIANDO...' : 'ENVIAR IMAGENS'}
-            </button>
+            </Button>
             <button onClick={onDone} className={styles.skipButton}>
                 Pular por enquanto
             </button>

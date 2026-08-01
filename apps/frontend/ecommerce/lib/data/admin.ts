@@ -1,11 +1,15 @@
 import type { AdminUser } from '@/types/order'
 
-export type Metric = {
+export type KpiIcon = 'dollar' | 'bag' | 'users' | 'chart'
+
+export type Kpi = {
     label: string
     value: string
-    change: string
-    changePositive: boolean
-    icon: string
+    delta: string
+    up: boolean
+    accent: string
+    spark: number[]
+    icon: KpiIcon
 }
 
 export type SalesBar = {
@@ -17,41 +21,48 @@ export type SalesBar = {
 export type TopProduct = {
     rank: number
     name: string
-    brand: string
-    revenue: string
-    sales: number
+    sold: string
+    pct: number
 }
 
 export const MAX_SALES_VALUE = 120000
 
-export const metrics: Metric[] = [
+export const kpis: Kpi[] = [
     {
         label: 'Receita Total',
         value: 'R$ 284.590',
-        change: '+12.5%',
-        changePositive: true,
-        icon: '💰',
+        delta: '+12.5%',
+        up: true,
+        accent: 'var(--accent)',
+        spark: [38, 52, 45, 61, 78, 92, 88, 105, 98, 115, 120, 87],
+        icon: 'dollar',
     },
     {
         label: 'Pedidos',
         value: '1.284',
-        change: '+8.2%',
-        changePositive: true,
-        icon: '📦',
+        delta: '+8.2%',
+        up: true,
+        accent: 'var(--info)',
+        spark: [60, 72, 68, 80, 90, 95, 91, 100, 96, 110, 118, 105],
+        icon: 'bag',
     },
     {
         label: 'Clientes',
         value: '3.847',
-        change: '+15.3%',
-        changePositive: true,
-        icon: '👥',
+        delta: '+15.3%',
+        up: true,
+        accent: 'var(--success)',
+        spark: [20, 30, 28, 40, 48, 55, 60, 70, 75, 88, 95, 102],
+        icon: 'users',
     },
     {
         label: 'Ticket Médio',
         value: 'R$ 1.247',
-        change: '-2.1%',
-        changePositive: false,
-        icon: '🎯',
+        delta: '-2.1%',
+        up: false,
+        accent: 'var(--performance)',
+        spark: [110, 105, 108, 100, 95, 98, 92, 90, 88, 85, 82, 80],
+        icon: 'chart',
     },
 ]
 
@@ -71,41 +82,11 @@ export const salesBars: SalesBar[] = [
 ]
 
 export const topProducts: TopProduct[] = [
-    {
-        rank: 1,
-        name: 'Rodas BBS RS Aro 18',
-        brand: 'BBS',
-        revenue: 'R$ 48.990',
-        sales: 10,
-    },
-    {
-        rank: 2,
-        name: 'Suspensão KW Variant 3',
-        brand: 'KW',
-        revenue: 'R$ 33.999',
-        sales: 4,
-    },
-    {
-        rank: 3,
-        name: 'Kit Freios Brembo GT',
-        brand: 'Brembo',
-        revenue: 'R$ 29.699',
-        sales: 9,
-    },
-    {
-        rank: 4,
-        name: 'Escapamento Akrapovic',
-        brand: 'Akrapovic',
-        revenue: 'R$ 23.699',
-        sales: 3,
-    },
-    {
-        rank: 5,
-        name: 'Pneu Michelin PS4',
-        brand: 'Michelin',
-        revenue: 'R$ 17.998',
-        sales: 20,
-    },
+    { rank: 1, name: 'Rodas BBS RS Aro 18', sold: '10 vendas', pct: 100 },
+    { rank: 2, name: 'Pneu Michelin PS4', sold: '20 vendas', pct: 92 },
+    { rank: 3, name: 'Kit Freios Brembo GT', sold: '9 vendas', pct: 68 },
+    { rank: 4, name: 'Suspensão KW Variant 3', sold: '4 vendas', pct: 40 },
+    { rank: 5, name: 'Escapamento Akrapovic', sold: '3 vendas', pct: 25 },
 ]
 
 export const adminUsers: AdminUser[] = [

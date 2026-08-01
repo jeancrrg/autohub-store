@@ -1,19 +1,38 @@
 .wrapper {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card);
+    padding: 24px;
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 14px;
 }
 
 .fileInput {
-    border: 1px dashed #999;
-    padding: 1rem;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-secondary);
 }
 
 .error {
-    color: #c0392b;
+    color: var(--danger);
+    font-family: var(--font-sans);
+    font-size: 13px;
 }
 
-.uploadButton,
 .skipButton {
-    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.skipButton:hover {
+    color: var(--text-secondary);
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { adminUsers } from '@/lib/data/admin'
 import type { AdminUser } from '@/types/order'
+import { DataTable, type DataTableColumn } from '../DataTable/DataTable'
 import styles from './UsersTable.module.css'
 
 export function UsersTable() {
@@ -12,41 +13,35 @@ export function UsersTable() {
         setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, active: !u.active } : u)))
     }
 
-    return (
-        <div className={styles.wrapper}>
-            <div className={styles.tableHeader}>
-                {['', 'NOME', 'E-MAIL', 'CADASTRO', 'STATUS', 'ATIVO'].map((h) => (
-                    <span key={h} className={styles.headerCell}>
-                        {h}
-                    </span>
-                ))}
-            </div>
-
-            {users.map((user) => (
-                <div key={user.id} className={styles.row}>
-                    <div className={styles.avatar}>{user.initials}</div>
-
-                    <span className={styles.name}>{user.name}</span>
-                    <span className={styles.email}>{user.email}</span>
-                    <span className={styles.registeredAt}>{user.registeredAt}</span>
-
-                    <span
-                        className={`${styles.statusBadge} ${user.active ? styles.statusActive : styles.statusInactive}`}
-                    >
-                        {user.active ? 'Ativo' : 'Inativo'}
-                    </span>
-
-                    <button
-                        onClick={() => toggleActive(user.id)}
-                        className={`${styles.toggle} ${user.active ? styles.toggleOn : styles.toggleOff}`}
-                        aria-label={user.active ? 'Desativar usuário' : 'Ativar usuário'}
-                    >
-                        <span
-                            className={`${styles.toggleKnob} ${user.active ? styles.toggleKnobOn : styles.toggleKnobOff}`}
-                        />
-                    </button>
+    const columns: Array<DataTableColumn<AdminUser>> = [
+        {
+            key: 'name',
+            label: 'Cliente',
+            render: (row) => (
+                <div className={styles.customer}>
+                    <span className={styles.avatar}>{row.initials}</span>
+                    <div>
+                        <div className={styles.name}>{row.name}</div>
+                        <div className={styles.email}>{row.email}</div>
+                    </div>
                 </div>
-            ))}
-        </div>
-    )
+            ),
+        },
+        { key: 'registeredAt', label: 'Cadastro', align: 'center', mono: true, width: 100 },
+        {
+            key: 'active',
+            label: 'Status',
+            render: (row) => (
+                <button
+                    onClick={() => toggleActive(row.id)}
+                    className={`${styles.toggle} ${row.active ? styles.toggleOn : styles.toggleOff}`}
+                    aria-label={row.active ? 'Desativar usuário' : 'Ativar usuário'}
+                >
+                    <span className={styles.toggleKnob} />
+                </button>
+            ),
+        },
+    ]
+
+    return <DataTable columns={columns} rows={users} rowKey={(row) => row.id} />
 }

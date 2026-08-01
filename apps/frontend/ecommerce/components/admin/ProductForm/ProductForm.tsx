@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useCreateProduct } from '@/hooks/useCreateProduct'
+import { Button } from '../Button/Button'
 import { ProductImageUpload } from '../ProductImageUpload/ProductImageUpload'
 import styles from './ProductForm.module.css'
 
@@ -49,9 +50,9 @@ export function ProductForm({ onClose }: { onClose: () => void }) {
                 <input value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required />
             </label>
             {createProductMutation.isError && <p className={styles.error}>Falha ao criar produto.</p>}
-            <button type="submit" disabled={createProductMutation.isPending} className={styles.submitButton}>
+            <Button type="submit" disabled={createProductMutation.isPending} fullWidth>
                 {createProductMutation.isPending ? 'CRIANDO...' : 'CRIAR PRODUTO'}
-            </button>
+            </Button>
         </form>
     )
 }

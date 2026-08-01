@@ -1,109 +1,55 @@
-.wrapper {
-    background: var(--color-dark-2);
-    border: 1px solid var(--color-dark-border);
+.tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
 }
 
-.tableHeader {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr) auto;
-    gap: 16px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--color-dark-border);
-}
-
-.headerCell {
-    font-family: var(--font-rajdhani);
-    font-weight: 600;
-    font-size: 0.75rem;
-    color: var(--color-gray-500);
-    letter-spacing: 0.1em;
-}
-
-.row {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr) auto;
-    gap: 16px;
-    padding: 16px;
-    border-bottom: 1px solid var(--color-dark-border);
+.tab {
+    display: flex;
     align-items: center;
-}
-
-.row:last-child {
-    border-bottom: none;
-}
-
-.orderId {
-    font-family: var(--font-rajdhani);
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--color-white);
-}
-
-.client {
-    font-family: var(--font-inter);
-    font-size: 0.875rem;
-    color: var(--color-gray-300);
-}
-
-.date {
-    font-family: var(--font-inter);
-    font-size: 0.875rem;
-    color: var(--color-gray-400);
-}
-
-.total {
-    font-family: var(--font-rajdhani);
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--color-white);
-}
-
-.badge {
-    font-family: var(--font-inter);
-    font-size: 0.75rem;
-    padding: 4px 8px;
-}
-
-.badgeEntregue {
-    background: var(--color-success-light);
-    color: var(--color-success-darker);
-}
-
-.badgeTransito {
-    background: var(--color-info-light);
-    color: var(--color-info);
-}
-
-.badgeProcessando {
-    background: var(--color-warning-light);
-    color: var(--color-warning);
-}
-
-.badgeCancelado {
-    background: var(--color-error-light);
-    color: var(--color-error-darker);
-}
-
-.badgeAguardando {
-    background: var(--color-notice-light);
-    color: var(--color-notice);
-}
-
-.badgeDefault {
-    background: var(--color-dark-6);
-    color: var(--color-gray-400);
-}
-
-.viewBtn {
-    font-family: var(--font-inter);
-    font-size: 0.75rem;
-    color: var(--color-primary);
-    background: none;
-    border: none;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: var(--r-sm);
     cursor: pointer;
-    transition: color 0.2s;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
 }
 
-.viewBtn:hover {
-    color: var(--color-primary-dark);
+.tabActive {
+    border-bottom-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: var(--r-pill);
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+}
+
+.rowBtn {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--r-xs);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-inset);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rowBtn:hover {
+    border-color: var(--info);
+    color: var(--text-primary);
 }

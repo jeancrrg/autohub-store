@@ -11,8 +11,6 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,19 +23,23 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class ProductImageService {
+
+    private final ProductRepository productRepository;
+    private final MinioClient minioClient;
+
+    public ProductImageService(ProductRepository productRepository, MinioClient minioClient) {
+        this.productRepository = productRepository;
+        this.minioClient = minioClient;
+    }
 
     private static final Set<String> ALLOWED_CONTENT_TYPES =
             Set.of("image/jpeg", "image/png", "image/webp");
 
     private static final long MAX_FILE_SIZE_BYTES = 5L * 1024 * 1024;
 
-    private final ProductRepository productRepository;
-    private final MinioClient minioClient;
-
     @Value("${spring.minio.bucket}")
-    private final String bucket;
+    private String bucket;
 
     @Transactional
     public List<ProductImageResponse> uploadImages(UUID productId, List<MultipartFile> files) {
