@@ -7,8 +7,8 @@ type CartStore = {
     total: number
     count: number
     addItem: (product: Product, qty: number) => void
-    removeItem: (id: number) => void
-    updateQty: (id: number, qty: number) => void
+    removeItem: (id: string) => void
+    updateQty: (id: string, qty: number) => void
     clearCart: () => void
 }
 

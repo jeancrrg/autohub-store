@@ -18,6 +18,7 @@
         },
         "allowJs": true,
         "incremental": true,
+        "types": ["vitest/globals"],
         "esModuleInterop": true,
         "isolatedModules": true,
         "plugins": [

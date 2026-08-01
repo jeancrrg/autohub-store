@@ -1,4 +1,4 @@
-import { products } from '@/lib/data/products'
+import { fetchProducts } from '@/lib/api/catalog'
 import { HeroBanner } from '@/components/home/HeroBanner/HeroBanner'
 import { TrustBadges } from '@/components/home/TrustBadges/TrustBadges'
 import { CategoryGrid } from '@/components/home/CategoryGrid/CategoryGrid'
@@ -7,7 +7,8 @@ import { PromoBanner } from '@/components/home/PromoBanner/PromoBanner'
 import { BrandsGrid } from '@/components/home/BrandsGrid/BrandsGrid'
 import { Newsletter } from '@/components/home/Newsletter/Newsletter'
 
-export default function HomePage() {
+export default async function HomePage() {
+    const products = await fetchProducts()
     const bestSellers = products.slice(0, 4)
 
     return (

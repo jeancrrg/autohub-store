@@ -1,4 +1,4 @@
-import { products } from '@/lib/data/products'
+import { fetchProducts } from '@/lib/api/catalog'
 import { ProductCard } from '@/components/catalog/ProductCard/ProductCard'
 import Link from 'next/link'
 import styles from './page.module.css'
@@ -10,6 +10,7 @@ export default async function SearchPage({
 }) {
     const { q } = await searchParams
     const query = q ?? ''
+    const products = await fetchProducts()
     const results = products.filter(
         (p) =>
             p.name.toLowerCase().includes(query.toLowerCase()) ||

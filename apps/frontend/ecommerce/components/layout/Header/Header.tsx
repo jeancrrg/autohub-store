@@ -4,14 +4,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useCartStore } from '@/store/cartStore'
-import { useAuthStore } from '@/store/authStore'
+import { useSession } from '@/hooks/useSession'
 import styles from './Header.module.css'
 
 export function Header() {
     const [searchValue, setSearchValue] = useState('')
     const router = useRouter()
     const count = useCartStore((s) => s.count)
-    const { isLoggedIn, user } = useAuthStore()
+    const { data: user } = useSession()
+    const isLoggedIn = Boolean(user)
 
     function handleSearch(e: React.FormEvent) {
         e.preventDefault()

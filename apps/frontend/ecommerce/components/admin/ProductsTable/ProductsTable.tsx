@@ -1,16 +1,26 @@
 'use client'
 
-import { useState } from 'react'
-import { products as initialProducts } from '@/lib/data/products'
-import type { Product } from '@/types/product'
+import { useProducts } from '@/hooks/useProducts'
+import { useDeleteProduct } from '@/hooks/useDeleteProduct'
 import styles from './ProductsTable.module.css'
 
 export function ProductsTable() {
-    const [rows, setRows] = useState<Product[]>(initialProducts)
+    const { data: products, isLoading, isError } = useProducts()
+    const deleteProductMutation = useDeleteProduct()
 
-    function handleDelete(id: number) {
-        setRows((prev) => prev.filter((p) => p.id !== id))
+    function handleDelete(id: string) {
+        deleteProductMutation.mutate(id)
     }
+
+    if (isLoading) {
+        return <p>Carregando produtos...</p>
+    }
+
+    if (isError) {
+        return <p>Não foi possível carregar os produtos.</p>
+    }
+
+    const rows = products ?? []
 
     return (
         <div className={styles.wrapper}>
@@ -51,6 +61,7 @@ export function ProductsTable() {
                         <button className={styles.editBtn}>Editar</button>
                         <button
                             onClick={() => handleDelete(product.id)}
+                            disabled={deleteProductMutation.isPending}
                             className={styles.deleteBtn}
                         >
                             Excluir

@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuthStore } from '@/store/authStore'
+import { useSession } from '@/hooks/useSession'
 import { Input } from '@/components/ui/Input/Input'
 import styles from './ProfileTab.module.css'
 
 export function ProfileTab() {
-    const { user } = useAuthStore()
+    const { data: user } = useSession()
     const [saved, setSaved] = useState(false)
 
     function handleSave(e: React.FormEvent) {

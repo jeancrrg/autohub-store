@@ -1,7 +1,13 @@
 export type ProductTag = 'OFERTA' | 'NOVO'
 
+export type ProductImage = {
+    id: string
+    url: string
+    isPrimary: boolean
+}
+
 export type Product = {
-    id: number
+    id: string
     name: string
     brand: string
     price: number

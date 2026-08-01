@@ -1,29 +1,13 @@
-import { act, renderHook } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
 import { useAuthStore } from '../authStore'
 
 describe('authStore', () => {
-    beforeEach(() => {
-        useAuthStore.setState({ isLoggedIn: false, user: null })
-    })
+    it('setUser updates the stored user', () => {
+        const user = { id: 'u1', name: 'Carlos Silva', email: 'carlos@email.com', phone: '', cpf: '' }
+        useAuthStore.getState().setUser(user)
+        expect(useAuthStore.getState().user).toEqual(user)
 
-    it('starts logged out', () => {
-        const { result } = renderHook(() => useAuthStore())
-        expect(result.current.isLoggedIn).toBe(false)
-        expect(result.current.user).toBeNull()
-    })
-
-    it('login sets isLoggedIn and user', () => {
-        const { result } = renderHook(() => useAuthStore())
-        act(() => result.current.login())
-        expect(result.current.isLoggedIn).toBe(true)
-        expect(result.current.user?.name).toBe('Carlos Silva')
-    })
-
-    it('logout clears state', () => {
-        const { result } = renderHook(() => useAuthStore())
-        act(() => result.current.login())
-        act(() => result.current.logout())
-        expect(result.current.isLoggedIn).toBe(false)
-        expect(result.current.user).toBeNull()
+        useAuthStore.getState().setUser(null)
+        expect(useAuthStore.getState().user).toBeNull()
     })
 })

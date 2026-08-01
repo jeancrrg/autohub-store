@@ -2,19 +2,32 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/store/authStore'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { login } from '@/lib/api/auth'
 import styles from './page.module.css'
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const login = useAuthStore((s) => s.login)
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const router = useRouter()
+    const queryClient = useQueryClient()
+
+    const loginMutation = useMutation({
+        mutationFn: () => login(email, password),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['session'] })
+            router.push('/account')
+        },
+        onError: (error: any) => {
+            setErrorMessage(error.response?.data?.detail ?? 'Falha ao entrar. Verifique suas credenciais.')
+        },
+    })
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
-        login()
-        router.push('/account')
+        setErrorMessage(null)
+        loginMutation.mutate()
     }
 
     return (
@@ -52,8 +65,10 @@ export default function LoginPage() {
                         />
                     </div>
 
-                    <button type="submit" className={styles.submitButton}>
-                        ENTRAR
+                    {errorMessage && <p role="alert">{errorMessage}</p>}
+
+                    <button type="submit" className={styles.submitButton} disabled={loginMutation.isPending}>
+                        {loginMutation.isPending ? 'ENTRANDO...' : 'ENTRAR'}
                     </button>
                 </form>
 

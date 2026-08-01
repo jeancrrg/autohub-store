@@ -1,0 +1,19 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.fileInput {
+    border: 1px dashed #999;
+    padding: 1rem;
+}
+
+.error {
+    color: #c0392b;
+}
+
+.uploadButton,
+.skipButton {
+    padding: 0.5rem 1rem;
+}

@@ -1,19 +1,19 @@
-import { notFound } from 'next/navigation'
-import { products } from '@/lib/data/products'
+'use client'
+
+import { useParams, notFound } from 'next/navigation'
+import { useProduct } from '@/hooks/useProduct'
 import { ImageGallery } from '@/components/product/ImageGallery/ImageGallery'
 import { ProductInfo } from '@/components/product/ProductInfo/ProductInfo'
 import { ProductTabs } from '@/components/product/ProductTabs/ProductTabs'
 import Link from 'next/link'
 import styles from './page.module.css'
 
-export function generateStaticParams() {
-    return products.map((p) => ({ id: String(p.id) }))
-}
+export default function ProductPage() {
+    const params = useParams<{ id: string }>()
+    const { data: product, isLoading, isError } = useProduct(params.id)
 
-export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params
-    const product = products.find((p) => p.id === Number(id))
-    if (!product) notFound()
+    if (isError) notFound()
+    if (isLoading || !product) return <p>Carregando produto...</p>
 
     return (
         <div className={styles.container}>

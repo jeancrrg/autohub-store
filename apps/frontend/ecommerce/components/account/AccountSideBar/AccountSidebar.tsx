@@ -1,7 +1,9 @@
 'use client'
 
-import { useAuthStore } from '@/store/authStore'
+import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import { useSession } from '@/hooks/useSession'
+import { logout } from '@/lib/api/auth'
 import styles from './AccountSidebar.module.css'
 
 type Tab = 'pedidos' | 'dados' | 'enderecos' | 'seguranca'
@@ -19,18 +21,29 @@ const NAV_ITEMS: { id: Tab; label: string }[] = [
 ]
 
 export function AccountSidebar({ activeTab, onTabChange }: AccountSidebarProps) {
-    const { user, logout } = useAuthStore()
+    const { data: user } = useSession()
     const router = useRouter()
+    const queryClient = useQueryClient()
 
-    function handleLogout() {
-        logout()
+    const initials = user?.name
+        ? user.name
+              .split(' ')
+              .map((part) => part[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase()
+        : 'U'
+
+    async function handleLogout() {
+        await logout()
+        await queryClient.invalidateQueries({ queryKey: ['session'] })
         router.push('/login')
     }
 
     return (
         <aside className={styles.sidebar}>
             <div className={styles.userInfo}>
-                <div className={styles.avatar}>{user?.initials ?? 'U'}</div>
+                <div className={styles.avatar}>{initials}</div>
                 <div>
                     <p className={styles.userName}>{user?.name ?? 'Usuário'}</p>
                     <p className={styles.userEmail}>{user?.email ?? ''}</p>
