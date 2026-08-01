@@ -1,0 +1,25 @@
+.state {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+}
+
+.name {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.slug {
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+}
+
+.parent {
+    color: var(--text-secondary);
+}
+
+.parentEmpty {
+    color: var(--text-muted);
+}

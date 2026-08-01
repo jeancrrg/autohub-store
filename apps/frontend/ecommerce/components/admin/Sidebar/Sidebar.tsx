@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BagIcon, BoltIcon, BoxIcon, ChartIcon, GridIcon, LogoutIcon, UsersIcon } from '../icons/Icons'
+import { BagIcon, BoxIcon, FilterIcon, GridIcon, LogoutIcon, UsersIcon } from '../icons/Icons'
 import styles from './Sidebar.module.css'
 
 const NAV_ITEMS = [
     { href: '/admin/dashboard', label: 'Dashboard', Icon: GridIcon },
-    { href: '/admin/products', label: 'Produtos', Icon: BoxIcon },
     { href: '/admin/orders', label: 'Pedidos', Icon: BagIcon },
     { href: '/admin/users', label: 'Usuários', Icon: UsersIcon },
-    { href: '/admin/analytics', label: 'Analytics', Icon: ChartIcon },
+    { href: '/admin/products', label: 'Produtos', Icon: BoxIcon },
+    { href: '/admin/categories', label: 'Categorias', Icon: FilterIcon },
 ]
 
 export function Sidebar() {
@@ -19,17 +19,20 @@ export function Sidebar() {
     return (
         <aside className={styles.sidebar}>
             <div className={styles.brand}>
-                <span className={styles.brandMark}>
-                    <BoltIcon size={18} stroke="#fff" />
-                </span>
-                <span className={styles.brandName}>
-                    Auto<span className={styles.brandAccent}>Hub</span>
-                </span>
+                <Link href="/" className={styles.logo}>
+                    <div className={styles.logoName}>
+                        AUTO<span className={styles.logoAccent}>HUB</span>
+                    </div>
+                    <div className={styles.logoSub}>
+                        {'STORE'.split('').map((c, i) => (
+                            <span key={i}>{c}</span>
+                        ))}
+                    </div>
+                </Link>
                 <span className={styles.brandTag}>ADMIN</span>
             </div>
 
             <nav className={styles.nav}>
-                <div className={styles.navLabel}>Gerenciar</div>
                 {NAV_ITEMS.map(({ href, label, Icon }) => {
                     const active = pathname === href
                     return (

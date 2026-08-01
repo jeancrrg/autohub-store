@@ -1,4 +1,16 @@
 import { apiClient } from './client'
+import type { AdminCategory } from '@/types/category'
+
+export type CreateCategoryInput = {
+    name: string
+    slug: string
+    parentId: string | null
+}
+
+export async function createCategory(input: CreateCategoryInput): Promise<AdminCategory> {
+    const { data } = await apiClient.post<AdminCategory>('/api/v1/catalog/categories', input)
+    return data
+}
 
 export type CreateProductInput = {
     name: string
