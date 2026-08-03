@@ -15,6 +15,7 @@ export function HeroBanner() {
                             src="/images/hero-car.jpg"
                             alt="Honda Civic Type R"
                             fill
+                            sizes="(max-width: 768px) 100vw, 55vw"
                             style={{ objectFit: 'cover', objectPosition: 'center right' }}
                             priority
                         />
