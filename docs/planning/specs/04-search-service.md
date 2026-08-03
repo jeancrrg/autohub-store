@@ -1,6 +1,6 @@
 # Search Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8005 | **Status:** Planejado
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8004 | **Status:** Planejado
 
 ## Objetivo
 
@@ -106,7 +106,6 @@ GET /api/v1/search?q={query}&category={uuid}&minPrice={n}&maxPrice={n}&page={n}&
       "categoryId":    { "type": "keyword" },
       "categoryName":  { "type": "keyword" },
       "status":        { "type": "keyword" },
-      "stockQuantity": { "type": "integer" },
       "createdAt":     { "type": "date" }
     }
   }

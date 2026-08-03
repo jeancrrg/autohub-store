@@ -61,7 +61,7 @@ dependencies {
 | Tópico | Consumer Group | Template | Assunto |
 |---|---|---|---|
 | `user.created` | `notification-user-group` | `welcome.html` | Bem-vindo ao AutoHubStore! |
-| `auth.password-reset` | `notification-auth-group` | `password-reset.html` | Redefinição de senha |
+| `user.password-reset` | `notification-user-group` | `password-reset.html` | Redefinição de senha |
 | `order.created` | `notification-order-group` | `order-confirmed.html` | Pedido confirmado |
 | `payment.approved` | `notification-payment-group` | `payment-approved.html` | Pagamento aprovado |
 | `payment.rejected` | `notification-payment-group` | `payment-rejected.html` | Pagamento recusado |
@@ -96,7 +96,7 @@ public void onUserCreated(UserCreatedEvent event) {
 }
 ```
 
-DLTs criados automaticamente: `user.created.DLT`, `auth.password-reset.DLT`, etc.
+DLTs criados automaticamente: `user.created.DLT`, `user.password-reset.DLT`, etc.
 
 ## Estrutura de Pacotes (MVC)
 
@@ -107,8 +107,7 @@ com.autohubstore.notificationservice/
 ├── service/
 │   └── EmailService.java                  # JavaMailSender + Thymeleaf rendering
 ├── messaging/
-│   ├── UserEventConsumer.java             # @KafkaListener user.created
-│   ├── AuthEventConsumer.java             # @KafkaListener auth.password-reset
+│   ├── UserEventConsumer.java             # @KafkaListener user.created + user.password-reset
 │   ├── OrderEventConsumer.java            # @KafkaListener order.created
 │   └── PaymentEventConsumer.java          # @KafkaListener payment.approved + payment.rejected
 ├── model/

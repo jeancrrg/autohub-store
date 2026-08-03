@@ -13,9 +13,10 @@ Gerenciar o ciclo de vida completo de pedidos com máquina de estados. A arquite
 - Criar pedido a partir do carrinho (lê via port Cart, limpa após criação)
 - Validar endereço de entrega (lê via port User)
 - Máquina de estados: `PENDING → WAITING_PAYMENT → PAID → CANCELLED`
-- Publicar `order.created` no Kafka (driven port out)
+- Publicar `order.created` no Kafka (driven port out) — consumido pelo Inventory Service para reserva de estoque
 - Consumir `payment.approved` → PAID (driving port in via Kafka)
 - Consumir `payment.rejected` → CANCELLED (driving port in via Kafka)
+- Consumir `inventory.stock-insufficient` → CANCELLED (compensação Saga — estoque insuficiente na reserva)
 - Manter histórico de todas as transições de status
 
 ## Tecnologias
@@ -175,7 +176,7 @@ CREATE INDEX idx_orders_status ON orders(status);
 PENDING
   └─→ WAITING_PAYMENT   (ao publicar order.created no Kafka)
         ├─→ PAID         (ao consumir payment.approved)
-        └─→ CANCELLED    (ao consumir payment.rejected)
+        └─→ CANCELLED    (ao consumir payment.rejected OU inventory.stock-insufficient)
 ```
 
 Cada transição registra entrada em `order_status_history`.
@@ -205,6 +206,7 @@ Cada transição registra entrada em `order_status_history`.
 
 - `payment.approved` → transiciona pedido para `PAID`
 - `payment.rejected` → transiciona pedido para `CANCELLED`
+- `inventory.stock-insufficient` → transiciona pedido para `CANCELLED` (compensação Saga)
 
 ## Estrutura de Pacotes (Hexagonal — Ports & Adapters)
 
@@ -233,7 +235,8 @@ com.autohubstore.orderservice/
     │   ├── web/
     │   │   └── OrderController.java            # @RestController → chama use cases
     │   └── messaging/
-    │       └── PaymentEventConsumer.java       # @KafkaListener → chama UpdateOrderStatusUseCase
+    │       ├── PaymentEventConsumer.java       # @KafkaListener payment.approved/rejected → chama UpdateOrderStatusUseCase
+    │       └── InventoryEventConsumer.java     # @KafkaListener inventory.stock-insufficient → chama UpdateOrderStatusUseCase
     └── out/
         ├── persistence/
         │   ├── OrderJpaEntity.java             # @Entity JPA
@@ -254,8 +257,8 @@ DB_USERNAME=order_user
 DB_PASSWORD=<secret>
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 KAFKA_GROUP_ID=order-service-group
-CART_SERVICE_URL=http://cart-service:8006
-USER_SERVICE_URL=http://user-service:8003
+CART_SERVICE_URL=http://cart-service:8005
+USER_SERVICE_URL=http://user-service:8002
 ```
 
 ## Docker

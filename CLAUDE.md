@@ -36,10 +36,10 @@ autohub-store/
 │   ├── apps/                  # Documentação técnica e didática de cada app
 │   │   └── api-gateway.md     # Explicação detalhada do Gateway (Hexagonal, JWT, rate limit)
 │   └── planning/              # Planejamento e specs
-│       ├── action-plan.md     # Plano de ação das 10 fases
+│       ├── action-plan.md     # Plano de ação das 10 fases (inclui Decisões de Consolidação)
 │       └── specs/             # Specs detalhadas por microsserviço
 │           ├── 01-api-gateway.md
-│           ├── 02-auth-service.md
+│           ├── 02-user-service.md
 │           └── ... (03 a 10)
 ├── README.md
 └── CLAUDE.md                  # este arquivo
@@ -49,18 +49,24 @@ autohub-store/
 
 ## 10 Microsserviços
 
+> Escopo revisado: Auth Service foi fundido em User Service (mesmo bounded context de Identidade)
+> e um novo Inventory Service foi extraído do Catalog Service (controle de estoque exige forte
+> consistência/reserva, incompatível com o papel de leitura/cache do Catalog). Detalhes e
+> justificativa completa em
+> [docs/planning/action-plan.md § Decisões de Consolidação](docs/planning/action-plan.md#decisões-de-consolidação).
+
 | # | Serviço | Porta | Banco | Arquitetura | Build | Status |
 |---|---|---|---|---|---|---|
-| 0 | **API Gateway** | 8001 | Redis (rate limit) | Hexagonal | Maven | Implementado |
-| 1 | **Auth Service** | 8002 | PostgreSQL + Redis | Clean Architecture | Maven | Planejado |
-| 2 | **User Service** | 8003 | PostgreSQL | MVC | Maven | Planejado |
-| 3 | **Catalog Service** | 8004 | PostgreSQL + Redis | MVC | Gradle | Planejado |
-| 4 | **Search Service** | 8005 | Elasticsearch | MVC | Gradle | Planejado |
-| 5 | **Cart Service** | 8006 | Redis | MVC | Gradle | Planejado |
-| 6 | **Order Service** | 8007 | PostgreSQL | Hexagonal | Maven | Planejado |
-| 7 | **Payment Service** | 8008 | PostgreSQL | MVC | Maven | Planejado |
-| 8 | **Notification Service** | 8009 | — (stateless) | MVC | Gradle | Planejado |
-| 9 | **Analytics Service** | 8010 | Cassandra | MVC | Gradle | Planejado |
+| 1 | **API Gateway** | 8001 | Redis (rate limit) | Hexagonal | Maven | Implementado |
+| 2 | **User Service** | 8002 | PostgreSQL + Redis | Clean Architecture | Maven | Planejado |
+| 3 | **Catalog Service** | 8003 | PostgreSQL + Redis | MVC | Gradle | Planejado |
+| 4 | **Search Service** | 8004 | Elasticsearch | MVC | Gradle | Planejado |
+| 5 | **Cart Service** | 8005 | Redis | MVC | Gradle | Planejado |
+| 6 | **Inventory Service** | 8006 | PostgreSQL | Hexagonal | Maven | Planejado |
+| 7 | **Order Service** | 8007 | PostgreSQL | Hexagonal | Maven | Planejado |
+| 8 | **Payment Service** | 8008 | PostgreSQL | MVC | Maven | Planejado |
+| 9 | **Notification Service** | 8009 | — (stateless) | MVC | Gradle | Planejado |
+| 10 | **Analytics Service** | 8010 | Cassandra | MVC | Gradle | Planejado |
 
 > Alternância Maven/Gradle é intencional: objetivo educacional de aprender ambos em contexto real.
 
@@ -75,7 +81,7 @@ autohub-store/
 | Spring Boot | 3.x | Framework base |
 | Spring Cloud | 2023.x | Gateway, OpenFeign, Config |
 | Spring Security | 6.x | Autenticação e autorização |
-| JJWT | 0.12+ | JWT (Auth Service + Gateway) |
+| JJWT | 0.12+ | JWT (User Service + Gateway) |
 | PostgreSQL | 16 | Persistência relacional (5 serviços) |
 | Flyway | 9+ | Migrações de banco |
 | Redis | 7 | Cache, carrinho, blacklist de tokens, rate limit |
@@ -103,7 +109,7 @@ autohub-store/
 
 ## Padrões Arquiteturais por Serviço
 
-### Hexagonal — API Gateway, Order Service
+### Hexagonal — API Gateway, Inventory Service, Order Service
 ```
 com.autohubstore.<service>/
 ├── domain/
@@ -118,9 +124,9 @@ com.autohubstore.<service>/
     └── out/         # Implementações de portas (Redis, JPA, Kafka)
 ```
 
-### Clean Architecture — Auth Service
+### Clean Architecture — User Service
 ```
-com.autohubstore.authservice/
+com.autohubstore.userservice/
 ├── domain/
 │   ├── model/       # Entidades e Value Objects
 │   ├── event/       # Domain Events
@@ -137,7 +143,7 @@ com.autohubstore.authservice/
     └── config/      # Spring config
 ```
 
-### MVC — demais 7 serviços
+### MVC — demais 6 serviços (Catalog, Search, Cart, Payment, Notification, Analytics)
 ```
 com.autohubstore.<servicename>/
 ├── controller/    # @RestController
@@ -208,14 +214,15 @@ a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml
 | Tópico | Producer | Consumer(s) |
 |---|---|---|
 | `user.created` | User Service | Notification Service |
-| `auth.password-reset` | Auth Service | Notification Service |
-| `catalog.product-created` | Catalog Service | Search Service |
+| `user.password-reset` | User Service | Notification Service |
+| `catalog.product-created` | Catalog Service | Search Service, Inventory Service |
 | `catalog.product-updated` | Catalog Service | Search Service |
 | `catalog.product-viewed` | Catalog Service | Analytics Service |
-| `order.created` | Order Service | Notification Service, Analytics Service |
+| `order.created` | Order Service | Notification Service, Analytics Service, Inventory Service |
 | `order.status-changed` | Order Service | — |
-| `payment.approved` | Payment Service | Order Service, Notification Service |
-| `payment.rejected` | Payment Service | Order Service, Notification Service |
+| `payment.approved` | Payment Service | Order Service, Notification Service, Inventory Service |
+| `payment.rejected` | Payment Service | Order Service, Notification Service, Inventory Service |
+| `inventory.stock-insufficient` | Inventory Service | Order Service |
 
 ---
 
@@ -224,11 +231,14 @@ a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml
 ```
 API Gateway ──────────────────────────────────────→ Todos os serviços (roteamento + JWT)
 Cart Service ────── OpenFeign ────────────────────→ Catalog Service
+Catalog Service ─── OpenFeign ────────────────────→ Inventory Service (disponibilidade)
 Order Service ───── OpenFeign ────────────────────→ Cart Service, User Service
 Search Service ←─── Kafka (product.created/updated) ─ Catalog Service
-Notification   ←─── Kafka (todos os eventos) ─────── Auth, User, Order, Payment
+Inventory      ←─── Kafka (order.created, payment.*) ─ Order Service, Payment Service
+Notification   ←─── Kafka (todos os eventos) ─────── User, Order, Payment
 Analytics      ←─── Kafka (product-viewed, order) ─── Catalog, Order
 Payment ──────────── Kafka ────────────────────────→ Order Service (resultado pagamento)
+Order ←───────────── Kafka (stock-insufficient) ──── Inventory Service
 ```
 
 ---
@@ -237,11 +247,11 @@ Payment ──────────── Kafka ─────────�
 
 | Serviço | Porta | Descrição |
 |---|---|---|
-| postgres-auth | 5432 | Banco do Auth Service |
-| postgres-user | 5433 | Banco do User Service |
+| postgres-user | 5433 | Banco do User Service (fusão Auth+User; `postgres-auth`/5432 descontinuado) |
 | postgres-catalog | 5434 | Banco do Catalog Service |
 | postgres-order | 5435 | Banco do Order Service |
 | postgres-payment | 5436 | Banco do Payment Service |
+| postgres-inventory | 5437 | Banco do Inventory Service |
 | redis | 6379 | Cache + Carrinho + Blacklist + Rate Limit |
 | zookeeper | 2181 | Kafka coordinator |
 | kafka | 9092 | Message broker |
@@ -260,10 +270,10 @@ Payment ──────────── Kafka ─────────�
 | Fase | Objetivo | Microsserviço(s) |
 |---|---|---|
 | 1 | Fundação e infraestrutura | API Gateway ✅ |
-| 2 | Autenticação e usuários | Auth Service, User Service |
+| 2 | Identidade e usuários | User Service (fusão Auth+User) |
 | 3 | Catálogo e busca | Catalog Service, Search Service |
 | 4 | Carrinho | Cart Service |
-| 5 | Pedidos | Order Service |
+| 5 | Estoque e pedidos | Inventory Service, Order Service |
 | 6 | Pagamentos | Payment Service |
 | 7 | Notificações | Notification Service |
 | 8 | Analytics | Analytics Service |
@@ -317,5 +327,6 @@ npm run dev
 | `docs/apps/api-gateway.md` | Explicação didática completa do Gateway (Hexagonal, JWT, rate limit, circuit breaker) |
 | `docs/planning/action-plan.md` | Plano de ação das 10 fases com critérios de conclusão |
 | `docs/planning/specs/01-api-gateway.md` | Spec técnica do API Gateway (deps, endpoints, estrutura) |
-| `docs/planning/specs/02-auth-service.md` | Spec do Auth Service (Clean Architecture, JWT, eventos Kafka) |
+| `docs/planning/specs/02-user-service.md` | Spec do User Service — Identidade+Perfil fundidos (Clean Architecture, JWT, eventos Kafka) |
+| `docs/planning/specs/06-inventory-service.md` | Spec do Inventory Service — reserva de estoque (Hexagonal, Saga via Kafka) |
 | `docs/planning/specs/03-10-*.md` | Specs dos demais microsserviços |

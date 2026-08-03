@@ -1,21 +1,27 @@
 # Catalog Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8004 | **Status:** Em implementação
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8003 | **Status:** Em implementação
 
 ## Objetivo
 
 Gerenciar produtos e categorias com cache Redis para reduzir latência e publicação de eventos Kafka para sincronizar o Search Service e alimentar o Analytics Service.
 
+> **Estoque não é mais responsabilidade deste serviço.** `stock_quantity` foi extraído para o
+> [Inventory Service](06-inventory-service.md) — Catalog é orientado a leitura/cache e não tem
+> semântica de reserva/concorrência necessária para controlar quantidade de forma segura sob
+> checkout simultâneo. Ver decisão em
+> [docs/planning/action-plan.md](../action-plan.md#decisões-de-consolidação).
+
 ## Banco de Dados: PostgreSQL (`catalog_db`) + Redis (cache) + MinIO (imagens)
 
 ## Responsabilidades
 
-- CRUD completo de produtos (admin)
+- CRUD completo de produtos (admin) — dados descritivos: nome, descrição, preço, categoria, imagens
 - CRUD de categorias (hierarquia pai/filho)
 - Upload/remoção de imagens de produto (MinIO) — ver [Upload de Imagens](#upload-de-imagens-minio)
 - Listagem paginada de produtos com filtro por categoria
 - Cache de produtos no Redis (TTL 5 minutos)
-- Controle básico de estoque (quantidade)
+- Consultar disponibilidade de estoque no Inventory Service (OpenFeign) para exibir badge "em estoque"
 - Publicar: `catalog.product-created`, `catalog.product-updated`, `catalog.product-viewed`
 
 > Contrato completo de integração com o frontend (paginação, erros, fluxo de upload) está
@@ -145,12 +151,13 @@ CREATE TABLE products (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
-    stock_quantity INTEGER NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
     category_id UUID NOT NULL REFERENCES categories(id),
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- estoque (stock_quantity) vive no Inventory Service, chaveado por product_id (UUID desta tabela)
 
 CREATE TABLE product_images (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -176,10 +183,12 @@ CREATE INDEX idx_products_status ON products(status);
   "price": 299.90,
   "categoryId": "uuid",
   "categoryName": "Filtros",
-  "status": "ACTIVE",
-  "stockQuantity": 50
+  "status": "ACTIVE"
 }
 ```
+
+> Ao criar produto (`catalog.product-created`), o Inventory Service consome o evento e cria o
+> registro de estoque inicial (`stockQuantity = 0` até admin ajustar via Inventory Service).
 
 **Tópico `catalog.product-viewed`:**
 
@@ -220,11 +229,13 @@ com.autohubstore.catalogservice/
 │   ├── ProductStatus.java              # Enum: ACTIVE, INACTIVE, OUT_OF_STOCK
 │   ├── CreateProductRequest.java       # DTO entrada
 │   ├── UpdateProductRequest.java       # DTO entrada
-│   └── ProductResponse.java            # DTO saída
+│   └── ProductResponse.java            # DTO saída (inclui stockQuantity lido do Inventory)
 ├── messaging/
 │   └── CatalogEventPublisher.java      # KafkaTemplate producer
 ├── exception/
 │   └── GlobalExceptionHandler.java     # @ControllerAdvice
+├── external/
+│   └── InventoryServiceClient.java     # @FeignClient(name = "inventory-service")
 └── config/
     ├── RedisConfig.java                # CacheManager Redis
     └── KafkaProducerConfig.java
@@ -239,6 +250,7 @@ DB_PASSWORD=<secret>
 REDIS_HOST=redis
 REDIS_PORT=6379
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+INVENTORY_SERVICE_URL=http://inventory-service:8006
 ```
 
 ## Docker
@@ -246,7 +258,7 @@ KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 ```dockerfile
 FROM eclipse-temurin:25-jre AS runtime
 COPY build/libs/catalog-service.jar app.jar
-EXPOSE 8004
+EXPOSE 8003
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 

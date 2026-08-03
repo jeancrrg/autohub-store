@@ -1,6 +1,6 @@
 # Cart Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8006 | **Status:** Planejado
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8005 | **Status:** Planejado
 
 ## Objetivo
 
@@ -157,7 +157,7 @@ com.autohubstore.cartservice/
 ```
 REDIS_HOST=redis
 REDIS_PORT=6379
-CATALOG_SERVICE_URL=http://catalog-service:8004
+CATALOG_SERVICE_URL=http://catalog-service:8003
 CART_TTL_DAYS=7
 ```
 
@@ -166,7 +166,7 @@ CART_TTL_DAYS=7
 ```dockerfile
 FROM eclipse-temurin:25-jre AS runtime
 COPY build/libs/cart-service.jar app.jar
-EXPOSE 8006
+EXPOSE 8005
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 

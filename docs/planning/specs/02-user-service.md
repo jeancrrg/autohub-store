@@ -1,20 +1,32 @@
-# Auth Service
+# User Service
 
 **Build Tool:** Maven | **Arquitetura:** Clean Architecture | **Porta:** 8002 | **Status:** Em implementação
 
 ## Objetivo
 
-Gerenciar autenticação: emissão e validação de JWT, refresh token com rotation, blacklist de tokens revogados no Redis e fluxo de reset de senha via e-mail.
+Serviço único de Identidade: gerencia cadastro, perfil e endereços de usuários **e** autenticação
+(login, logout, refresh token com rotation, blacklist de tokens revogados no Redis, reset de
+senha via e-mail). Resultado da fusão dos antigos `auth-service` + `user-service` — ambos
+pertenciam ao mesmo bounded context ("Identidade") e o Auth já dependia do User via OpenFeign só
+para validar credenciais; separá-los era overhead artificial sem ganho de domínio. Ver decisão em
+[docs/planning/action-plan.md](../action-plan.md#decisões-de-consolidação).
 
-## Banco de Dados: PostgreSQL (`auth_db`) + Redis
+## Banco de Dados: PostgreSQL (`user_db`) + Redis
 
 ## Responsabilidades
 
+### Identidade (ex-Auth)
 - Login com e-mail/senha → emite access token (JWT) + refresh token
 - Logout → revoga refresh token + adiciona access token na blacklist Redis
 - Refresh → valida refresh token, emite novo par de tokens (rotation)
 - Forgot password → gera token temporário (15 min), publica evento Kafka
-- Reset password → valida token, atualiza senha via User Service
+- Reset password → valida token, atualiza senha do usuário
+
+### Perfil (ex-User)
+- Cadastro de novos usuários (hash BCrypt da senha)
+- Consulta e atualização de perfil
+- CRUD de endereços de entrega
+- Publicação de evento `user.created` no Kafka
 
 ## Tecnologias
 
@@ -27,8 +39,10 @@ Gerenciar autenticação: emissão e validação de JWT, refresh token com rotat
 | Spring Data JPA | 3.x | PostgreSQL |
 | Flyway | 9+ | Migrações |
 | Spring Data Redis | 3.x | Blacklist de tokens |
-| Spring Kafka | 3.x | Producer `auth.password-reset` |
-| OpenFeign | Spring Cloud | Chamar User Service (validar credenciais) |
+| Spring Kafka | 3.x | Producer `user.created`, `user.password-reset` |
+| BCrypt | Spring Security Crypto | Hash de senhas |
+| Bean Validation | Jakarta | Validação de entrada |
+| Springdoc OpenAPI | 2.x | Swagger |
 | Testcontainers | 1.19+ | Testes de integração |
 
 ## Dependências Maven (pom.xml)
@@ -36,7 +50,6 @@ Gerenciar autenticação: emissão e validação de JWT, refresh token com rotat
 ```xml
 <properties>
     <java.version>25</java.version>
-    <spring-cloud.version>2023.0.3</spring-cloud.version>
 </properties>
 
 <dependencies>
@@ -57,8 +70,8 @@ Gerenciar autenticação: emissão e validação de JWT, refresh token com rotat
         <artifactId>spring-boot-starter-data-redis</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-starter-openfeign</artifactId>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
     <dependency>
         <groupId>org.springframework.kafka</groupId>
@@ -119,35 +132,32 @@ Gerenciar autenticação: emissão e validação de JWT, refresh token com rotat
         <scope>test</scope>
     </dependency>
 </dependencies>
-
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-dependencies</artifactId>
-            <version>${spring-cloud.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
 ```
 
 ## Endpoints
 
 ```
-POST /api/v1/auth/login              # Login → seta cookies httpOnly (ver Estratégia de Token)
-POST /api/v1/auth/logout             # Logout → revoga tokens + limpa cookies
-POST /api/v1/auth/refresh            # Refresh token rotation → re-seta cookies
-POST /api/v1/auth/forgot-password    # Solicitar reset de senha
-POST /api/v1/auth/reset-password     # Confirmar reset com token temporário
+# Identidade (público)
+POST   /api/v1/auth/login                        # Login → seta cookies httpOnly
+POST   /api/v1/auth/logout                        # Logout → revoga tokens + limpa cookies
+POST   /api/v1/auth/refresh                       # Refresh token rotation → re-seta cookies
+POST   /api/v1/auth/forgot-password                # Solicitar reset de senha
+POST   /api/v1/auth/reset-password                 # Confirmar reset com token temporário
+
+# Perfil
+POST   /api/v1/users                              # Cadastro (público)
+GET    /api/v1/users/{id}                         # Perfil
+PUT    /api/v1/users/{id}                         # Atualizar perfil
+GET    /api/v1/users/{id}/addresses               # Listar endereços
+POST   /api/v1/users/{id}/addresses               # Criar endereço
+DELETE /api/v1/users/{id}/addresses/{addressId}   # Remover endereço
 ```
 
 ## Estratégia de Token — httpOnly Cookie
 
 Frontend nunca lê/armazena o JWT diretamente (proteção contra XSS). Fluxo:
 
-- `login`/`refresh` respondem **sem token no body** — o Gateway repassa o `Set-Cookie` do Auth
+- `login`/`refresh` respondem **sem token no body** — o Gateway repassa o `Set-Cookie` do User
   Service pro cliente: `access_token` (httpOnly, Secure, SameSite=Lax, maxAge=1h) e `refresh_token`
   (httpOnly, Secure, SameSite=Lax, path=`/api/v1/auth/refresh`, maxAge=7d).
 - Requests subsequentes do front usam `withCredentials:true` — cookie vai automático, sem header
@@ -158,12 +168,35 @@ Frontend nunca lê/armazena o JWT diretamente (proteção contra XSS). Fluxo:
 
 ## Schema do Banco (Flyway)
 
-### V1__create_auth_schema.sql
+### V1__create_user_schema.sql
 
 ```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    full_name VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE addresses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    street VARCHAR(255) NOT NULL,
+    number VARCHAR(20) NOT NULL,
+    complement VARCHAR(100),
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(2) NOT NULL,
+    zip_code VARCHAR(9) NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token VARCHAR(512) NOT NULL UNIQUE,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -172,17 +205,30 @@ CREATE TABLE refresh_tokens (
 
 CREATE TABLE password_reset_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token VARCHAR(128) NOT NULL UNIQUE,
     expires_at TIMESTAMPTZ NOT NULL,
     used BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX idx_addresses_user_id ON addresses(user_id);
 ```
 
-## Evento Kafka Publicado
+## Eventos Kafka Publicados
 
-**Tópico:** `auth.password-reset`
+**Tópico:** `user.created`
+
+```json
+{
+  "userId": "uuid",
+  "email": "user@example.com",
+  "fullName": "João Silva",
+  "createdAt": "2024-01-01T10:00:00Z"
+}
+```
+
+**Tópico:** `user.password-reset`
 
 ```json
 {
@@ -196,41 +242,61 @@ CREATE TABLE password_reset_tokens (
 ## Estrutura de Pacotes (Clean Architecture)
 
 ```
-com.autohubstore.authservice/
+com.autohubstore.userservice/
 ├── domain/
 │   ├── model/
-│   │   ├── RefreshToken.java                     # Entidade de domínio
-│   │   └── PasswordResetToken.java               # Entidade de domínio
+│   │   ├── User.java                              # Entidade de domínio
+│   │   ├── Address.java                           # Entidade de domínio
+│   │   ├── RefreshToken.java                      # Entidade de domínio
+│   │   └── PasswordResetToken.java                 # Entidade de domínio
 │   ├── event/
-│   │   └── PasswordResetRequestedEvent.java      # Domain Event
+│   │   ├── UserCreatedEvent.java                   # Domain Event
+│   │   └── PasswordResetRequestedEvent.java        # Domain Event
 │   ├── repository/
-│   │   ├── RefreshTokenRepository.java           # Interface (output boundary)
-│   │   └── PasswordResetTokenRepository.java     # Interface (output boundary)
+│   │   ├── UserRepository.java                     # Interface (output boundary)
+│   │   ├── AddressRepository.java                  # Interface (output boundary)
+│   │   ├── RefreshTokenRepository.java             # Interface (output boundary)
+│   │   └── PasswordResetTokenRepository.java       # Interface (output boundary)
 │   └── service/
-│       └── TokenDomainService.java               # Regras de domínio (TTL, rotation)
+│       └── TokenDomainService.java                 # Regras de domínio (TTL, rotation)
 ├── application/
 │   ├── usecase/
-│   │   ├── LoginUseCase.java                     # Input boundary
+│   │   ├── LoginUseCase.java                       # Input boundary
 │   │   ├── LogoutUseCase.java
 │   │   ├── RefreshTokenUseCase.java
 │   │   ├── ForgotPasswordUseCase.java
-│   │   └── ResetPasswordUseCase.java
-│   └── dto/
-│       ├── LoginRequest.java
-│       ├── LoginResponse.java
-│       └── RefreshRequest.java
+│   │   ├── ResetPasswordUseCase.java
+│   │   ├── CreateUserUseCase.java
+│   │   ├── UpdateUserUseCase.java
+│   │   └── ManageAddressUseCase.java
+│   ├── dto/
+│   │   ├── LoginRequest.java
+│   │   ├── LoginResponse.java
+│   │   ├── RefreshRequest.java
+│   │   ├── CreateUserRequest.java
+│   │   ├── UpdateUserRequest.java
+│   │   ├── UserResponse.java
+│   │   ├── AddressRequest.java
+│   │   └── AddressResponse.java
+│   └── mapper/
+│       └── UserMapper.java                         # MapStruct
 └── infrastructure/
     ├── web/
-    │   └── AuthController.java                   # @RestController
+    │   ├── AuthController.java                     # @RestController — /api/v1/auth
+    │   ├── UserController.java                     # @RestController — /api/v1/users
+    │   └── AddressController.java                  # @RestController — /api/v1/users/{id}/addresses
     ├── persistence/
-    │   ├── RefreshTokenJpaEntity.java             # @Entity JPA
-    │   ├── RefreshTokenJpaRepository.java         # Implementa RefreshTokenRepository
+    │   ├── UserJpaEntity.java                      # @Entity JPA
+    │   ├── UserJpaRepository.java                  # Implementa UserRepository
+    │   ├── AddressJpaEntity.java
+    │   ├── AddressJpaRepository.java                # Implementa AddressRepository
+    │   ├── RefreshTokenJpaEntity.java
+    │   ├── RefreshTokenJpaRepository.java           # Implementa RefreshTokenRepository
     │   ├── PasswordResetTokenJpaEntity.java
-    │   └── PasswordResetTokenJpaRepository.java
+    │   └── PasswordResetTokenJpaRepository.java     # Implementa PasswordResetTokenRepository
     ├── messaging/
-    │   └── PasswordResetEventPublisher.java       # KafkaTemplate producer
-    ├── external/
-    │   └── UserServiceClient.java                 # @FeignClient para User Service
+    │   ├── UserEventPublisher.java                  # KafkaTemplate producer user.created
+    │   └── PasswordResetEventPublisher.java         # KafkaTemplate producer user.password-reset
     └── config/
         ├── SecurityConfig.java
         ├── JwtConfig.java
@@ -247,8 +313,8 @@ com.autohubstore.authservice/
 ## Variáveis de Ambiente
 
 ```
-DB_URL=jdbc:postgresql://postgres-auth:5432/auth_db
-DB_USERNAME=auth_user
+DB_URL=jdbc:postgresql://postgres-user:5433/user_db
+DB_USERNAME=user_user
 DB_PASSWORD=<secret>
 REDIS_HOST=redis
 REDIS_PORT=6379
@@ -256,15 +322,18 @@ JWT_SECRET=<base64-encoded-256bit-key>
 JWT_EXPIRATION_MS=3600000
 JWT_REFRESH_EXPIRATION_MS=604800000
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-USER_SERVICE_URL=http://user-service:8003
 PASSWORD_RESET_TOKEN_TTL_MINUTES=15
 ```
+
+> **Infra:** container `postgres-auth` removido de `infra/docker-compose.yml` — as tabelas
+> `refresh_tokens` e `password_reset_tokens` passam a viver em `user_db` (container
+> `postgres-user`, porta 5433).
 
 ## Docker
 
 ```dockerfile
 FROM eclipse-temurin:25-jre AS runtime
-COPY target/auth-service.jar app.jar
+COPY target/user-service.jar app.jar
 EXPOSE 8002
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
@@ -315,6 +384,9 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
 
 ## Estratégia de Testes
 
-- **Unitários:** `TokenDomainService` (TTL, rotation), cada UseCase com mocks das interfaces de domínio
-- **Integração:** Testcontainers (PostgreSQL + Redis + Kafka) para fluxos login/logout/refresh completos
+- **Unitários:** `TokenDomainService` (TTL, rotation); use cases de perfil (e-mail único, hash de
+  senha) com mocks das interfaces de domínio
+- **Integração:** Testcontainers (PostgreSQL + Redis + Kafka) para fluxos cadastro → login → refresh →
+  logout completos
 - **Segurança:** Acesso sem token → 401; token expirado → 401; token na blacklist → 401
+- **Validação:** Campos obrigatórios ausentes → 400; e-mail duplicado → 409
