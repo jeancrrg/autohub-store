@@ -36,7 +36,7 @@ export function CartTable() {
                         </div>
                         <div>
                             <p className={styles.productBrand}>{product.brand}</p>
-                            <Link href={`/products/${product.id}`} className={styles.productName}>
+                            <Link href={`/products/${product.slug}`} className={styles.productName}>
                                 {product.name}
                             </Link>
                         </div>

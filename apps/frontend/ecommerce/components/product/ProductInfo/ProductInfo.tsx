@@ -39,6 +39,8 @@ export function ProductInfo({ product }: { product: Product }) {
                 <span className={styles.metaText}>
                     Marca: <span className={styles.brandName}>{product.brand}</span>
                 </span>
+                <span className={styles.metaDivider}>|</span>
+                <span className={styles.metaText}>Código: {product.sku}</span>
             </div>
 
             <div className={styles.priceBox}>

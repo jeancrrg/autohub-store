@@ -8,6 +8,8 @@ export type ProductImage = {
 
 export type Product = {
     id: string
+    sku: string
+    slug: string
     name: string
     brand: string
     price: number

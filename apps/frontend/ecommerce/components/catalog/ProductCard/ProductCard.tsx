@@ -15,7 +15,7 @@ export function ProductCard({ product }: { product: Product }) {
 
             <div className={styles.body}>
                 <p className={styles.brand}>{product.brand}</p>
-                <Link href={`/products/${product.id}`}>
+                <Link href={`/products/${product.slug}`}>
                     <p className={styles.name}>{product.name}</p>
                 </Link>
 
@@ -38,7 +38,7 @@ export function ProductCard({ product }: { product: Product }) {
                     </p>
                 </div>
 
-                <Link href={`/products/${product.id}`} className={styles.button}>
+                <Link href={`/products/${product.slug}`} className={styles.button}>
                     VER PRODUTO
                 </Link>
             </div>

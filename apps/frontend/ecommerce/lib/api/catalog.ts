@@ -10,6 +10,8 @@ type ProductImageResponse = {
 
 type ProductResponse = {
     id: string
+    sku: string
+    slug: string
     name: string
     description: string
     price: number
@@ -33,6 +35,8 @@ const DEFAULT_PAGE_SIZE = 100
 function toProduct(response: ProductResponse): Product {
     return {
         id: response.id,
+        sku: response.sku,
+        slug: response.slug,
         name: response.name,
         brand: response.categoryName,
         price: response.price,
@@ -57,6 +61,11 @@ export async function fetchProducts(): Promise<Product[]> {
 
 export async function fetchProduct(id: string): Promise<Product> {
     const { data } = await apiClient.get<ProductResponse>(`/api/v1/catalog/products/${id}`)
+    return toProduct(data)
+}
+
+export async function fetchProductBySlug(slug: string): Promise<Product> {
+    const { data } = await apiClient.get<ProductResponse>(`/api/v1/catalog/products/slug/${slug}`)
     return toProduct(data)
 }
 

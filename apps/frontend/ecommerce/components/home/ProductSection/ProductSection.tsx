@@ -56,7 +56,7 @@ function ProductCard({ product, rank }: { product: Product; rank?: number }) {
                     {oldPrice && <span className={styles.cardOldPrice}>{oldPrice}</span>}
                 </div>
                 <div className={styles.cardInstall}>12x de {install} sem juros</div>
-                <Link href={`/products/${product.id}`} className={styles.addBtn}>
+                <Link href={`/products/${product.slug}`} className={styles.addBtn}>
                     ADICIONAR
                 </Link>
             </div>

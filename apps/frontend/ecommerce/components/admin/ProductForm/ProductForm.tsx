@@ -8,6 +8,7 @@ import styles from './ProductForm.module.css'
 
 export function ProductForm({ onClose }: { onClose: () => void }) {
     const [name, setName] = useState('')
+    const [sku, setSku] = useState('')
     const [description, setDescription] = useState('')
     const [price, setPrice] = useState('')
     const [stockQuantity, setStockQuantity] = useState('')
@@ -18,7 +19,14 @@ export function ProductForm({ onClose }: { onClose: () => void }) {
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         createProductMutation.mutate(
-            { name, description, price: Number(price), stockQuantity: Number(stockQuantity), categoryId },
+            {
+                name,
+                sku: sku || undefined,
+                description,
+                price: Number(price),
+                stockQuantity: Number(stockQuantity),
+                categoryId,
+            },
             { onSuccess: (result) => setCreatedProductId(result.id) }
         )
     }
@@ -32,6 +40,10 @@ export function ProductForm({ onClose }: { onClose: () => void }) {
             <label className={styles.field}>
                 Nome
                 <input value={name} onChange={(e) => setName(e.target.value)} required />
+            </label>
+            <label className={styles.field}>
+                SKU (opcional — gerado automaticamente se vazio)
+                <input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="FLT-KN-0042" />
             </label>
             <label className={styles.field}>
                 Descrição

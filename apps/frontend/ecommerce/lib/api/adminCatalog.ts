@@ -14,6 +14,7 @@ export async function createCategory(input: CreateCategoryInput): Promise<AdminC
 
 export type CreateProductInput = {
     name: string
+    sku?: string
     description: string
     price: number
     stockQuantity: number

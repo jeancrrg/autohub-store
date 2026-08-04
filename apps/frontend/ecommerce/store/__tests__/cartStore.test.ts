@@ -4,6 +4,8 @@ import type { Product } from '@/types/product'
 
 const mockProduct: Product = {
     id: '11111111-1111-1111-1111-111111111111',
+    sku: 'TEST-0001',
+    slug: 'test-product',
     name: 'Test Product',
     brand: 'Brand',
     price: 100,
