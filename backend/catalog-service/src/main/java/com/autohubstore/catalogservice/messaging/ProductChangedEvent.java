@@ -11,6 +11,8 @@ import java.util.UUID;
  */
 public record ProductChangedEvent(
         UUID productId,
+        String sku,
+        String slug,
         String name,
         String description,
         BigDecimal price,

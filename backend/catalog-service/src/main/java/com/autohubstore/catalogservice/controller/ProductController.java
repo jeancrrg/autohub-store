@@ -59,6 +59,14 @@ public class ProductController implements ProductControllerDocs {
     }
 
     @Override
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<ProductResponse> getProductBySlug(@PathVariable String slug) {
+        ProductResponse response = productService.getProductBySlug(slug);
+        productService.publishProductViewed(response);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody CreateProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request));

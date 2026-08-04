@@ -10,7 +10,9 @@ Busca textual full-text de produtos com filtros. Mantém o índice Elasticsearch
 
 ## Responsabilidades
 
-- Busca textual com analyzer português
+- Busca textual com analyzer português (`name`/`description`) — full-text, fuzzy, com stemming
+- Busca exata por `sku` — match exato sem analyzer, usada por admin/suporte/atendimento (ver
+  [Busca Textual vs. Busca Exata por SKU](#busca-textual-vs-busca-exata-por-sku))
 - Filtros: categoria, faixa de preço, disponibilidade (`status = ACTIVE`)
 - Resultados paginados com total de registros
 - Re-indexação automática ao consumir `catalog.product-created` e `catalog.product-updated`
@@ -59,18 +61,23 @@ dependencies {
 
 ```
 GET /api/v1/search?q={query}&category={uuid}&minPrice={n}&maxPrice={n}&page={n}&size={n}
+GET /api/v1/search?sku={sku}
 ```
 
 **Parâmetros:**
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `q` | string | Sim | Termo de busca |
+| `q` | string | Um dos dois (`q` ou `sku`) | Termo de busca — full-text (`match`/`multi_match` com analyzer) |
+| `sku` | string | Um dos dois (`q` ou `sku`) | Código exato de produto — `term` query, sem analyzer, sem fuzzy |
 | `category` | UUID | Não | Filtrar por categoria |
 | `minPrice` | decimal | Não | Preço mínimo |
 | `maxPrice` | decimal | Não | Preço máximo |
 | `page` | int | Não | Página (default 0) |
 | `size` | int | Não | Tamanho (default 10, max 50) |
+
+> `q` e `sku` são mutuamente exclusivos — se ambos vierem, `sku` tem prioridade (é a intenção mais
+> específica: usuário/atendimento já sabe o código exato).
 
 **Resposta:**
 
@@ -79,6 +86,8 @@ GET /api/v1/search?q={query}&category={uuid}&minPrice={n}&maxPrice={n}&page={n}&
   "content": [
     {
       "id": "uuid",
+      "sku": "FLT-KN-0042",
+      "slug": "filtro-de-ar-kn-0042",
       "name": "Filtro de Ar K&N",
       "price": 299.90,
       "categoryId": "uuid",
@@ -93,6 +102,21 @@ GET /api/v1/search?q={query}&category={uuid}&minPrice={n}&maxPrice={n}&page={n}&
 }
 ```
 
+## Busca Textual vs. Busca Exata por SKU
+
+Duas queries diferentes sobre o mesmo índice — ponto central de estudo deste serviço:
+
+| | Campo `q` (texto livre) | Campo `sku` (código exato) |
+|---|---|---|
+| Tipo do campo no mapping | `text` com `analyzer: portuguese` | `keyword` (sem analyzer) |
+| Query Elasticsearch | `multi_match` sobre `name` + `description`, com stemming/fuzzy | `term` — match exato byte a byte |
+| Quem usa | Cliente final na vitrine ("filtro ar") | Admin/suporte/atendimento com código em mãos ("FLT-KN-0042") |
+| Tolerância a erro de digitação | Alta (stemming, sinônimos futuros) | Nenhuma — código errado não deve retornar nada |
+
+`keyword` nunca passa por analyzer — por isso `sku` não pode reaproveitar o mesmo campo de busca
+textual; um `term` query em campo `text` normalmente falha porque o texto foi tokenizado no index
+time. Index separado por tipo de campo, mesma index física.
+
 ## Mapeamento do Índice Elasticsearch
 
 ```json
@@ -100,6 +124,8 @@ GET /api/v1/search?q={query}&category={uuid}&minPrice={n}&maxPrice={n}&page={n}&
   "mappings": {
     "properties": {
       "id":            { "type": "keyword" },
+      "sku":           { "type": "keyword" },
+      "slug":          { "type": "keyword" },
       "name":          { "type": "text", "analyzer": "portuguese" },
       "description":   { "type": "text", "analyzer": "portuguese" },
       "price":         { "type": "float" },
@@ -126,7 +152,7 @@ com.autohubstore.searchservice/
 ├── controller/
 │   └── SearchController.java               # GET /api/v1/search
 ├── service/
-│   └── SearchService.java                  # Monta query Elasticsearch com filtros
+│   └── SearchService.java                  # Monta query: multi_match (q) ou term (sku), + filtros
 ├── repository/
 │   └── ProductSearchRepository.java        # ElasticsearchRepository<ProductDocument, String>
 ├── model/
@@ -156,7 +182,7 @@ KAFKA_GROUP_ID=search-service-group
 ```dockerfile
 FROM eclipse-temurin:25-jre AS runtime
 COPY build/libs/search-service.jar app.jar
-EXPOSE 8005
+EXPOSE 8004
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 
@@ -187,6 +213,6 @@ checkstyle {
 
 ## Estratégia de Testes
 
-- **Unitários:** `SearchService` (construção de query com cada combinação de filtros)
+- **Unitários:** `SearchService` (construção de query com cada combinação de filtros; `sku` gera `term`, `q` gera `multi_match`)
 - **Integração:** Testcontainers (Elasticsearch + Kafka); publicar `product-created` → buscar produto indexado
-- **Busca:** Testar analyzer português (stemming), filtro de preço, filtro de categoria
+- **Busca:** Testar analyzer português (stemming) via `q`; testar `sku` com código exato retorna 1 resultado e com typo retorna 0 (sem fuzzy)

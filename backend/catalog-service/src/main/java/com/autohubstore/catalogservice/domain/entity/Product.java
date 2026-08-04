@@ -44,6 +44,12 @@ public class Product {
     @Column(name = "id")
     private UUID id;
 
+    @Column(name = "sku", nullable = false, unique = true, length = 50)
+    private String sku;
+
+    @Column(name = "slug", nullable = false, unique = true, length = 255)
+    private String slug;
+
     @Column(name = "name", nullable = false)
     private String name;
 

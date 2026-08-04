@@ -3,6 +3,7 @@ package com.autohubstore.catalogservice.exception.handler;
 import com.autohubstore.catalogservice.exception.CategoryNotFoundException;
 import com.autohubstore.catalogservice.exception.CategorySlugAlreadyExistsException;
 import com.autohubstore.catalogservice.exception.ProductNotFoundException;
+import com.autohubstore.catalogservice.exception.ProductSkuAlreadyExistsException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,6 +52,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CategorySlugAlreadyExistsException.class)
     public ProblemDetail handleSlugConflict(CategorySlugAlreadyExistsException ex) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setTitle("Conflict");
+        problem.setDetail(ex.getMessage());
+        return problem;
+    }
+
+    @ExceptionHandler(ProductSkuAlreadyExistsException.class)
+    public ProblemDetail handleSkuConflict(ProductSkuAlreadyExistsException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problem.setTitle("Conflict");
         problem.setDetail(ex.getMessage());

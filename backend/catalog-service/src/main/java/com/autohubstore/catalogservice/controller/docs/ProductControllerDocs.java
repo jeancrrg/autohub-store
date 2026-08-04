@@ -60,8 +60,31 @@ public interface ProductControllerDocs {
     );
 
     @Operation(
+            summary = "Detalhes do produto por slug",
+            description = "Retorna os dados de um produto pelo slug (URL amigável). Usado pela página "
+                    + "pública de produto do frontend. Mesmo cache/evento de `GET /{id}`."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Produto encontrado",
+                    content = @Content(schema = @Schema(implementation = ProductResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Produto não encontrado",
+                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
+            )
+    })
+    ResponseEntity<ProductResponse> getProductBySlug(
+            @Parameter(description = "Slug do produto", required = true) String slug
+    );
+
+    @Operation(
             summary = "Criar produto",
-            description = "Cria um novo produto. Publica o evento `catalog.product-created` no Kafka."
+            description = "Cria um novo produto. `sku` é opcional — se vazio, é gerado a partir da "
+                    + "categoria. `slug` é sempre gerado automaticamente a partir do nome. "
+                    + "Publica o evento `catalog.product-created` no Kafka."
     )
     @ApiResponses({
             @ApiResponse(
@@ -77,6 +100,11 @@ public interface ProductControllerDocs {
             @ApiResponse(
                     responseCode = "404",
                     description = "Categoria informada não existe",
+                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "SKU informado já cadastrado",
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             )
     })

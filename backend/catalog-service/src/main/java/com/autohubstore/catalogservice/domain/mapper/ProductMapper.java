@@ -18,6 +18,8 @@ public interface ProductMapper {
     @Mapping(target = "categoryName", source = "category.name")
     ProductResponse toResponse(Product product);
 
+    @Mapping(target = "sku", ignore = true)
+    @Mapping(target = "slug", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "images", ignore = true)

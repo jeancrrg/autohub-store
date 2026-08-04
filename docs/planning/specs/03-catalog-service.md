@@ -18,6 +18,7 @@ Gerenciar produtos e categorias com cache Redis para reduzir latência e publica
 
 - CRUD completo de produtos (admin) — dados descritivos: nome, descrição, preço, categoria, imagens
 - CRUD de categorias (hierarquia pai/filho)
+- Gerar e validar identificadores de produto: `sku` (código de negócio) e `slug` (URL amigável) — ver [Identificadores de Produto](#identificadores-de-produto-sku-slug-e-id)
 - Upload/remoção de imagens de produto (MinIO) — ver [Upload de Imagens](#upload-de-imagens-minio)
 - Listagem paginada de produtos com filtro por categoria
 - Cache de produtos no Redis (TTL 5 minutos)
@@ -94,7 +95,8 @@ dependencyManagement {
 ```
 # Público
 GET    /api/v1/catalog/products                       # Lista paginada
-GET    /api/v1/catalog/products/{id}                  # Detalhes (publica product-viewed)
+GET    /api/v1/catalog/products/{id}                  # Detalhes por id (UUID) — publica product-viewed
+GET    /api/v1/catalog/products/slug/{slug}           # Detalhes por slug (usado pela URL pública do frontend)
 GET    /api/v1/catalog/categories                     # Lista categorias
 GET    /api/v1/catalog/categories/{id}/products       # Produtos por categoria
 
@@ -108,6 +110,27 @@ POST   /api/v1/catalog/categories                     # Criar categoria
 POST   /api/v1/catalog/products/{id}/images           # Upload multipart (1..N arquivos)
 DELETE /api/v1/catalog/products/{id}/images/{imageId} # Remove imagem específica
 ```
+
+## Identificadores de Produto — SKU, Slug e ID
+
+Três identificadores com papéis distintos, nunca usados um pelo outro:
+
+| Campo | Tipo | Papel | Exposto ao cliente final? |
+|---|---|---|---|
+| `id` | UUID (PK) | Chave técnica — FK usada por Cart, Order, Inventory. Nunca muda. | Só em payloads de API, como campo opaco — nunca na URL |
+| `sku` | `VARCHAR(50)` legível (`FLT-KN-0042`) | Identidade de negócio — nota fiscal, suporte, estoque físico. Nunca muda após criado. | Sim — exibido na ficha técnica da PDP e no item do pedido |
+| `slug` | `VARCHAR(255)` (`filtro-de-ar-kn-0042`) | URL amigável/SEO — muda se o nome do produto mudar | Sim — usado na URL pública (`/produto/{slug}`) |
+
+**Geração:**
+- `sku`: informado pelo admin no cadastro (validação de unicidade); se vazio, gerado como
+  `{PREFIXO_CATEGORIA}-{SEQ}` (nunca puramente sequencial sozinho — evita expor volume de catálogo
+  a concorrentes).
+- `slug`: gerado automaticamente a partir do `name` (slugify: minúsculas, sem acento, `-` no lugar
+  de espaço); sufixo numérico incremental se colidir (`filtro-de-ar-kn`, `filtro-de-ar-kn-2`, ...).
+
+**Por que não usar o UUID como identificador visível:** não carrega semântica de negócio, não é
+memorável, e URLs com UUID cru são ruins pra SEO. SKU serve pra operação (suporte/logística), slug
+serve pra navegação/SEO — nunca a mesma string.
 
 ## Upload de Imagens (MinIO)
 
@@ -148,6 +171,8 @@ CREATE TABLE categories (
 
 CREATE TABLE products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sku VARCHAR(50) NOT NULL UNIQUE,
+    slug VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
@@ -156,6 +181,9 @@ CREATE TABLE products (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX idx_products_sku ON products(sku);
+CREATE INDEX idx_products_slug ON products(slug);
 
 -- estoque (stock_quantity) vive no Inventory Service, chaveado por product_id (UUID desta tabela)
 
@@ -178,6 +206,8 @@ CREATE INDEX idx_products_status ON products(status);
 ```json
 {
   "productId": "uuid",
+  "sku": "FLT-KN-0042",
+  "slug": "filtro-de-ar-kn-0042",
   "name": "Filtro de Ar K&N",
   "description": "Filtro de alto desempenho...",
   "price": 299.90,
@@ -205,6 +235,7 @@ CREATE INDEX idx_products_status ON products(status);
 | Chave | TTL | Conteúdo |
 |---|---|---|
 | `product:{id}` | 5 min | JSON do produto |
+| `product:slug:{slug}` | 5 min | JSON do produto (lookup por slug) |
 | `products:category:{id}:page:{n}` | 2 min | Lista paginada |
 
 Usar `@CacheEvict` ao atualizar ou deletar produto.
@@ -218,7 +249,8 @@ com.autohubstore.catalogservice/
 │   └── CategoryController.java         # CRUD categorias
 ├── service/
 │   ├── ProductService.java             # Lógica de negócio de produto + cache
-│   └── CategoryService.java            # Lógica de negócio de categoria
+│   ├── CategoryService.java            # Lógica de negócio de categoria
+│   └── SlugGenerator.java              # Slugify de name + resolução de colisão
 ├── repository/
 │   ├── ProductRepository.java          # JpaRepository<Product, UUID>
 │   └── CategoryRepository.java         # JpaRepository<Category, UUID>
@@ -227,9 +259,9 @@ com.autohubstore.catalogservice/
 │   ├── Category.java                   # @Entity
 │   ├── ProductImage.java               # @Entity
 │   ├── ProductStatus.java              # Enum: ACTIVE, INACTIVE, OUT_OF_STOCK
-│   ├── CreateProductRequest.java       # DTO entrada
+│   ├── CreateProductRequest.java       # DTO entrada (sku opcional — gerado se vazio)
 │   ├── UpdateProductRequest.java       # DTO entrada
-│   └── ProductResponse.java            # DTO saída (inclui stockQuantity lido do Inventory)
+│   └── ProductResponse.java            # DTO saída (sku, slug, stockQuantity lido do Inventory)
 ├── messaging/
 │   └── CatalogEventPublisher.java      # KafkaTemplate producer
 ├── exception/
