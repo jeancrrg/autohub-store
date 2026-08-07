@@ -22,7 +22,8 @@
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
     font-family: var(--font-sans);
     font-size: 14px;
     text-transform: none;
@@ -37,7 +38,8 @@
 }
 
 .field input:focus,
-.field textarea:focus {
+.field textarea:focus,
+.field select:focus {
     border-color: var(--border-focus);
     box-shadow: var(--focus-ring);
 }

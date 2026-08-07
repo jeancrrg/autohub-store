@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useCategories } from '@/hooks/useCategories'
 import { useCreateProduct } from '@/hooks/useCreateProduct'
 import { Button } from '../Button/Button'
 import { ProductImageUpload } from '../ProductImageUpload/ProductImageUpload'
@@ -14,6 +15,7 @@ export function ProductForm({ onClose }: { onClose: () => void }) {
     const [stockQuantity, setStockQuantity] = useState('')
     const [categoryId, setCategoryId] = useState('')
     const [createdProductId, setCreatedProductId] = useState<string | null>(null)
+    const { data: categories } = useCategories()
     const createProductMutation = useCreateProduct()
 
     function handleSubmit(e: React.FormEvent) {
@@ -58,8 +60,17 @@ export function ProductForm({ onClose }: { onClose: () => void }) {
                 <input type="number" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} required />
             </label>
             <label className={styles.field}>
-                Categoria (ID)
-                <input value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required />
+                Categoria
+                <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
+                    <option value="" disabled>
+                        Selecione uma categoria
+                    </option>
+                    {(categories ?? []).map((category) => (
+                        <option key={category.id} value={category.id}>
+                            {category.name}
+                        </option>
+                    ))}
+                </select>
             </label>
             {createProductMutation.isError && <p className={styles.error}>Falha ao criar produto.</p>}
             <Button type="submit" disabled={createProductMutation.isPending} fullWidth>
