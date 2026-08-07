@@ -40,7 +40,6 @@ public class ProductController implements ProductControllerDocs {
 
     private final ProductImageService productImageService;
 
-    @Override
     @GetMapping
     public ResponseEntity<Page<ProductResponse>> listProducts(
             @RequestParam(required = false) UUID categoryId, Pageable pageable) {
@@ -50,7 +49,6 @@ public class ProductController implements ProductControllerDocs {
         return ResponseEntity.ok(page);
     }
 
-    @Override
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProduct(@PathVariable UUID id) {
         ProductResponse response = productService.getProduct(id);
@@ -58,7 +56,6 @@ public class ProductController implements ProductControllerDocs {
         return ResponseEntity.ok(response);
     }
 
-    @Override
     @GetMapping("/slug/{slug}")
     public ResponseEntity<ProductResponse> getProductBySlug(@PathVariable String slug) {
         ProductResponse response = productService.getProductBySlug(slug);
@@ -66,20 +63,17 @@ public class ProductController implements ProductControllerDocs {
         return ResponseEntity.ok(response);
     }
 
-    @Override
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody CreateProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request));
     }
 
-    @Override
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> updateProduct(@PathVariable UUID id,
                                                           @Valid @RequestBody UpdateProductRequest request) {
         return ResponseEntity.ok(productService.updateProduct(id, request));
     }
-
-    @Override
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {
         productService.deleteProduct(id);

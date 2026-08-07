@@ -206,6 +206,7 @@ a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml
 - **Lombok:** usar para reduzir boilerplate (`@Getter`, `@Setter`, `@RequiredArgsConstructor`, `@Builder`, `@Slf4j`, etc.) em entities, DTOs e services — nunca escrever getters/setters/construtores manuais quando Lombok resolve.
 - **MapStruct:** toda conversão Entity ↔ DTO usa `@Mapper` de MapStruct — nunca mapeamento manual campo a campo em service ou controller.
 - **Validações em Request DTOs:** toda anotação Bean Validation (`@NotNull`, `@NotBlank`, `@Size`, `@Email`, etc.) sempre com `message` explícita — nunca deixar mensagem default do framework.
+- **`@Override` em controllers:** não usar em métodos de controller (nem quando implementa interface de docs como `*ControllerDocs`) — só quando realmente necessário (ex.: sobrescrita de método de classe abstrata onde o compilador não infere o contrato sozinho).
 
 ---
 

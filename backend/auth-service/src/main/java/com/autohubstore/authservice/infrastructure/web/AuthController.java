@@ -36,14 +36,12 @@ public class AuthController implements AuthControllerDocs {
     private final ResetPasswordUseCase resetPasswordUseCase;
     private final AuthCookieFactory cookieFactory;
 
-    @Override
     @PostMapping("/login")
     public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse tokens = loginUseCase.execute(request);
         return withSessionCookies(tokens);
     }
 
-    @Override
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @CookieValue(value = "access_token", required = false) String accessToken,
@@ -55,7 +53,6 @@ public class AuthController implements AuthControllerDocs {
                 .build();
     }
 
-    @Override
     @PostMapping("/refresh")
     public ResponseEntity<Void> refresh(
             @CookieValue(value = "refresh_token", required = true) String refreshToken) {
@@ -63,14 +60,12 @@ public class AuthController implements AuthControllerDocs {
         return withSessionCookies(tokens);
     }
 
-    @Override
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         forgotPasswordUseCase.execute(request);
         return ResponseEntity.accepted().build();
     }
 
-    @Override
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         resetPasswordUseCase.execute(request);

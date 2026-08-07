@@ -26,13 +26,11 @@ public class AddressController implements AddressControllerDocs {
 
     private final AddressService addressService;
 
-    @Override
     @GetMapping
     public ResponseEntity<List<AddressResponse>> listAddresses(@PathVariable UUID userId) {
         return ResponseEntity.ok(addressService.listAddresses(userId));
     }
 
-    @Override
     @PostMapping
     public ResponseEntity<AddressResponse> createAddress(@PathVariable UUID userId,
                                                          @Valid @RequestBody AddressRequest request) {
@@ -40,7 +38,6 @@ public class AddressController implements AddressControllerDocs {
                 .body(addressService.createAddress(userId, request));
     }
 
-    @Override
     @DeleteMapping("/{addressId}")
     public ResponseEntity<Void> deleteAddress(@PathVariable UUID userId,
                                               @PathVariable UUID addressId) {

@@ -17,7 +17,6 @@ public class InternalUserController implements InternalUserControllerDocs {
 
     private final UserService userService;
 
-    @Override
     @GetMapping("/credentials")
     public ResponseEntity<UserResponse> getCredentials(@RequestParam String email) {
         return ResponseEntity.ok(userService.getUserByEmail(email));

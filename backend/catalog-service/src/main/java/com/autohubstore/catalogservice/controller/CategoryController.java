@@ -33,19 +33,16 @@ public class CategoryController implements CategoryControllerDocs {
     private final CategoryService categoryService;
     private final ProductService productService;
 
-    @Override
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> listCategories() {
         return ResponseEntity.ok(categoryService.listCategories());
     }
 
-    @Override
     @PostMapping
     public ResponseEntity<CategoryResponse> createCategory(@Valid @RequestBody CreateCategoryRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(request));
     }
 
-    @Override
     @GetMapping("/{id}/products")
     public ResponseEntity<Page<ProductResponse>> listProductsByCategory(@PathVariable UUID id, Pageable pageable) {
         return ResponseEntity.ok(productService.listProductsByCategory(id, pageable));

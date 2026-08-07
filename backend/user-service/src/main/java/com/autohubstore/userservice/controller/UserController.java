@@ -29,45 +29,38 @@ public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 
-    @Override
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(request));
     }
 
-    @Override
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getUser(id));
     }
 
-    @Override
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id,
                                                    @Valid @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(userService.updateUser(id, request));
     }
 
-    @Override
     @GetMapping("/email/{email}")
     public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
         return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 
-    @Override
     @GetMapping("/exists/email/{email}")
     public ResponseEntity<ExistsResponse> existsByEmail(@PathVariable String email) {
         return ResponseEntity.ok(new ExistsResponse(userService.existsByEmail(email)));
     }
 
-    @Override
     @PostMapping("/validate-credentials")
     public ResponseEntity<UserResponse> validateCredentials(
             @Valid @RequestBody ValidateCredentialsRequest request) {
         return ResponseEntity.ok(userService.validateCredentials(request.email(), request.password()));
     }
 
-    @Override
     @PutMapping("/{id}/password")
     public ResponseEntity<Void> updatePassword(@PathVariable UUID id,
                                                @Valid @RequestBody UpdatePasswordRequest request) {
