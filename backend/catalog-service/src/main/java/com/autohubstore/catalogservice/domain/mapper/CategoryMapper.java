@@ -10,10 +10,11 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
 
-    @Mapping(target = "parentId", source = "parent.id")
+    @Mapping(target = "productCount", constant = "0L")
     CategoryResponse toResponse(Category category);
 
-    @Mapping(target = "parent", ignore = true)
+    CategoryResponse toResponse(Category category, Long productCount);
+
     Category toEntity(CreateCategoryRequest request);
 
 }

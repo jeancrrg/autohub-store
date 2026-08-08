@@ -193,7 +193,7 @@ public class ProductService {
                 product.getCategory().getId(),
                 product.getCategory().getName(),
                 product.getStatus(),
-                product.getStockQuantity()
+                null
         );
     }
 

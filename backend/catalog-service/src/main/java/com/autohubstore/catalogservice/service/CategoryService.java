@@ -6,6 +6,7 @@ import com.autohubstore.catalogservice.domain.entity.Category;
 import com.autohubstore.catalogservice.domain.mapper.CategoryMapper;
 import com.autohubstore.catalogservice.exception.CategoryNotFoundException;
 import com.autohubstore.catalogservice.exception.CategorySlugAlreadyExistsException;
+import com.autohubstore.catalogservice.domain.projection.CategoryProductCountProjection;
 import com.autohubstore.catalogservice.repository.CategoryRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,17 +33,16 @@ public class CategoryService {
         }
 
         Category category = categoryMapper.toEntity(request);
-        if (request.parentId() != null) {
-            category.setParent(findEntityOrThrow(request.parentId()));
-        }
-
         return categoryMapper.toResponse(categoryRepository.save(category));
     }
 
     @Transactional(readOnly = true)
     public List<CategoryResponse> listCategories() {
-        return categoryRepository.findAllByOrderByNameAsc().stream()
-                .map(categoryMapper::toResponse)
+        Map<UUID, Long> productCounts = categoryRepository.findProductCounts().stream()
+                .collect(Collectors.toMap(CategoryProductCountProjection::getCategoryId, CategoryProductCountProjection::getProductCount));
+
+        return categoryRepository.findAllByOrderByCreatedAt().stream()
+                .map(category -> categoryMapper.toResponse(category, productCounts.getOrDefault(category.getId(), 0L)))
                 .collect(Collectors.toList());
     }
 

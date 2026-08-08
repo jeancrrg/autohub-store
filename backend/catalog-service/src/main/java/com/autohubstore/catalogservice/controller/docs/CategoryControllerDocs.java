@@ -22,14 +22,15 @@ import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Categories", description = """
-        Categorias de produtos (hierarquia pai/filho). Leitura pública, escrita requer
+        Categorias de produtos. Leitura pública, escrita requer
         Bearer JWT com role ADMIN (validado pelo API Gateway).
         """)
 public interface CategoryControllerDocs {
 
     @Operation(
             summary = "Listar categorias",
-            description = "Retorna todas as categorias ordenadas por nome."
+            description = "Retorna todas as categorias, cada uma com `productCount` (total de produtos da "
+                    + "categoria, independente de status ou estoque)."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de categorias retornada com sucesso")
@@ -38,7 +39,7 @@ public interface CategoryControllerDocs {
 
     @Operation(
             summary = "Criar categoria",
-            description = "Cria uma nova categoria. Aceita `parentId` opcional para categorias filhas."
+            description = "Cria uma nova categoria."
     )
     @ApiResponses({
             @ApiResponse(
@@ -49,11 +50,6 @@ public interface CategoryControllerDocs {
             @ApiResponse(
                     responseCode = "400",
                     description = "Dados inválidos",
-                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Categoria pai informada não existe",
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             ),
             @ApiResponse(

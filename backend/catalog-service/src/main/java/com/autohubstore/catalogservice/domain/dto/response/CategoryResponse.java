@@ -7,6 +7,6 @@ public record CategoryResponse(
         UUID id,
         String name,
         String slug,
-        UUID parentId,
+        Long productCount,
         Instant createdAt
 ) {}
