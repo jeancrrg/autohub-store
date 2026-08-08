@@ -25,8 +25,3 @@ export type Product = {
     category: string
     images: string[]
 }
-
-export type Brand = {
-    id: string
-    name: string
-}

@@ -83,3 +83,27 @@
 .brandCard:hover .brandName {
     color: var(--color-dark);
 }
+
+.expandRow {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.expandBtn {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    background: none;
+    border: none;
+    padding: 8px 0;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.expandBtn:hover {
+    opacity: 0.75;
+}

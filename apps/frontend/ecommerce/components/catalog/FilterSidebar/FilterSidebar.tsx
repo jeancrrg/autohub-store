@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { useCategories } from '@/hooks/useCategories'
-import { brands } from '@/lib/data/brands'
+import { useBrands } from '@/hooks/useBrands'
 import styles from './FilterSidebar.module.css'
 
 type Filters = {
@@ -17,8 +18,16 @@ type FilterSidebarProps = {
     onChange: (filters: Filters) => void
 }
 
+const VISIBLE_BRANDS_LIMIT = 10
+
 export function FilterSidebar({ filters, onChange }: FilterSidebarProps) {
     const { data: categories } = useCategories()
+    const { data: allBrands } = useBrands()
+    const [brandsExpanded, setBrandsExpanded] = useState(false)
+
+    const brands = allBrands ?? []
+    const visibleBrands = brandsExpanded ? brands : brands.slice(0, VISIBLE_BRANDS_LIMIT)
+    const hiddenBrandsCount = brands.length - VISIBLE_BRANDS_LIMIT
 
     function toggleBrand(brandId: string) {
         const next = filters.brands.includes(brandId)
@@ -75,18 +84,27 @@ export function FilterSidebar({ filters, onChange }: FilterSidebarProps) {
             <div className={styles.group}>
                 <h3 className={styles.groupTitle}>MARCAS</h3>
                 <div className={styles.checkList}>
-                    {brands.map((brand) => (
+                    {visibleBrands.map((brand) => (
                         <label key={brand.id} className={styles.checkLabel}>
                             <input
                                 type="checkbox"
-                                checked={filters.brands.includes(brand.id)}
-                                onChange={() => toggleBrand(brand.id)}
+                                checked={filters.brands.includes(brand.slug)}
+                                onChange={() => toggleBrand(brand.slug)}
                                 style={{ accentColor: 'var(--color-primary)' }}
                             />
                             <span className={styles.checkText}>{brand.name}</span>
                         </label>
                     ))}
                 </div>
+                {hiddenBrandsCount > 0 && (
+                    <button
+                        type="button"
+                        onClick={() => setBrandsExpanded((expanded) => !expanded)}
+                        className={styles.expandBtn}
+                    >
+                        {brandsExpanded ? 'Ver menos' : `Ver mais (+${hiddenBrandsCount})`}
+                    </button>
+                )}
             </div>
 
             <div>
