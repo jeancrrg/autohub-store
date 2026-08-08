@@ -1,7 +1,17 @@
+'use client'
+
 import Link from 'next/link'
+import { useCategories } from '@/hooks/useCategories'
+import { FEATURED_CATEGORY_SLUGS } from '@/lib/data/featuredCategorySlugs'
 import styles from './Footer.module.css'
 
 export function Footer() {
+    const { data: categories } = useCategories()
+
+    const featured = FEATURED_CATEGORY_SLUGS.map((slug) =>
+        (categories ?? []).find((cat) => cat.slug === slug)
+    ).filter((cat): cat is NonNullable<typeof cat> => cat !== undefined)
+
     return (
         <footer className={styles.footer}>
             <div className={styles.footerGrid}>
@@ -13,16 +23,16 @@ export function Footer() {
                     </p>
                 </div>
 
-                <div>
-                    <p className={styles.colTitle}>CATEGORIAS</p>
-                    {['Rodas', 'Pneus', 'Suspensão', 'Freios', 'Performance', 'Motor'].map(
-                        (cat) => (
-                            <Link key={cat} href="/catalog" className={styles.footerLink}>
-                                {cat}
+                {featured.length > 0 && (
+                    <div>
+                        <p className={styles.colTitle}>CATEGORIAS</p>
+                        {featured.map((cat) => (
+                            <Link key={cat.id} href="/catalog" className={styles.footerLink}>
+                                {cat.name}
                             </Link>
-                        )
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
 
                 <div>
                     <p className={styles.colTitle}>INFORMAÇÕES</p>

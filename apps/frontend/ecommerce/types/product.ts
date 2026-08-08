@@ -26,13 +26,6 @@ export type Product = {
     images: string[]
 }
 
-export type Category = {
-    id: string
-    name: string
-    icon: string
-    count: number
-}
-
 export type Brand = {
     id: string
     name: string

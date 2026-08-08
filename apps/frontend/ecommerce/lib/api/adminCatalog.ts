@@ -4,7 +4,6 @@ import type { AdminCategory } from '@/types/category'
 export type CreateCategoryInput = {
     name: string
     slug: string
-    parentId: string | null
 }
 
 export async function createCategory(input: CreateCategoryInput): Promise<AdminCategory> {

@@ -1,6 +1,6 @@
 'use client'
 
-import { categories } from '@/lib/data/categories'
+import { useCategories } from '@/hooks/useCategories'
 import { brands } from '@/lib/data/brands'
 import styles from './FilterSidebar.module.css'
 
@@ -18,6 +18,8 @@ type FilterSidebarProps = {
 }
 
 export function FilterSidebar({ filters, onChange }: FilterSidebarProps) {
+    const { data: categories } = useCategories()
+
     function toggleBrand(brandId: string) {
         const next = filters.brands.includes(brandId)
             ? filters.brands.filter((b) => b !== brandId)
@@ -36,14 +38,14 @@ export function FilterSidebar({ filters, onChange }: FilterSidebarProps) {
                     >
                         Todos os produtos
                     </button>
-                    {categories.map((cat) => (
+                    {(categories ?? []).map((cat) => (
                         <button
                             key={cat.id}
                             onClick={() => onChange({ ...filters, category: cat.name })}
                             className={`${styles.filterBtn} ${filters.category === cat.name ? styles.filterBtnActive : styles.filterBtnInactive}`}
                         >
                             {cat.name}
-                            <span className={styles.countLabel}>({cat.count})</span>
+                            <span className={styles.countLabel}>({cat.productCount})</span>
                         </button>
                     ))}
                 </div>

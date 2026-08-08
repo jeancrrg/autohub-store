@@ -16,10 +16,3 @@
     color: var(--text-secondary);
 }
 
-.parent {
-    color: var(--text-secondary);
-}
-
-.parentEmpty {
-    color: var(--text-muted);
-}

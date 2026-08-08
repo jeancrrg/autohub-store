@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useCartStore } from '@/store/cartStore'
 import { useSession } from '@/hooks/useSession'
+import { useCategories } from '@/hooks/useCategories'
 import { Logo } from '../Logo/Logo'
 import styles from './Header.module.css'
+
+const MAX_NAV_CATEGORIES = 11
 
 export function Header() {
     const [searchValue, setSearchValue] = useState('')
@@ -14,6 +17,8 @@ export function Header() {
     const count = useCartStore((s) => s.count)
     const { data: user } = useSession()
     const isLoggedIn = Boolean(user)
+    const { data: allCategories } = useCategories()
+    const categories = (allCategories ?? []).slice(0, MAX_NAV_CATEGORIES)
 
     function handleSearch(e: React.FormEvent) {
         e.preventDefault()
@@ -143,25 +148,20 @@ export function Header() {
                             </svg>
                             <span className={styles.categoriesLabel}>Categorias</span>
                         </div>
-                        {[
-                            { label: 'Rodas', href: '/catalog' },
-                            { label: 'Pneus', href: '/catalog' },
-                            { label: 'Suspensão', href: '/catalog' },
-                            { label: 'Freios', href: '/catalog' },
-                            { label: 'Performance', href: '/catalog' },
-                            { label: 'Motor', href: '/catalog' },
-                            { label: 'Escapamento', href: '/catalog' },
-                            { label: 'Iluminação', href: '/catalog' },
-                            { label: 'Acessórios', href: '/catalog' },
-                            { label: 'Limpeza', href: '/catalog' },
-                        ].map((item) => (
-                            <Link key={item.label} href={item.href} className={styles.navLink}>
-                                {item.label}
-                            </Link>
-                        ))}
-                        <Link href="/catalog" className={styles.navLinkOffers}>
-                            OFERTAS
-                        </Link>
+                        {categories
+                            .filter((cat) => cat.slug !== 'ofertas')
+                            .map((cat) => (
+                                <Link key={cat.id} href="/catalog" className={styles.navLink}>
+                                    {cat.name}
+                                </Link>
+                            ))}
+                        {categories
+                            .filter((cat) => cat.slug === 'ofertas')
+                            .map((cat) => (
+                                <Link key={cat.id} href="/catalog" className={styles.navLinkOffers}>
+                                    {cat.name.toUpperCase()}
+                                </Link>
+                            ))}
                     </div>
                 </nav>
             </header>

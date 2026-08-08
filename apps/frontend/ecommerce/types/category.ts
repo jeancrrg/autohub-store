@@ -2,6 +2,6 @@ export type AdminCategory = {
     id: string
     name: string
     slug: string
-    parentId: string | null
+    productCount: number
     createdAt: string
 }

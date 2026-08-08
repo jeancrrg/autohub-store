@@ -17,7 +17,6 @@ export function CategoriesTable() {
     }
 
     const rows = categories ?? []
-    const nameById = new Map(rows.map((category) => [category.id, category.name]))
 
     const columns: Array<DataTableColumn<AdminCategory>> = [
         {
@@ -31,18 +30,7 @@ export function CategoriesTable() {
             mono: true,
             render: (row) => <span className={styles.slug}>{row.slug}</span>,
         },
-        {
-            key: 'parentId',
-            label: 'Categoria pai',
-            render: (row) => {
-                const parentName = row.parentId ? nameById.get(row.parentId) : null
-                return (
-                    <span className={parentName ? styles.parent : styles.parentEmpty}>
-                        {parentName ?? 'Raiz'}
-                    </span>
-                )
-            },
-        },
+        { key: 'productCount', label: 'Produtos', align: 'right', mono: true, width: 90 },
         { key: 'createdAt', label: 'Criado em', align: 'right', mono: true, width: 110 },
     ]
 
