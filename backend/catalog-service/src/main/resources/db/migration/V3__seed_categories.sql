@@ -8,5 +8,4 @@ INSERT INTO categories (id, name, slug, created_at) VALUES
     (gen_random_uuid(), 'Performance',  'performance',  NOW()),
     (gen_random_uuid(), 'Pneus',        'pneus',        NOW()),
     (gen_random_uuid(), 'Rodas',        'rodas',        NOW()),
-    (gen_random_uuid(), 'Suspensão',    'suspensao',    NOW()),
-    (gen_random_uuid(), 'Ofertas',      'ofertas',      NOW());
+    (gen_random_uuid(), 'Suspensão',    'suspensao',    NOW())
