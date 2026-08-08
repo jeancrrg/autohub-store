@@ -200,6 +200,8 @@ a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml
 - **Entities JPA:**
   - Todo campo mapeia coluna explícita via `@Column(name = "...")` — nunca depender do nome inferido pelo Hibernate.
   - Sempre implementar `@PrePersist` e `@PreUpdate` para timestamps de auditoria (`createdAt`, `updatedAt`) — nunca delegar isso à aplicação/service.
+  - **Nunca usar `@ManyToOne`/`@OneToMany`/`@OneToOne`/`@ManyToMany`** — relacionamento entre entidades sempre mapeado como o `id` (UUID) da outra entidade em um `@Column` simples (ex.: `categoryId`, `brandId`), nunca a entidade inteira. Resolver nome/dado relacionado explicitamente no `Service` (chamando o `Service` do domínio dono, nunca o `Repository` de outro domínio direto) e montar isso no DTO de resposta — nunca via join automático do Hibernate.
+  - Coleção mantida por outra entidade (ex.: imagens de um produto) nunca vira campo dentro da entidade dona (ex.: `Product` não tem `List<ProductImage>`) — a entidade filha referencia o pai só pelo id (`productId`), e quem quer a lista busca via `Repository`/`Service` da entidade filha.
 - **Services:**
   - Injeção de dependência sempre via `@RequiredArgsConstructor` (Lombok) com campos `private final` — nunca `@Autowired` em campo ou construtor manual.
   - Um `Service` só pode chamar outro `Service` (ou `Repository` do próprio domínio) — nunca acessar `Repository` de outro serviço/domínio diretamente, e nunca acessar `Controller`.

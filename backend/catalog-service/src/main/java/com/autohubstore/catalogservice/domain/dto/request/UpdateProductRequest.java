@@ -24,5 +24,7 @@ public record UpdateProductRequest(
 
         UUID categoryId,
 
+        UUID brandId,
+
         ProductStatus status
 ) {}

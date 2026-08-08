@@ -3,7 +3,9 @@ package com.autohubstore.catalogservice.service;
 import com.autohubstore.catalogservice.config.RedisConfig;
 import com.autohubstore.catalogservice.domain.dto.request.CreateProductRequest;
 import com.autohubstore.catalogservice.domain.dto.request.UpdateProductRequest;
+import com.autohubstore.catalogservice.domain.dto.response.ProductImageResponse;
 import com.autohubstore.catalogservice.domain.dto.response.ProductResponse;
+import com.autohubstore.catalogservice.domain.entity.Brand;
 import com.autohubstore.catalogservice.domain.entity.Category;
 import com.autohubstore.catalogservice.domain.entity.Product;
 import com.autohubstore.catalogservice.domain.mapper.ProductMapper;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -46,28 +49,32 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryService categoryService;
+    private final BrandService brandService;
+    private final ProductImageService productImageService;
     private final ProductMapper productMapper;
     private final CatalogEventPublisher eventPublisher;
 
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
         Category category = categoryService.findEntityOrThrow(request.categoryId());
+        Brand brand = brandService.findEntityOrThrow(request.brandId());
 
         Product product = productMapper.toEntity(request);
-        product.setCategory(category);
+        product.setCategoryId(category.getId());
+        product.setBrandId(brand.getId());
         product.setSku(resolveSku(request.sku(), category));
         product.setSlug(generateUniqueSlug(request.name()));
         product = productRepository.save(product);
 
         eventPublisher.publishProductCreated(toChangedEvent(product));
 
-        return productMapper.toResponse(product);
+        return toResponse(product);
     }
 
     @Cacheable(cacheNames = RedisConfig.CACHE_PRODUCTS, key = "#id")
     @Transactional(readOnly = true)
     public ProductResponse getProduct(UUID id) {
-        return productMapper.toResponse(findEntityOrThrow(id));
+        return toResponse(findEntityOrThrow(id));
     }
 
     @Cacheable(cacheNames = RedisConfig.CACHE_PRODUCTS, key = "'slug:' + #slug")
@@ -75,7 +82,7 @@ public class ProductService {
     public ProductResponse getProductBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new ProductNotFoundException(slug));
-        return productMapper.toResponse(product);
+        return toResponse(product);
     }
 
     public void publishProductViewed(ProductResponse product) {
@@ -85,7 +92,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductResponse> listProducts(Pageable pageable) {
-        return productRepository.findAll(pageable).map(productMapper::toResponse);
+        return productRepository.findAll(pageable).map(this::toResponse);
     }
 
     @Cacheable(cacheNames = RedisConfig.CACHE_PRODUCTS_BY_CATEGORY,
@@ -93,7 +100,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Page<ProductResponse> listProductsByCategory(UUID categoryId, Pageable pageable) {
         categoryService.findEntityOrThrow(categoryId);
-        return productRepository.findByCategoryId(categoryId, pageable).map(productMapper::toResponse);
+        return productRepository.findByCategoryId(categoryId, pageable).map(this::toResponse);
     }
 
     @Caching(evict = {
@@ -111,13 +118,17 @@ public class ProductService {
         }
 
         if (request.categoryId() != null) {
-            product.setCategory(categoryService.findEntityOrThrow(request.categoryId()));
+            product.setCategoryId(categoryService.findEntityOrThrow(request.categoryId()).getId());
+        }
+
+        if (request.brandId() != null) {
+            product.setBrandId(brandService.findEntityOrThrow(request.brandId()).getId());
         }
 
         product = productRepository.save(product);
         eventPublisher.publishProductUpdated(toChangedEvent(product));
 
-        return productMapper.toResponse(product);
+        return toResponse(product);
     }
 
     @Caching(evict = {
@@ -133,6 +144,12 @@ public class ProductService {
     private Product findEntityOrThrow(UUID id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id.toString()));
+    }
+
+    private ProductResponse toResponse(Product product) {
+        String categoryName = categoryService.findEntityOrThrow(product.getCategoryId()).getName();
+        List<ProductImageResponse> images = productImageService.listImages(product.getId());
+        return productMapper.toResponse(product, categoryName, images);
     }
 
     private String resolveSku(String requestedSku, Category category) {
@@ -183,6 +200,7 @@ public class ProductService {
     }
 
     private ProductChangedEvent toChangedEvent(Product product) {
+        Category category = categoryService.findEntityOrThrow(product.getCategoryId());
         return new ProductChangedEvent(
                 product.getId(),
                 product.getSku(),
@@ -190,8 +208,8 @@ public class ProductService {
                 product.getName(),
                 product.getDescription(),
                 product.getPrice(),
-                product.getCategory().getId(),
-                product.getCategory().getName(),
+                category.getId(),
+                category.getName(),
                 product.getStatus(),
                 null
         );

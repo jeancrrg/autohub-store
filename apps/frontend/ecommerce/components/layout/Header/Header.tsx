@@ -9,7 +9,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { Logo } from '../Logo/Logo'
 import styles from './Header.module.css'
 
-const MAX_NAV_CATEGORIES = 11
+const MAX_NAV_CATEGORIES = 10
 
 export function Header() {
     const [searchValue, setSearchValue] = useState('')
@@ -148,20 +148,14 @@ export function Header() {
                             </svg>
                             <span className={styles.categoriesLabel}>Categorias</span>
                         </div>
-                        {categories
-                            .filter((cat) => cat.slug !== 'ofertas')
-                            .map((cat) => (
-                                <Link key={cat.id} href="/catalog" className={styles.navLink}>
-                                    {cat.name}
-                                </Link>
-                            ))}
-                        {categories
-                            .filter((cat) => cat.slug === 'ofertas')
-                            .map((cat) => (
-                                <Link key={cat.id} href="/catalog" className={styles.navLinkOffers}>
-                                    {cat.name.toUpperCase()}
-                                </Link>
-                            ))}
+                        {categories.map((cat) => (
+                            <Link key={cat.id} href="/catalog" className={styles.navLink}>
+                                {cat.name}
+                            </Link>
+                        ))}
+                        <Link href="/catalog" className={styles.navLinkOffers}>
+                            OFERTAS
+                        </Link>
                     </div>
                 </nav>
             </header>

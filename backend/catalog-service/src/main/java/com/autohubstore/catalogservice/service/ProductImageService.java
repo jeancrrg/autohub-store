@@ -1,10 +1,11 @@
 package com.autohubstore.catalogservice.service;
 
-import com.autohubstore.catalogservice.domain.entity.Product;
 import com.autohubstore.catalogservice.domain.entity.ProductImage;
 import com.autohubstore.catalogservice.domain.dto.response.ProductImageResponse;
+import com.autohubstore.catalogservice.domain.mapper.ProductImageMapper;
 import com.autohubstore.catalogservice.exception.ProductNotFoundException;
 import com.autohubstore.catalogservice.exception.UnsupportedImageTypeException;
+import com.autohubstore.catalogservice.repository.ProductImageRepository;
 import com.autohubstore.catalogservice.repository.ProductRepository;
 
 import io.minio.MinioClient;
@@ -17,19 +18,24 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class ProductImageService {
 
     private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
+    private final ProductImageMapper productImageMapper;
     private final MinioClient minioClient;
 
-    public ProductImageService(ProductRepository productRepository, MinioClient minioClient) {
+    public ProductImageService(ProductRepository productRepository, ProductImageRepository productImageRepository,
+                                ProductImageMapper productImageMapper, MinioClient minioClient) {
         this.productRepository = productRepository;
+        this.productImageRepository = productImageRepository;
+        this.productImageMapper = productImageMapper;
         this.minioClient = minioClient;
     }
 
@@ -41,44 +47,50 @@ public class ProductImageService {
     @Value("${spring.minio.bucket}")
     private String bucket;
 
+    @Transactional(readOnly = true)
+    public List<ProductImageResponse> listImages(UUID productId) {
+        return productImageMapper.toResponseList(productImageRepository.findByProductId(productId));
+    }
+
     @Transactional
     public List<ProductImageResponse> uploadImages(UUID productId, List<MultipartFile> files) {
-        Product product = findProductOrThrow(productId);
-        boolean hasExistingPrimary = product.getImages().stream().anyMatch(ProductImage::isPrimary);
+        verifyProductExists(productId);
+        List<ProductImage> existingImages = productImageRepository.findByProductId(productId);
+        boolean hasExistingPrimary = existingImages.stream().anyMatch(ProductImage::isPrimary);
+        boolean noImagesYet = existingImages.isEmpty();
 
-        List<ProductImageResponse> uploaded = files.stream()
-                .map(file -> uploadOne(product, file, hasExistingPrimary))
-                .collect(Collectors.toList());
-
-        productRepository.save(product);
+        List<ProductImageResponse> uploaded = new ArrayList<>();
+        boolean firstInBatch = noImagesYet;
+        for (MultipartFile file : files) {
+            ProductImage image = uploadOne(productId, file, !hasExistingPrimary && firstInBatch);
+            firstInBatch = false;
+            uploaded.add(productImageMapper.toResponse(image));
+        }
         return uploaded;
     }
 
     @Transactional
     public void deleteImage(UUID productId, UUID imageId) {
-        Product product = findProductOrThrow(productId);
-        ProductImage image = product.getImages().stream()
-                .filter(img -> img.getId().equals(imageId))
-                .findFirst()
+        verifyProductExists(productId);
+        ProductImage image = productImageRepository.findById(imageId)
+                .filter(img -> img.getProductId().equals(productId))
                 .orElseThrow(() -> new ProductNotFoundException(imageId.toString()));
 
         removeFromMinio(objectKey(image.getUrl()));
-        product.getImages().remove(image);
-        productRepository.save(product);
+        productImageRepository.delete(image);
     }
 
-    private ProductImageResponse uploadOne(Product product, MultipartFile file, boolean hasExistingPrimary) {
+    private ProductImage uploadOne(UUID productId, MultipartFile file, boolean primary) {
         validate(file);
-        String objectKey = product.getId() + "/" + UUID.randomUUID() + extensionOf(file);
+        String objectKey = productId + "/" + UUID.randomUUID() + extensionOf(file);
         putInMinio(objectKey, file);
 
         ProductImage image = ProductImage.builder()
-                .product(product)
+                .productId(productId)
                 .url(publicUrl(objectKey))
-                .primary(!hasExistingPrimary && product.getImages().isEmpty())
+                .primary(primary)
                 .build();
-        product.getImages().add(image);
-        return new ProductImageResponse(image.getId(), image.getUrl(), image.isPrimary());
+        return productImageRepository.save(image);
     }
 
     private void validate(MultipartFile file) {
@@ -114,9 +126,10 @@ public class ProductImageService {
         }
     }
 
-    private Product findProductOrThrow(UUID productId) {
-        return productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException(productId.toString()));
+    private void verifyProductExists(UUID productId) {
+        if (!productRepository.existsById(productId)) {
+            throw new ProductNotFoundException(productId.toString());
+        }
     }
 
     private String extensionOf(MultipartFile file) {

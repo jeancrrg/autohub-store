@@ -1,5 +1,6 @@
 package com.autohubstore.catalogservice.exception.handler;
 
+import com.autohubstore.catalogservice.exception.BrandNotFoundException;
 import com.autohubstore.catalogservice.exception.CategoryNotFoundException;
 import com.autohubstore.catalogservice.exception.CategorySlugAlreadyExistsException;
 import com.autohubstore.catalogservice.exception.ProductNotFoundException;
@@ -44,6 +45,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CategoryNotFoundException.class)
     public ProblemDetail handleCategoryNotFound(CategoryNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problem.setTitle("Not Found");
+        problem.setDetail(ex.getMessage());
+        return problem;
+    }
+
+    @ExceptionHandler(BrandNotFoundException.class)
+    public ProblemDetail handleBrandNotFound(BrandNotFoundException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
         problem.setTitle("Not Found");
         problem.setDetail(ex.getMessage());

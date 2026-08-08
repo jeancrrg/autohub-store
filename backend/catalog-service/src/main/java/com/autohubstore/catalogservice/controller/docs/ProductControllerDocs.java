@@ -99,7 +99,7 @@ public interface ProductControllerDocs {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Categoria informada não existe",
+                    description = "Categoria ou marca informada não existe",
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             ),
             @ApiResponse(
@@ -134,7 +134,7 @@ public interface ProductControllerDocs {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Produto ou categoria não encontrados",
+                    description = "Produto, categoria ou marca não encontrados",
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             )
     })

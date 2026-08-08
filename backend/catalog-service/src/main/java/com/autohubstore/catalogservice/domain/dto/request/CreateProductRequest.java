@@ -30,5 +30,8 @@ public record CreateProductRequest(
         Integer stockQuantity,
 
         @NotNull(message = "Categoria é obrigatória")
-        UUID categoryId
+        UUID categoryId,
+
+        @NotNull(message = "Marca é obrigatória")
+        UUID brandId
 ) {}
