@@ -37,8 +37,13 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public List<CategoryResponse> findCategories() {
-        Map<UUID, Long> productCounts = categoryRepository.findProductCounts().stream()
-                .collect(Collectors.toMap(CategoryProductCountProjection::getCategoryId, CategoryProductCountProjection::getProductCount));
+        List<CategoryProductCountProjection> projections = categoryRepository.findProductCounts();
+
+        Map<UUID, Long> productCounts = projections.stream()
+                .collect(Collectors.toMap(
+                        CategoryProductCountProjection::getCategoryId,
+                        CategoryProductCountProjection::getProductCount
+                ));
 
         return categoryRepository.findAllByOrderByCreatedAt().stream()
                 .map(category -> categoryMapper.toResponse(category, productCounts.getOrDefault(category.getId(), 0L)))

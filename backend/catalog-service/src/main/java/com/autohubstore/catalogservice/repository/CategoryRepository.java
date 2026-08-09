@@ -19,8 +19,7 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
         SELECT c.id AS categoryId,
                COUNT(p) AS productCount
           FROM Category c LEFT JOIN Product p ON p.categoryId = c.id
-         GROUP BY c.id
-    """)
+         GROUP BY c.id""")
     List<CategoryProductCountProjection> findProductCounts();
 
 }
