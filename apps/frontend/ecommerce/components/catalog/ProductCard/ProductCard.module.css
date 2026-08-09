@@ -42,6 +42,13 @@
     letter-spacing: 0.05em;
 }
 
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 12px;
+}
+
 .imagePlaceholder {
     width: 112px;
     height: 112px;

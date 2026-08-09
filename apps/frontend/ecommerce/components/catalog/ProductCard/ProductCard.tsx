@@ -10,7 +10,11 @@ export function ProductCard({ product }: { product: Product }) {
                     <span className={`${styles.tagBadge} ${product.tagColor}`}>{product.tag}</span>
                 )}
                 {!product.inStock && <span className={styles.soldOutBadge}>ESGOTADO</span>}
-                <div className={styles.imagePlaceholder}>{product.brand}</div>
+                {product.images[0] ? (
+                    <img src={product.images[0]} alt={product.name} className={styles.image} />
+                ) : (
+                    <div className={styles.imagePlaceholder}>{product.brand}</div>
+                )}
             </div>
 
             <div className={styles.body}>

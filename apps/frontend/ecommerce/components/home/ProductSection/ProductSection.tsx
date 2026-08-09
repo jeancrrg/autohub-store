@@ -35,14 +35,20 @@ function ProductCard({ product, rank }: { product: Product; rank?: number }) {
             )}
 
             <div className={styles.imageArea}>
-                <div className={styles.imagePattern} />
-                <div className={styles.imagePlaceholder}>
-                    <div className={styles.imagePlaceholderText}>
-                        {product.brand}
-                        <br />
-                        foto
-                    </div>
-                </div>
+                {product.images[0] ? (
+                    <img src={product.images[0]} alt={product.name} className={styles.image} />
+                ) : (
+                    <>
+                        <div className={styles.imagePattern} />
+                        <div className={styles.imagePlaceholder}>
+                            <div className={styles.imagePlaceholderText}>
+                                {product.brand}
+                                <br />
+                                foto
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             <div className={styles.cardBody}>

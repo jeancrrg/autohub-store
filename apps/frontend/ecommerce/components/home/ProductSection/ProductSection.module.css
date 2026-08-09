@@ -140,6 +140,15 @@
     overflow: hidden;
 }
 
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 16px;
+    position: relative;
+    z-index: 1;
+}
+
 .imagePattern {
     position: absolute;
     inset: 0;

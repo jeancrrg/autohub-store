@@ -33,6 +33,10 @@ type PageResponse<T> = {
 
 const DEFAULT_PAGE_SIZE = 100
 
+function toAbsoluteMediaUrl(url: string): string {
+    return `${process.env.NEXT_PUBLIC_MEDIA_URL}${url}`
+}
+
 function toProduct(response: ProductResponse): Product {
     return {
         id: response.id,
@@ -49,7 +53,7 @@ function toProduct(response: ProductResponse): Product {
         description: response.description,
         specs: {},
         category: response.categoryName,
-        images: response.images.map((img) => img.url),
+        images: response.images.map((img) => toAbsoluteMediaUrl(img.url)),
     }
 }
 
