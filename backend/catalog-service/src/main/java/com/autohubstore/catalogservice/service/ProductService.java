@@ -54,6 +54,26 @@ public class ProductService {
     private final ProductMapper productMapper;
     private final CatalogEventPublisher eventPublisher;
 
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> findProducts(UUID categoryId, Pageable pageable) {
+        return categoryId != null
+                ? findProductsByCategory(categoryId, pageable)
+                : findProducts(pageable);
+    }
+
+    @Cacheable(cacheNames = RedisConfig.CACHE_PRODUCTS_BY_CATEGORY,
+            key = "#categoryId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> findProductsByCategory(UUID categoryId, Pageable pageable) {
+        categoryService.findEntityOrThrow(categoryId);
+        return productRepository.findByCategoryId(categoryId, pageable).map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> findProducts(Pageable pageable) {
+        return productRepository.findAll(pageable).map(this::toResponse);
+    }
+
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
         Category category = categoryService.findEntityOrThrow(request.categoryId());
@@ -73,13 +93,13 @@ public class ProductService {
 
     @Cacheable(cacheNames = RedisConfig.CACHE_PRODUCTS, key = "#id")
     @Transactional(readOnly = true)
-    public ProductResponse getProduct(UUID id) {
+    public ProductResponse findProduct(UUID id) {
         return toResponse(findEntityOrThrow(id));
     }
 
     @Cacheable(cacheNames = RedisConfig.CACHE_PRODUCTS, key = "'slug:' + #slug")
     @Transactional(readOnly = true)
-    public ProductResponse getProductBySlug(String slug) {
+    public ProductResponse findProductBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new ProductNotFoundException(slug));
         return toResponse(product);
@@ -88,19 +108,6 @@ public class ProductService {
     public void publishProductViewed(ProductResponse product) {
         eventPublisher.publishProductViewed(
                 new ProductViewedEvent(product.id(), product.name(), Instant.now()));
-    }
-
-    @Transactional(readOnly = true)
-    public Page<ProductResponse> listProducts(Pageable pageable) {
-        return productRepository.findAll(pageable).map(this::toResponse);
-    }
-
-    @Cacheable(cacheNames = RedisConfig.CACHE_PRODUCTS_BY_CATEGORY,
-            key = "#categoryId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
-    @Transactional(readOnly = true)
-    public Page<ProductResponse> listProductsByCategory(UUID categoryId, Pageable pageable) {
-        categoryService.findEntityOrThrow(categoryId);
-        return productRepository.findByCategoryId(categoryId, pageable).map(this::toResponse);
     }
 
     @Caching(evict = {
@@ -148,8 +155,9 @@ public class ProductService {
 
     private ProductResponse toResponse(Product product) {
         String categoryName = categoryService.findEntityOrThrow(product.getCategoryId()).getName();
-        List<ProductImageResponse> images = productImageService.listImages(product.getId());
-        return productMapper.toResponse(product, categoryName, images);
+        Brand brand = brandService.findEntityOrThrow(product.getBrandId());
+        List<ProductImageResponse> images = productImageService.findImages(product.getId());
+        return productMapper.toResponse(product, categoryName, brand.getName(), brand.getSlug(), images);
     }
 
     private String resolveSku(String requestedSku, Category category) {

@@ -23,7 +23,7 @@ public class BrandService {
     private final BrandMapper brandMapper;
 
     @Transactional(readOnly = true)
-    public List<BrandResponse> listBrands() {
+    public List<BrandResponse> findBrands() {
         return brandRepository.findAllByOrderByNameAsc().stream()
                 .map(brandMapper::toResponse)
                 .collect(Collectors.toList());

@@ -37,7 +37,7 @@ public class CategoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<CategoryResponse> listCategories() {
+    public List<CategoryResponse> findCategories() {
         Map<UUID, Long> productCounts = categoryRepository.findProductCounts().stream()
                 .collect(Collectors.toMap(CategoryProductCountProjection::getCategoryId, CategoryProductCountProjection::getProductCount));
 

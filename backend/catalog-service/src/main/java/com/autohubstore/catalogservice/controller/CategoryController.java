@@ -34,8 +34,8 @@ public class CategoryController implements CategoryControllerDocs {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<CategoryResponse>> listCategories() {
-        return ResponseEntity.ok(categoryService.listCategories());
+    public ResponseEntity<List<CategoryResponse>> findCategories() {
+        return ResponseEntity.status(HttpStatus.OK).body(categoryService.findCategories());
     }
 
     @PostMapping
@@ -44,8 +44,8 @@ public class CategoryController implements CategoryControllerDocs {
     }
 
     @GetMapping("/{id}/products")
-    public ResponseEntity<Page<ProductResponse>> listProductsByCategory(@PathVariable UUID id, Pageable pageable) {
-        return ResponseEntity.ok(productService.listProductsByCategory(id, pageable));
+    public ResponseEntity<Page<ProductResponse>> findProductsByCategory(@PathVariable UUID id, Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(productService.findProductsByCategory(id, pageable));
     }
 
 }

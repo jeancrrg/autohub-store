@@ -18,7 +18,8 @@ import java.util.List;
 public interface ProductMapper {
 
     @Mapping(target = "images", source = "images")
-    ProductResponse toResponse(Product product, String categoryName, List<ProductImageResponse> images);
+    ProductResponse toResponse(Product product, String categoryName, String brandName, String brandSlug,
+                                List<ProductImageResponse> images);
 
     @Mapping(target = "sku", ignore = true)
     @Mapping(target = "slug", ignore = true)

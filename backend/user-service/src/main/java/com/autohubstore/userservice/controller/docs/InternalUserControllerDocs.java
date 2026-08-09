@@ -45,7 +45,7 @@ public interface InternalUserControllerDocs {
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             )
     })
-    ResponseEntity<UserResponse> getCredentials(
+    ResponseEntity<UserResponse> findCredentials(
             @Parameter(
                     description = "E-mail do usuário a consultar",
                     required = true,

@@ -23,6 +23,6 @@ public interface BrandControllerDocs {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de marcas retornada com sucesso")
     })
-    ResponseEntity<List<BrandResponse>> listBrands();
+    ResponseEntity<List<BrandResponse>> findBrands();
 
 }

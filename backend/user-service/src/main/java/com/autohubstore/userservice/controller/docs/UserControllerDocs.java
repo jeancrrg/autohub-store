@@ -72,7 +72,7 @@ public interface UserControllerDocs {
             )
     })
     @SecurityRequirement(name = "bearerAuth")
-    ResponseEntity<UserResponse> getUser(
+    ResponseEntity<UserResponse> findUser(
             @Parameter(description = "UUID do usuário", required = true) UUID id
     );
 
@@ -125,7 +125,7 @@ public interface UserControllerDocs {
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             )
     })
-    ResponseEntity<UserResponse> getUserByEmail(
+    ResponseEntity<UserResponse> findUserByEmail(
             @Parameter(description = "E-mail do usuário", required = true, example = "user@example.com")
             String email
     );
@@ -142,7 +142,7 @@ public interface UserControllerDocs {
                     content = @Content(schema = @Schema(implementation = ExistsResponse.class))
             )
     })
-    ResponseEntity<ExistsResponse> existsByEmail(
+    ResponseEntity<ExistsResponse> findExistsByEmail(
             @Parameter(description = "E-mail a verificar", required = true, example = "user@example.com")
             String email
     );

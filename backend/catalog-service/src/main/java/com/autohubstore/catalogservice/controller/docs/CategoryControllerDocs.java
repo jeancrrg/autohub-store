@@ -35,7 +35,7 @@ public interface CategoryControllerDocs {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de categorias retornada com sucesso")
     })
-    ResponseEntity<List<CategoryResponse>> listCategories();
+    ResponseEntity<List<CategoryResponse>> findCategories();
 
     @Operation(
             summary = "Criar categoria",
@@ -79,7 +79,7 @@ public interface CategoryControllerDocs {
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             )
     })
-    ResponseEntity<Page<ProductResponse>> listProductsByCategory(
+    ResponseEntity<Page<ProductResponse>> findProductsByCategory(
             @Parameter(description = "UUID da categoria", required = true) UUID id,
             Pageable pageable
     );

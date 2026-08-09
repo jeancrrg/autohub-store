@@ -27,8 +27,8 @@ public class AddressController implements AddressControllerDocs {
     private final AddressService addressService;
 
     @GetMapping
-    public ResponseEntity<List<AddressResponse>> listAddresses(@PathVariable UUID userId) {
-        return ResponseEntity.ok(addressService.listAddresses(userId));
+    public ResponseEntity<List<AddressResponse>> findAddresses(@PathVariable UUID userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(addressService.findAddresses(userId));
     }
 
     @PostMapping
@@ -42,7 +42,7 @@ public class AddressController implements AddressControllerDocs {
     public ResponseEntity<Void> deleteAddress(@PathVariable UUID userId,
                                               @PathVariable UUID addressId) {
         addressService.deleteAddress(userId, addressId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 }

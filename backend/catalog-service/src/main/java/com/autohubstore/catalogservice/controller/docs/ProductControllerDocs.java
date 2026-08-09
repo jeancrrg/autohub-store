@@ -2,6 +2,7 @@ package com.autohubstore.catalogservice.controller.docs;
 
 import com.autohubstore.catalogservice.domain.dto.request.CreateProductRequest;
 import com.autohubstore.catalogservice.domain.dto.request.UpdateProductRequest;
+import com.autohubstore.catalogservice.domain.dto.response.ProductImageResponse;
 import com.autohubstore.catalogservice.domain.dto.response.ProductResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +18,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Products", description = """
@@ -33,7 +36,7 @@ public interface ProductControllerDocs {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Página de produtos retornada com sucesso")
     })
-    ResponseEntity<Page<ProductResponse>> listProducts(
+    ResponseEntity<Page<ProductResponse>> findProducts(
             @Parameter(description = "UUID da categoria para filtrar") UUID categoryId,
             Pageable pageable
     );
@@ -55,7 +58,7 @@ public interface ProductControllerDocs {
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             )
     })
-    ResponseEntity<ProductResponse> getProduct(
+    ResponseEntity<ProductResponse> findProduct(
             @Parameter(description = "UUID do produto", required = true) UUID id
     );
 
@@ -76,7 +79,7 @@ public interface ProductControllerDocs {
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             )
     })
-    ResponseEntity<ProductResponse> getProductBySlug(
+    ResponseEntity<ProductResponse> findProductBySlug(
             @Parameter(description = "Slug do produto", required = true) String slug
     );
 
@@ -164,6 +167,57 @@ public interface ProductControllerDocs {
     @SecurityRequirement(name = "bearerAuth")
     ResponseEntity<Void> deleteProduct(
             @Parameter(description = "UUID do produto", required = true) UUID id
+    );
+
+    @Operation(
+            summary = "Enviar imagens do produto",
+            description = "Envia uma ou mais imagens para um produto. Tipos aceitos: JPEG, PNG e WEBP, "
+                    + "até 5MB cada. A primeira imagem enviada para um produto sem imagens vira a "
+                    + "imagem primária (`isPrimary`) automaticamente."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Imagens enviadas com sucesso",
+                    content = @Content(schema = @Schema(implementation = ProductImageResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Tipo de arquivo não suportado ou tamanho acima do limite",
+                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Produto não encontrado",
+                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
+            )
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @RequestBody(
+            description = "Arquivos de imagem a enviar",
+            required = true
+    )
+    ResponseEntity<List<ProductImageResponse>> uploadImages(
+            @Parameter(description = "UUID do produto", required = true) UUID id,
+            List<MultipartFile> files
+    );
+
+    @Operation(
+            summary = "Remover imagem do produto",
+            description = "Remove uma imagem do produto, tanto do MinIO quanto do banco de dados."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Imagem removida com sucesso"),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Produto ou imagem não encontrados",
+                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
+            )
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    ResponseEntity<Void> deleteImage(
+            @Parameter(description = "UUID do produto", required = true) UUID id,
+            @Parameter(description = "UUID da imagem", required = true) UUID imageId
     );
 
 }

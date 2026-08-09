@@ -48,7 +48,7 @@ public class ProductImageService {
     private String bucket;
 
     @Transactional(readOnly = true)
-    public List<ProductImageResponse> listImages(UUID productId) {
+    public List<ProductImageResponse> findImages(UUID productId) {
         return productImageMapper.toResponseList(productImageRepository.findByProductId(productId));
     }
 

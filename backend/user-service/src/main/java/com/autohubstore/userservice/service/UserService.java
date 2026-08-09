@@ -48,12 +48,12 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserResponse getUser(UUID id) {
+    public UserResponse findUser(UUID id) {
         return userMapper.toResponse(findOrThrow(id));
     }
 
     @Transactional(readOnly = true)
-    public UserResponse getUserByEmail(String email) {
+    public UserResponse findUserByEmail(String email) {
         return userMapper.toResponse(userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("email=" + email)));
     }

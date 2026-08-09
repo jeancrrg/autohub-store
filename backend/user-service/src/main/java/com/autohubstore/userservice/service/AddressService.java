@@ -24,7 +24,7 @@ public class AddressService {
     private final AddressMapper addressMapper;
 
     @Transactional(readOnly = true)
-    public List<AddressResponse> listAddresses(UUID userId) {
+    public List<AddressResponse> findAddresses(UUID userId) {
         ensureUserExists(userId);
         return addressRepository.findAllByUserId(userId)
                 .stream()

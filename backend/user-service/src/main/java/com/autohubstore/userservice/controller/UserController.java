@@ -35,37 +35,38 @@ public class UserController implements UserControllerDocs {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUser(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.getUser(id));
+    public ResponseEntity<UserResponse> findUser(@PathVariable UUID id) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.findUser(id));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id,
                                                    @Valid @RequestBody UpdateUserRequest request) {
-        return ResponseEntity.ok(userService.updateUser(id, request));
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUser(id, request));
     }
 
     @GetMapping("/email/{email}")
-    public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
-        return ResponseEntity.ok(userService.getUserByEmail(email));
+    public ResponseEntity<UserResponse> findUserByEmail(@PathVariable String email) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.findUserByEmail(email));
     }
 
     @GetMapping("/exists/email/{email}")
-    public ResponseEntity<ExistsResponse> existsByEmail(@PathVariable String email) {
-        return ResponseEntity.ok(new ExistsResponse(userService.existsByEmail(email)));
+    public ResponseEntity<ExistsResponse> findExistsByEmail(@PathVariable String email) {
+        return ResponseEntity.status(HttpStatus.OK).body(new ExistsResponse(userService.existsByEmail(email)));
     }
 
     @PostMapping("/validate-credentials")
     public ResponseEntity<UserResponse> validateCredentials(
             @Valid @RequestBody ValidateCredentialsRequest request) {
-        return ResponseEntity.ok(userService.validateCredentials(request.email(), request.password()));
+        UserResponse response = userService.validateCredentials(request.email(), request.password());
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PutMapping("/{id}/password")
     public ResponseEntity<Void> updatePassword(@PathVariable UUID id,
                                                @Valid @RequestBody UpdatePasswordRequest request) {
         userService.updatePassword(id, request.newPassword());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 }

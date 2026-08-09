@@ -209,6 +209,10 @@ a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml
 - **MapStruct:** toda conversão Entity ↔ DTO usa `@Mapper` de MapStruct — nunca mapeamento manual campo a campo em service ou controller.
 - **Validações em Request DTOs:** toda anotação Bean Validation (`@NotNull`, `@NotBlank`, `@Size`, `@Email`, etc.) sempre com `message` explícita — nunca deixar mensagem default do framework.
 - **`@Override` em controllers:** não usar em métodos de controller (nem quando implementa interface de docs como `*ControllerDocs`) — só quando realmente necessário (ex.: sobrescrita de método de classe abstrata onde o compilador não infere o contrato sozinho).
+- **Retorno de endpoints em controllers:** todo método de controller retorna `ResponseEntity` construído de forma explícita, sempre no formato `return ResponseEntity.status(HttpStatus.X).body(response);` (ou `.status(HttpStatus.X).build();` quando não há corpo) — `HttpStatus` sempre explícito, inclusive para `200 OK`. Nunca usar os atalhos `ResponseEntity.ok(...)`, `.noContent()`, `.created(...)`, `.accepted()`, `.badRequest()`, etc.
+- **Nome de método de leitura (`find`):** todo método que busca/lista dado — `@GetMapping` de controller, método de `Service` chamado por ele, e método de `Repository` — começa com `find` (ex.: `findProducts`, `findProductById`, `findProductBySlug`, `findCategories`, `findUserByEmail`). Nunca `get*`/`list*`/`search*`/outros verbos nessas três camadas.
+  - Exceção: método de query derivada do Spring Data (`JpaRepository`) que usa prefixo reservado do parser (`existsBy*`, `countBy*`, `deleteBy*`) mantém o prefixo reservado — não pode virar `find*` sem quebrar o parsing. `findBy*` já está correto e não muda.
+  - Getter simples de campo/valor calculado (ex.: `getRemainingTtlSeconds` de um token) não é "busca de dado" — não entra nessa regra.
 
 ---
 

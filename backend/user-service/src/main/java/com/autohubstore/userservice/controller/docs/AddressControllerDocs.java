@@ -41,7 +41,7 @@ public interface AddressControllerDocs {
                     content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
             )
     })
-    ResponseEntity<List<AddressResponse>> listAddresses(
+    ResponseEntity<List<AddressResponse>> findAddresses(
             @Parameter(description = "UUID do usuário", required = true) UUID userId
     );
 
