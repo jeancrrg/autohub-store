@@ -74,23 +74,6 @@ public class ProductService {
         return productRepository.findAll(pageable).map(this::toResponse);
     }
 
-    @Transactional
-    public ProductResponse createProduct(CreateProductRequest request) {
-        Category category = categoryService.findEntityOrThrow(request.categoryId());
-        Brand brand = brandService.findEntityOrThrow(request.brandId());
-
-        Product product = productMapper.toEntity(request);
-        product.setCategoryId(category.getId());
-        product.setBrandId(brand.getId());
-        product.setSku(resolveSku(request.sku(), category));
-        product.setSlug(generateUniqueSlug(request.name()));
-        product = productRepository.save(product);
-
-        eventPublisher.publishProductCreated(toChangedEvent(product));
-
-        return toResponse(product);
-    }
-
     @Cacheable(cacheNames = RedisConfig.CACHE_PRODUCTS, key = "#id")
     @Transactional(readOnly = true)
     public ProductResponse findProduct(UUID id) {
@@ -105,9 +88,18 @@ public class ProductService {
         return toResponse(product);
     }
 
-    public void publishProductViewed(ProductResponse product) {
-        eventPublisher.publishProductViewed(
-                new ProductViewedEvent(product.id(), product.name(), Instant.now()));
+    @Transactional
+    public ProductResponse createProduct(CreateProductRequest request) {
+        Category category = categoryService.findEntityOrThrow(request.categoryId());
+        Brand brand = brandService.findEntityOrThrow(request.brandId());
+        String sku = resolveSku(request.sku(), category);
+        String slug = generateUniqueSlug(request.name());
+
+        Product product = productMapper.toEntity(request, category.getId(), brand.getId(), sku, slug);
+        product = productRepository.save(product);
+        eventPublisher.publishProductCreated(toChangedEvent(product));
+
+        return toResponse(product);
     }
 
     @Caching(evict = {
@@ -123,11 +115,9 @@ public class ProductService {
         if (request.name() != null && !request.name().equals(previousName)) {
             product.setSlug(generateUniqueSlug(request.name()));
         }
-
         if (request.categoryId() != null) {
             product.setCategoryId(categoryService.findEntityOrThrow(request.categoryId()).getId());
         }
-
         if (request.brandId() != null) {
             product.setBrandId(brandService.findEntityOrThrow(request.brandId()).getId());
         }
@@ -151,6 +141,27 @@ public class ProductService {
     private Product findEntityOrThrow(UUID id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id.toString()));
+    }
+
+    public void publishProductViewed(ProductResponse product) {
+        eventPublisher.publishProductViewed(
+                new ProductViewedEvent(product.id(), product.name(), Instant.now()));
+    }
+
+    private ProductChangedEvent toChangedEvent(Product product) {
+        Category category = categoryService.findEntityOrThrow(product.getCategoryId());
+        return new ProductChangedEvent(
+                product.getId(),
+                product.getSku(),
+                product.getSlug(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                category.getId(),
+                category.getName(),
+                product.getStatus(),
+                null
+        );
     }
 
     private ProductResponse toResponse(Product product) {
@@ -205,22 +216,6 @@ public class ProductService {
         String lowerCased = withoutDiacritics.toLowerCase(Locale.ROOT);
         String hyphenated = NON_ALPHANUMERIC.matcher(lowerCased).replaceAll("-");
         return EDGE_HYPHENS.matcher(hyphenated).replaceAll("");
-    }
-
-    private ProductChangedEvent toChangedEvent(Product product) {
-        Category category = categoryService.findEntityOrThrow(product.getCategoryId());
-        return new ProductChangedEvent(
-                product.getId(),
-                product.getSku(),
-                product.getSlug(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                category.getId(),
-                category.getName(),
-                product.getStatus(),
-                null
-        );
     }
 
 }

@@ -31,7 +31,6 @@ public class CategoryService {
         if (categoryRepository.existsBySlug(request.slug())) {
             throw new CategorySlugAlreadyExistsException(request.slug());
         }
-
         Category category = categoryMapper.toEntity(request);
         return categoryMapper.toResponse(categoryRepository.save(category));
     }

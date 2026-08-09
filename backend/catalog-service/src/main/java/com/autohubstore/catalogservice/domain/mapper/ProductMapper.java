@@ -13,6 +13,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import java.util.List;
+import java.util.UUID;
 
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
@@ -21,12 +22,8 @@ public interface ProductMapper {
     ProductResponse toResponse(Product product, String categoryName, String brandName, String brandSlug,
                                 List<ProductImageResponse> images);
 
-    @Mapping(target = "sku", ignore = true)
-    @Mapping(target = "slug", ignore = true)
-    @Mapping(target = "categoryId", ignore = true)
-    @Mapping(target = "brandId", ignore = true)
     @Mapping(target = "status", ignore = true)
-    Product toEntity(CreateProductRequest request);
+    Product toEntity(CreateProductRequest request, UUID categoryId, UUID brandId, String sku, String slug);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "categoryId", ignore = true)
