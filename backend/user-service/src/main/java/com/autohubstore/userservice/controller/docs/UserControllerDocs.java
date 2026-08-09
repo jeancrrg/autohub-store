@@ -3,8 +3,6 @@ package com.autohubstore.userservice.controller.docs;
 import com.autohubstore.userservice.domain.dto.request.CreateUserRequest;
 import com.autohubstore.userservice.domain.dto.request.UpdatePasswordRequest;
 import com.autohubstore.userservice.domain.dto.request.UpdateUserRequest;
-import com.autohubstore.userservice.domain.dto.request.ValidateCredentialsRequest;
-import com.autohubstore.userservice.domain.dto.response.ExistsResponse;
 import com.autohubstore.userservice.domain.dto.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,7 +20,7 @@ import java.util.UUID;
 @Tag(name = "Users", description = """
         Gerenciamento de cadastro e perfil de usuários.
         O endpoint de cadastro (`POST /api/v1/users`) é público.
-        Os demais requerem Bearer JWT válido (validado pelo API Gateway).
+        Os demais requerem cookie access_token válido.
         """)
 public interface UserControllerDocs {
 
@@ -54,6 +52,24 @@ public interface UserControllerDocs {
             content = @Content(schema = @Schema(implementation = CreateUserRequest.class))
     )
     ResponseEntity<UserResponse> createUser(CreateUserRequest request);
+
+    @Operation(
+            summary = "Buscar perfil do usuário autenticado",
+            description = "Retorna os dados do usuário identificado pelo cookie access_token da requisição."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Perfil encontrado",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Cookie access_token ausente, inválido ou expirado",
+                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
+            )
+    })
+    ResponseEntity<UserResponse> findCurrentUser();
 
     @Operation(
             summary = "Buscar perfil por ID",
@@ -109,77 +125,9 @@ public interface UserControllerDocs {
     );
 
     @Operation(
-            summary = "Buscar usuário por e-mail",
-            description = "Endpoint de uso interno — chamado pelo Auth Service via OpenFeign. "
-                    + "Retorna os dados completos do usuário, incluindo roles."
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Usuário encontrado",
-                    content = @Content(schema = @Schema(implementation = UserResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Nenhum usuário com este e-mail",
-                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
-            )
-    })
-    ResponseEntity<UserResponse> findUserByEmail(
-            @Parameter(description = "E-mail do usuário", required = true, example = "user@example.com")
-            String email
-    );
-
-    @Operation(
-            summary = "Verificar existência de e-mail",
-            description = "Endpoint de uso interno — chamado pelo Auth Service para verificar "
-                    + "se um e-mail existe antes de iniciar o fluxo de reset de senha."
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Resultado da verificação",
-                    content = @Content(schema = @Schema(implementation = ExistsResponse.class))
-            )
-    })
-    ResponseEntity<ExistsResponse> findExistsByEmail(
-            @Parameter(description = "E-mail a verificar", required = true, example = "user@example.com")
-            String email
-    );
-
-    @Operation(
-            summary = "Validar credenciais",
-            description = "Endpoint de uso interno — chamado pelo Auth Service no fluxo de login. "
-                    + "Verifica e-mail e senha (BCrypt). Retorna os dados do usuário se válidos."
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Credenciais válidas — retorna dados do usuário",
-                    content = @Content(schema = @Schema(implementation = UserResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Credenciais inválidas",
-                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Conta inativa ou bloqueada",
-                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
-            )
-    })
-    @RequestBody(
-            description = "E-mail e senha em texto plano",
-            required = true,
-            content = @Content(schema = @Schema(implementation = ValidateCredentialsRequest.class))
-    )
-    ResponseEntity<UserResponse> validateCredentials(ValidateCredentialsRequest request);
-
-    @Operation(
             summary = "Atualizar senha",
-            description = "Endpoint de uso interno — chamado pelo Auth Service após o usuário "
-                    + "confirmar o reset de senha. A nova senha é armazenada com hash BCrypt."
+            description = "Atualiza a senha do usuário (usado internamente pelo fluxo de reset de senha, "
+                    + "também disponível como endpoint administrativo). A nova senha é armazenada com hash BCrypt."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Senha atualizada com sucesso"),

@@ -1,5 +1,6 @@
 package com.autohubstore.userservice.config;
 
+import com.autohubstore.userservice.domain.event.PasswordResetRequestedEvent;
 import com.autohubstore.userservice.messaging.UserCreatedEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -36,6 +37,22 @@ public class KafkaProducerConfig {
     @Bean
     public KafkaTemplate<String, UserCreatedEvent> kafkaTemplate() {
         return new KafkaTemplate<>(userCreatedProducerFactory());
+    }
+
+    @Bean
+    public ProducerFactory<String, PasswordResetRequestedEvent> passwordResetProducerFactory() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        config.put(ProducerConfig.ACKS_CONFIG, "all");
+        config.put(ProducerConfig.RETRIES_CONFIG, PRODUCER_RETRIES);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaTemplate<String, PasswordResetRequestedEvent> passwordResetKafkaTemplate() {
+        return new KafkaTemplate<>(passwordResetProducerFactory());
     }
 
 }

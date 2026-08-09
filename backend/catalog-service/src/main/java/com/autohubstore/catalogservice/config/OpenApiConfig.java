@@ -22,10 +22,10 @@ public class OpenApiConfig {
                 .info(apiInfo())
                 .servers(List.of(
                         new Server()
-                                .url("http://localhost:8004")
+                                .url("http://localhost:8003")
                                 .description("Desenvolvimento local"),
                         new Server()
-                                .url("http://catalog-service:8004")
+                                .url("http://catalog-service:8003")
                                 .description("Docker Compose (rede interna)")
                 ))
                 .components(new Components()

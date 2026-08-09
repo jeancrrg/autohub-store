@@ -21,10 +21,10 @@ public class OpenApiConfig {
                 .info(apiInfo())
                 .servers(List.of(
                         new Server()
-                                .url("http://localhost:8003")
+                                .url("http://localhost:8002")
                                 .description("Desenvolvimento local"),
                         new Server()
-                                .url("http://user-service:8003")
+                                .url("http://user-service:8002")
                                 .description("Docker Compose (rede interna)")
                 ))
                 .components(new Components()
@@ -36,17 +36,18 @@ public class OpenApiConfig {
         return new Info()
                 .title("User Service API")
                 .description("""
-                        Microsserviço responsável pelo cadastro, perfil e endereços de usuários do AutoHubStore.
+                        Microsserviço responsável por identidade, cadastro, perfil e endereços de usuários
+                        do AutoHubStore (fusão Auth + User).
 
                         **Responsabilidades:**
+                        - Login, logout, refresh e reset de senha (JWT + refresh token + blacklist Redis)
                         - Cadastro de novos usuários com hash BCrypt de senha
-                        - Consulta e atualização de perfil
+                        - Consulta e atualização de perfil (`/api/v1/users/me`, `/api/v1/users/{id}`)
                         - CRUD de endereços de entrega
-                        - Publicação do evento `user.created` no Kafka
-                        - Endpoint interno `/internal/users/credentials` para o Auth Service
+                        - Publicação dos eventos `user.created` e `user.password-reset` no Kafka
 
-                        **Autenticação:** endpoints públicos não requerem token. Endpoints de perfil e endereço
-                        requerem Bearer JWT emitido pelo Auth Service (validado pelo API Gateway).
+                        **Autenticação:** endpoints de cadastro e `/api/v1/auth/*` são públicos. Os demais
+                        exigem cookie `access_token` (httpOnly) válido, emitido por este próprio serviço.
                         """)
                 .version("0.0.1")
                 .contact(new Contact()
@@ -63,7 +64,8 @@ public class OpenApiConfig {
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
                 .bearerFormat("JWT")
-                .description("JWT Bearer token emitido pelo Auth Service. Formato: `Bearer <token>`");
+                .description("JWT emitido por este serviço. Em produção é entregue como cookie httpOnly "
+                        + "access_token; o esquema Bearer aqui existe apenas para testar via Swagger UI.");
     }
 
 }

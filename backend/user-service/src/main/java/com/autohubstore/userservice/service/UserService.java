@@ -1,6 +1,8 @@
 package com.autohubstore.userservice.service;
 
 import com.autohubstore.userservice.exception.EmailAlreadyExistsException;
+import com.autohubstore.userservice.exception.InactiveAccountException;
+import com.autohubstore.userservice.exception.InvalidCredentialsException;
 import com.autohubstore.userservice.exception.UserNotFoundException;
 import com.autohubstore.userservice.messaging.UserCreatedEvent;
 import com.autohubstore.userservice.messaging.UserEventPublisher;
@@ -71,27 +73,27 @@ public class UserService {
     }
 
     /**
-     * Valida credenciais (chamado pelo Auth Service).
+     * Valida credenciais no fluxo de login.
      * Retorna os dados do usuário se as credenciais forem válidas.
      */
     @Transactional(readOnly = true)
     public UserResponse validateCredentials(String email, String rawPassword) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas"));
+                .orElseThrow(() -> new InvalidCredentialsException("Credenciais inválidas"));
 
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new IllegalStateException("Conta inativa ou bloqueada");
+            throw new InactiveAccountException("Conta inativa ou bloqueada");
         }
 
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Credenciais inválidas");
+            throw new InvalidCredentialsException("Credenciais inválidas");
         }
 
         return userMapper.toResponse(user);
     }
 
     /**
-     * Atualiza a senha do usuário (chamado pelo Auth Service após reset).
+     * Atualiza a senha do usuário (chamado pelo fluxo de reset de senha).
      */
     @Transactional
     public void updatePassword(UUID userId, String newPassword) {

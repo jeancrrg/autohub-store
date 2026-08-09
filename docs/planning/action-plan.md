@@ -286,8 +286,7 @@ Arquivo: `infra/docker-compose.yml`
 
 | Serviço | Porta | Descrição |
 |---|---|---|
-| postgres-auth | 5432 | Banco do Auth Service |
-| postgres-user | 5433 | Banco do User Service |
+| postgres-user | 5433 | Banco do User Service (fusão Auth+User) |
 | postgres-catalog | 5434 | Banco do Catalog Service |
 | postgres-order | 5435 | Banco do Order Service |
 | postgres-payment | 5436 | Banco do Payment Service |

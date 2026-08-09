@@ -17,12 +17,10 @@ cors:
   allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000}
 
 services:
-  auth:
-    url: ${AUTH_SERVICE_URL:http://localhost:8002}
   user:
-    url: ${USER_SERVICE_URL:http://localhost:8003}
+    url: ${USER_SERVICE_URL:http://localhost:8002}
   catalog:
-    url: ${CATALOG_SERVICE_URL:http://localhost:8004}
+    url: ${CATALOG_SERVICE_URL:http://localhost:8003}
   search:
     url: ${SEARCH_SERVICE_URL:lb://search-service}
   cart:
