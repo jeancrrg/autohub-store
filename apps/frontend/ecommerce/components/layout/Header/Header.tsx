@@ -149,7 +149,11 @@ export function Header() {
                             <span className={styles.categoriesLabel}>Categorias</span>
                         </div>
                         {categories.map((cat) => (
-                            <Link key={cat.id} href="/catalog" className={styles.navLink}>
+                            <Link
+                                key={cat.id}
+                                href={`/catalog?category=${encodeURIComponent(cat.name)}`}
+                                className={styles.navLink}
+                            >
                                 {cat.name}
                             </Link>
                         ))}

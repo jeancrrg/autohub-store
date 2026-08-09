@@ -19,6 +19,9 @@ type ProductResponse = {
     stockQuantity: number
     categoryId: string
     categoryName: string
+    brandId: string
+    brandName: string
+    brandSlug: string
     status: 'ACTIVE' | 'INACTIVE' | 'OUT_OF_STOCK'
     images: ProductImageResponse[]
 }
@@ -43,7 +46,8 @@ function toProduct(response: ProductResponse): Product {
         sku: response.sku,
         slug: response.slug,
         name: response.name,
-        brand: response.categoryName,
+        brand: response.brandName,
+        brandSlug: response.brandSlug,
         price: response.price,
         tagColor: '',
         stars: 5,

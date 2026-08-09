@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Product } from '@/types/product'
 import { ProductCard } from '../ProductCard/ProductCard'
 import { FilterSidebar } from '../FilterSidebar/FilterSidebar'
@@ -26,18 +26,27 @@ const DEFAULT_FILTERS: Filters = {
     inStock: false,
 }
 
-export function ProductGrid({ allProducts }: { allProducts: Product[] }) {
-    const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
+type ProductGridProps = {
+    allProducts: Product[]
+    initialCategory?: string
+}
+
+export function ProductGrid({ allProducts, initialCategory = '' }: ProductGridProps) {
+    const [filters, setFilters] = useState<Filters>({
+        ...DEFAULT_FILTERS,
+        category: initialCategory,
+    })
     const [sortBy, setSortBy] = useState('relevance')
     const [page, setPage] = useState(1)
 
+    useEffect(() => {
+        setFilters((prev) => ({ ...prev, category: initialCategory }))
+        setPage(1)
+    }, [initialCategory])
+
     const filtered = allProducts
         .filter((p) => !filters.category || p.category === filters.category)
-        .filter(
-            (p) =>
-                filters.brands.length === 0 ||
-                filters.brands.includes(p.brand.toLowerCase().replace(/[^a-z0-9]/g, ''))
-        )
+        .filter((p) => filters.brands.length === 0 || filters.brands.includes(p.brandSlug))
         .filter(
             (p) =>
                 p.price >= filters.minPrice &&

@@ -12,6 +12,7 @@ export type Product = {
     slug: string
     name: string
     brand: string
+    brandSlug: string
     price: number
     oldPrice?: number
     tag?: ProductTag
