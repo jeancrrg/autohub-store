@@ -47,6 +47,7 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'org.postgresql:postgresql'
     implementation 'io.minio:minio:8.5.11'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.0.21'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
