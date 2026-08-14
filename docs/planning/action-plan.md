@@ -3,7 +3,7 @@
 ## Visão Geral
 
 O AutoHubStore é um e-commerce automotivo construído com arquitetura de microsserviços.
-São **10 microsserviços** em **Java 25** (LTS), seguindo diferentes arquiteturas para fins educacionais.
+São **11 microsserviços** em **Java 25** (LTS), seguindo diferentes arquiteturas para fins educacionais.
 
 **Repositório:** monorepo em `autohub-store/`  
 **Backend:** `backend/<nome-do-servico>/`  
@@ -20,9 +20,10 @@ valor didático (projeto de estudo solo). Detalhes completos da análise nas spe
 | **Auth Service fundido em User Service** | Mesmo bounded context ("Identidade"); Auth já dependia de User via Feign só pra validar credencial — separação era overhead artificial sem ganho de domínio. Serviço fundido mantém Clean Architecture. Ver [02-user-service.md](specs/02-user-service.md). |
 | **Cart Service mantido separado de Order** | Bounded contexts diferentes: Cart é sessão de compra efêmera (Redis, TTL, mutável), Order é agregado transacional durável (Postgres, máquina de estados, auditoria). Fundir quebraria ADR-002 (database per service) e mataria a demo de circuit breaker Cart↔Catalog. Ver [05-cart-service.md](specs/05-cart-service.md) e [07-order-service.md](specs/07-order-service.md). |
 | **Inventory Service criado (extraído do Catalog)** | Estoque é recurso de escrita contenciosa que exige forte consistência (evitar overselling) — incompatível com o papel de leitura/cache do Catalog. Novo serviço aplica padrão Saga (reserve/confirm/release via Kafka) entre Order, Payment e Inventory. Ver [06-inventory-service.md](specs/06-inventory-service.md). |
+| **Compatibility Service criado (extraído do Catalog)** | Responder "essa peça é compatível com quais veículos?" é um bounded context próprio (Fitment/Compatibility), com modelo de dado naturalmente semi-estruturado (marca/modelo/ano/motorização variam por categoria de peça — nem toda peça tem os mesmos atributos de aplicação) e volume de leitura alto e desacoplado do CRUD transacional de produto. Mistura isso no Catalog inflaria o schema relacional com combinações esparsas. Novo serviço usa MongoDB (schema flexível por categoria de peça) e é consultado via OpenFeign pelo Catalog Service na página de produto. |
 
-Resultado líquido: 10 → 9 (fusão Auth+User) → 10 (novo Inventory). Contagem final de serviços
-permanece 10, porém com escopo mais correto por serviço.
+Resultado líquido: 10 → 9 (fusão Auth+User) → 10 (novo Inventory) → 11 (novo Compatibility).
+Contagem final de serviços é 11, com escopo mais correto por serviço.
 
 ---
 
@@ -38,7 +39,8 @@ permanece 10, porém com escopo mais correto por serviço.
 | Spring Security | 6.x | Autenticação e autorização |
 | JJWT | 0.12+ | JWT (Auth Service) |
 | PostgreSQL | 16 | Persistência relacional |
-| Flyway | 9+ | Migrações de banco |
+| MongoDB | 7.x | Persistência documental (Compatibility Service) |
+| Flyway | 9+ | Migrações de banco (serviços Postgres) |
 | Redis | 7 | Cache, carrinho, blacklist |
 | Apache Kafka | 3.6+ | Mensageria assíncrona |
 | Elasticsearch | 8.x | Busca full-text |
@@ -143,6 +145,7 @@ checkstyle {
 | 8 | Payment Service | **Maven** | MVC |
 | 9 | Notification Service | **Gradle** | MVC |
 | 10 | Analytics Service | **Gradle** | MVC |
+| 11 | Compatibility Service | **Gradle** | MVC |
 
 > **Objetivo educacional:** A divisão de build tools permite aprender tanto Maven quanto Gradle em contexto real. A variação de arquiteturas demonstra Clean Architecture, Hexagonal (Ports & Adapters) e MVC no mesmo projeto.
 
@@ -150,7 +153,7 @@ checkstyle {
 
 ## Padrões de Pacotes por Arquitetura
 
-### MVC (Catalog, Search, Cart, Payment, Notification, Analytics)
+### MVC (Catalog, Search, Cart, Payment, Notification, Analytics, Compatibility)
 
 ```
 com.autohubstore.<servicename>/
@@ -162,6 +165,12 @@ com.autohubstore.<servicename>/
 ├── messaging/       # Kafka producers/consumers
 └── config/          # @Configuration
 ```
+
+> **Compatibility Service** segue o mesmo pacote MVC, porém `repository/` usa `MongoRepository`
+> (Spring Data MongoDB) em vez de `JpaRepository`, e `model/` contém documentos (`@Document`) em
+> vez de entidades JPA — regra de "sem `@ManyToOne`/relação automática" do
+> [CLAUDE.md § Padrões de Implementação](../../CLAUDE.md#padrões-de-implementação--obrigatórios-em-todo-código-gerado)
+> continua valendo: referência a `productId` como campo simples, nunca objeto embutido resolvido por join.
 
 ### Clean Architecture — User Service
 
@@ -237,6 +246,7 @@ com.autohubstore.orderservice/
 | 8 | Payment Service | 8008 | PostgreSQL (`payment_db`) | Producer | Planejado |
 | 9 | Notification Service | 8009 | — (stateless) | Consumer | Planejado |
 | 10 | Analytics Service | 8010 | Cassandra | Consumer | Planejado |
+| 11 | Compatibility Service | 8011 | MongoDB (`compatibility_db`) | Consumer | Planejado |
 
 > **Nomes de banco:** seguem exatamente `POSTGRES_DB` definido em `infra/docker-compose.yml`
 > (`user_db`, `catalog_db`, `order_db`, `payment_db`, `inventory_db`) — evita erro
@@ -252,6 +262,7 @@ com.autohubstore.orderservice/
 API Gateway ─────────────────────────────→ Todos os serviços (roteamento)
 Cart Service ──── OpenFeign ─────────────→ Catalog Service
 Catalog Service ── OpenFeign ────────────→ Inventory Service (disponibilidade)
+Catalog Service ── OpenFeign ────────────→ Compatibility Service (veículos compatíveis)
 Order Service ─── OpenFeign ─────────────→ Cart Service, User Service
 Search Service ←── Kafka ─────────────────── Catalog Service (product.created/updated)
 Inventory Service ←── Kafka ──────────────── Order Service (order.created), Payment Service (payment.approved/rejected)
@@ -269,7 +280,7 @@ Order ←────────── Kafka ───────────�
 |---|---|---|
 | `user.created` | User Service | Notification Service |
 | `user.password-reset` | User Service | Notification Service |
-| `catalog.product-created` | Catalog Service | Search Service, Inventory Service |
+| `catalog.product-created` | Catalog Service | Search Service, Inventory Service, Compatibility Service |
 | `catalog.product-updated` | Catalog Service | Search Service |
 | `catalog.product-viewed` | Catalog Service | Analytics Service |
 | `order.created` | Order Service | Notification Service, Analytics Service, Inventory Service |
@@ -290,6 +301,7 @@ Arquivo: `infra/docker-compose.yml`
 | postgres-catalog | 5434 | Banco do Catalog Service |
 | postgres-order | 5435 | Banco do Order Service |
 | postgres-payment | 5436 | Banco do Payment Service |
+| mongo-compatibility | 27017 | Banco do Compatibility Service (`compatibility_db`) |
 | redis | 6379 | Cache + Carrinho + Blacklist |
 | zookeeper | 2181 | Kafka coordinator |
 | kafka | 9092 | Message broker |
@@ -300,6 +312,9 @@ Arquivo: `infra/docker-compose.yml`
 | grafana | 3011 | Dashboards |
 | jaeger | 16686 | Traces distribuídos |
 | mailhog | 8025 | SMTP local (testes de e-mail) |
+
+> **Pendente:** `mongo-compatibility` ainda não existe em `infra/docker-compose.yml` — adicionar
+> ao implementar o Compatibility Service (Fase 3).
 
 ---
 
@@ -364,17 +379,22 @@ referência a `id: number` de produto restante no frontend.
 
 ---
 
-### Fase 3 — Catálogo e Busca
+### Fase 3 — Catálogo, Busca e Compatibilidade
 
-**Objetivo:** CRUD de produtos com cache e busca full-text.
+**Objetivo:** CRUD de produtos com cache, busca full-text e consulta de compatibilidade peça↔veículo.
 
 **Entregas:**
 1. **Catalog Service** (Gradle + MVC) — CRUD admin + listagem pública + cache Redis + upload de imagens (MinIO)
 2. **Search Service** (Gradle + MVC) — Elasticsearch + Kafka consumer para re-indexação
+3. **Compatibility Service** (Gradle + MVC) — CRUD admin de aplicações (peça × marca/modelo/ano/motorização) em MongoDB; endpoint `findCompatibleVehiclesByProductId` consumido pelo Catalog via OpenFeign; Kafka consumer de `catalog.product-created` para validar referência de produto
+
+**Critério de conclusão (Compatibility):** cadastrar aplicação de veículo pra um produto e consultar
+"veículos compatíveis" a partir do `productId` na página de produto do Catalog.
 
 **Specs:**
 - Catalog Service → [docs/microservices/03-catalog-service.md](microservices/03-catalog-service.md)
 - Search Service → [docs/microservices/04-search-service.md](microservices/04-search-service.md)
+- Compatibility Service → [specs/11-compatibility-service.md](specs/11-compatibility-service.md)
 
 ---
 
