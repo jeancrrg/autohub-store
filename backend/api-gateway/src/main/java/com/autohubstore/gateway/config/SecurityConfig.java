@@ -51,7 +51,7 @@ public class SecurityConfig {
                         .pathMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .anyExchange().authenticated()
                 )
-                .exceptionHandling(ex -> ex
+                .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(this::handleUnauthorized)
                         .accessDeniedHandler(this::handleForbidden)
                 )
@@ -60,9 +60,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationWebFilter jwtAuthenticationFilter() {
-        AuthenticationWebFilter filter = new AuthenticationWebFilter(
-                new JwtReactiveAuthenticationManager(jwtService)
-        );
+        AuthenticationWebFilter filter = new AuthenticationWebFilter(new JwtReactiveAuthenticationManager(jwtService));
         filter.setServerAuthenticationConverter(new JwtServerAuthenticationConverter());
         return filter;
     }

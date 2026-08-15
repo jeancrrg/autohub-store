@@ -2,7 +2,6 @@ package com.autohubstore.gateway.service;
 
 import com.autohubstore.gateway.model.JwtClaims;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -44,15 +43,6 @@ public class JwtService {
                     .toList();
         }
         return List.of();
-    }
-
-    public boolean isValid(String token) {
-        try {
-            validate(token);
-            return true;
-        } catch (JwtException e) {
-            return false;
-        }
     }
 
 }
