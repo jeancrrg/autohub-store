@@ -1,4 +1,4 @@
-package com.autohubstore.gateway.adapter.out.web;
+package com.autohubstore.gateway.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.JwtException;
@@ -35,22 +35,22 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
 
     @Override
     @SuppressWarnings("NullableProblems")
-    public Mono<Void> handle(final ServerWebExchange exchange, final Throwable exception) {
-        final HttpStatus status = resolveStatus(exception);
-        final String message = resolveMessage(exception, status);
+    public Mono<Void> handle(ServerWebExchange exchange, Throwable exception) {
+        HttpStatus status = resolveStatus(exception);
+        String message = resolveMessage(exception, status);
         prepareResponse(exchange, status);
         return writeResponse(exchange, buildResponseBody(exchange, status, message));
     }
 
-    private void prepareResponse(final ServerWebExchange exchange, final HttpStatus status) {
+    private void prepareResponse(ServerWebExchange exchange, HttpStatus status) {
         exchange.getResponse().setStatusCode(status);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
     }
 
     private Map<String, Object> buildResponseBody(
-            final ServerWebExchange exchange, final HttpStatus status, final String message) {
+            ServerWebExchange exchange, HttpStatus status, String message) {
 
-        final Map<String, Object> body = new LinkedHashMap<>();
+        Map<String, Object> body = new LinkedHashMap<>();
         body.put(FIELD_STATUS, status.value());
         body.put(FIELD_ERROR, status.getReasonPhrase());
         body.put(FIELD_MESSAGE, message);
@@ -59,13 +59,13 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
         return body;
     }
 
-    private Mono<Void> writeResponse(final ServerWebExchange exchange, final Map<String, Object> body) {
+    private Mono<Void> writeResponse(ServerWebExchange exchange, Map<String, Object> body) {
         return Mono.fromCallable(() -> objectMapper.writeValueAsBytes(body))
                 .map(bytes -> exchange.getResponse().bufferFactory().wrap(bytes))
                 .flatMap(buffer -> exchange.getResponse().writeWith(Mono.just(buffer)));
     }
 
-    private HttpStatus resolveStatus(final Throwable exception) {
+    private HttpStatus resolveStatus(Throwable exception) {
         if (exception instanceof ResponseStatusException rse) {
             return HttpStatus.valueOf(rse.getStatusCode().value());
         }
@@ -78,7 +78,7 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
-    private String resolveMessage(final Throwable exception, final HttpStatus status) {
+    private String resolveMessage(Throwable exception, HttpStatus status) {
         if (exception instanceof ResponseStatusException rse && rse.getReason() != null) {
             return rse.getReason();
         }

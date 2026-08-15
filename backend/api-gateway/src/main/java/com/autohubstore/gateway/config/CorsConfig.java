@@ -1,4 +1,4 @@
-package com.autohubstore.gateway.adapter.in.web;
+package com.autohubstore.gateway.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,7 +20,7 @@ public class CorsConfig {
 
     @Bean
     public CorsWebFilter corsWebFilter() {
-        final CorsConfiguration config = new CorsConfiguration();
+        CorsConfiguration config = new CorsConfiguration();
 
         Arrays.stream(allowedOriginsRaw.split(","))
                 .map(String::trim)
@@ -31,7 +31,7 @@ public class CorsConfig {
         config.setAllowCredentials(true);
         config.setMaxAge(CORS_MAX_AGE_SECONDS);
 
-        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 
         return new CorsWebFilter(source);

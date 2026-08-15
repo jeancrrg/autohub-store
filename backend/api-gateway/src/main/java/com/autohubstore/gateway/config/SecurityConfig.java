@@ -1,6 +1,8 @@
-package com.autohubstore.gateway.adapter.in.web;
+package com.autohubstore.gateway.config;
 
-import com.autohubstore.gateway.domain.port.in.ValidateTokenUseCase;
+import com.autohubstore.gateway.filter.JwtReactiveAuthenticationManager;
+import com.autohubstore.gateway.filter.JwtServerAuthenticationConverter;
+import com.autohubstore.gateway.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,10 +38,10 @@ public class SecurityConfig {
             "/fallback"
     };
 
-    private final ValidateTokenUseCase validateTokenUseCase;
+    private final JwtService jwtService;
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(final ServerHttpSecurity http) {
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
@@ -58,19 +60,19 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationWebFilter jwtAuthenticationFilter() {
-        final AuthenticationWebFilter filter = new AuthenticationWebFilter(
-                new JwtReactiveAuthenticationManager(validateTokenUseCase)
+        AuthenticationWebFilter filter = new AuthenticationWebFilter(
+                new JwtReactiveAuthenticationManager(jwtService)
         );
         filter.setServerAuthenticationConverter(new JwtServerAuthenticationConverter());
         return filter;
     }
 
-    private Mono<Void> handleUnauthorized(final ServerWebExchange exchange, final AuthenticationException e) {
+    private Mono<Void> handleUnauthorized(ServerWebExchange exchange, AuthenticationException e) {
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         return exchange.getResponse().setComplete();
     }
 
-    private Mono<Void> handleForbidden(final ServerWebExchange exchange, final AccessDeniedException e) {
+    private Mono<Void> handleForbidden(ServerWebExchange exchange, AccessDeniedException e) {
         exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
         return exchange.getResponse().setComplete();
     }

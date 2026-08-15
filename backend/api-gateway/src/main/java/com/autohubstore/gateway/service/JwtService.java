@@ -1,40 +1,42 @@
-package com.autohubstore.gateway.domain.service;
+package com.autohubstore.gateway.service;
 
-import com.autohubstore.gateway.domain.model.JwtClaims;
-import com.autohubstore.gateway.domain.port.in.ValidateTokenUseCase;
+import com.autohubstore.gateway.model.JwtClaims;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.List;
 
-public class JwtValidationService implements ValidateTokenUseCase {
+@Service
+public class JwtService {
 
     private final SecretKey signingKey;
 
-    public JwtValidationService(final String secret) {
+    public JwtService(@Value("${jwt.secret}") String secret) {
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
-    @Override
-    public JwtClaims validate(final String token) {
-        final Claims claims = Jwts.parser()
+    public JwtClaims validate(String token) {
+        Claims claims = Jwts.parser()
                 .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
 
-        final String userId = claims.getSubject();
-        final String email = claims.get("email", String.class);
-        final List<String> roles = extractRoles(claims);
+        String userId = claims.getSubject();
+        String email = claims.get("email", String.class);
+        List<String> roles = extractRoles(claims);
 
         return new JwtClaims(userId, email, roles);
     }
 
-    private List<String> extractRoles(final Claims claims) {
-        final Object rolesClaim = claims.get("roles");
+    private List<String> extractRoles(Claims claims) {
+        Object rolesClaim = claims.get("roles");
         if (rolesClaim instanceof List<?> roles) {
             return roles.stream()
                     .filter(String.class::isInstance)
@@ -44,12 +46,11 @@ public class JwtValidationService implements ValidateTokenUseCase {
         return List.of();
     }
 
-    @Override
-    public boolean isValid(final String token) {
+    public boolean isValid(String token) {
         try {
             validate(token);
             return true;
-        } catch (final Exception e) {
+        } catch (JwtException e) {
             return false;
         }
     }

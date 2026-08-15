@@ -57,7 +57,7 @@ autohub-store/
 
 | # | Serviço | Porta | Banco | Arquitetura | Build | Status |
 |---|---|---|---|---|---|---|
-| 1 | **API Gateway** | 8001 | Redis (rate limit) | Hexagonal | Maven | Implementado |
+| 1 | **API Gateway** | 8001 | Redis (rate limit) | MVC | Maven | Implementado |
 | 2 | **User Service** | 8002 | PostgreSQL + Redis | Clean Architecture | Maven | Planejado |
 | 3 | **Catalog Service** | 8003 | PostgreSQL + Redis | MVC | Gradle | Planejado |
 | 4 | **Search Service** | 8004 | Elasticsearch | MVC | Gradle | Planejado |
@@ -109,7 +109,7 @@ autohub-store/
 
 ## Padrões Arquiteturais por Serviço
 
-### Hexagonal — API Gateway, Inventory Service, Order Service
+### Hexagonal — Inventory Service, Order Service
 ```
 com.autohubstore.<service>/
 ├── domain/
@@ -143,7 +143,7 @@ com.autohubstore.userservice/
     └── config/      # Spring config
 ```
 
-### MVC — demais 6 serviços (Catalog, Search, Cart, Payment, Notification, Analytics)
+### MVC — API Gateway e demais 6 serviços (Catalog, Search, Cart, Payment, Notification, Analytics)
 ```
 com.autohubstore.<servicename>/
 ├── controller/    # @RestController
@@ -154,6 +154,10 @@ com.autohubstore.<servicename>/
 ├── messaging/     # Kafka producers/consumers
 └── config/        # @Configuration
 ```
+> API Gateway (sem JPA/Kafka) adapta o padrão: usa `filter/` no lugar de
+> `repository`/`messaging` para os `GlobalFilter`/security filters do Spring
+> Cloud Gateway (`RateLimitFilter`, `JwtServerAuthenticationConverter`,
+> `JwtReactiveAuthenticationManager`).
 
 ---
 
@@ -165,6 +169,10 @@ com.autohubstore.<servicename>/
 - **Flyway:** arquivos em `src/main/resources/db/migration/V*.sql`
 - **Swagger:** Springdoc OpenAPI 2.x, acessível em `/swagger-ui.html` em todos os serviços
 - **Sem @Service no domínio** — instanciado via `@Configuration` (ex: `DomainConfig.java`)
+- **Sem `final` desnecessário em parâmetros e variáveis locais** — nunca escrever `final String x` em
+  parâmetro de método/construtor nem `final Foo y = ...` em variável local (nem em `catch`/`for`).
+  `final` só se mantém em campos de classe (`private final Foo bar;`, exigido por
+  `@RequiredArgsConstructor`/imutabilidade) e em constantes (`private static final`).
 - **Variáveis de ambiente com default local:** `${VARIAVEL:valor-default}` no `application.yml`
 - **Virtual Threads:** `spring.threads.virtual.enabled=true` em todos os serviços (Java 25)
 - **Log:** sempre `@Slf4j` (Lombok, `lombok.extern.slf4j.Slf4j`) — nunca instanciar `Logger`/`LoggerFactory` manualmente. Usar campo `log` gerado pela anotação (ex: `log.info(...)`, `log.error(...)`). **Nunca usar `@Log4j`/`@Log4j2`** — projeto roda em SLF4J + Logback (padrão Spring Boot), não Log4j.

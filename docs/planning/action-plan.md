@@ -135,8 +135,8 @@ checkstyle {
 
 | # | Serviço | Build Tool | Arquitetura |
 |---|---|---|---|
-| 1 | API Gateway | **Maven** | **Hexagonal** |
-| 2 | User Service | **Maven** | **Clean Architecture** |
+| 1 | API Gateway | **Maven** | MVC |
+| 2 | User Service | **Maven** | MVC |
 | 3 | Catalog Service | **Gradle** | MVC |
 | 4 | Search Service | **Gradle** | MVC |
 | 5 | Cart Service | **Gradle** | MVC |
@@ -153,7 +153,7 @@ checkstyle {
 
 ## Padrões de Pacotes por Arquitetura
 
-### MVC (Catalog, Search, Cart, Payment, Notification, Analytics, Compatibility)
+### MVC (API Gateway, Catalog, Search, Cart, Payment, Notification, Analytics, Compatibility)
 
 ```
 com.autohubstore.<servicename>/
@@ -171,6 +171,13 @@ com.autohubstore.<servicename>/
 > vez de entidades JPA — regra de "sem `@ManyToOne`/relação automática" do
 > [CLAUDE.md § Padrões de Implementação](../../CLAUDE.md#padrões-de-implementação--obrigatórios-em-todo-código-gerado)
 > continua valendo: referência a `productId` como campo simples, nunca objeto embutido resolvido por join.
+
+> **API Gateway** não tem JPA/Kafka, então adapta o pacote MVC: usa `filter/` no lugar de
+> `repository`/`messaging`, para os `GlobalFilter`/security filters do Spring Cloud Gateway
+> (`RateLimitFilter`, `JwtServerAuthenticationConverter`, `JwtReactiveAuthenticationManager`).
+> `JwtService` e `RateLimitService` são `@Service` Spring-gerenciados de verdade, sem
+> porta/interface intermediária. Detalhe completo em
+> [docs/planning/specs/01-api-gateway.md](specs/01-api-gateway.md#estrutura-de-pacotes-mvc).
 
 ### Clean Architecture — User Service
 
@@ -192,26 +199,7 @@ com.autohubstore.userservice/
     └── config/         # Spring config
 ```
 
-### Hexagonal — API Gateway, Inventory Service e Order Service (Ports & Adapters)
-
-```
-com.autohubstore.gateway/
-├── domain/
-│   ├── model/           # JwtClaims (Value Object)
-│   ├── service/         # JwtValidationService, RateLimitDomainService (sem @Service)
-│   └── port/
-│       ├── in/          # ValidateTokenUseCase, CheckRateLimitUseCase
-│       └── out/         # RateLimitPort
-└── adapter/
-    ├── config/          # DomainConfig — instancia beans do domínio
-    ├── in/web/          # SecurityConfig, GatewayRoutesConfig, CorsConfig,
-    │                    # RateLimitFilter, FallbackController
-    └── out/
-        ├── redis/       # RateLimitRedisAdapter
-        └── web/         # GatewayExceptionHandler
-```
-
-### Hexagonal — Order Service (Ports & Adapters)
+### Hexagonal — Inventory Service e Order Service (Ports & Adapters)
 
 ```
 com.autohubstore.orderservice/

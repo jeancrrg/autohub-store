@@ -1,4 +1,4 @@
-package com.autohubstore.gateway.adapter.in.web;
+package com.autohubstore.gateway.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +12,7 @@ import java.util.Map;
 public class FallbackController {
 
     @RequestMapping("/fallback/{service}")
-    public ResponseEntity<Map<String, String>> serviceFallback(@PathVariable final String service) {
+    public ResponseEntity<Map<String, String>> serviceFallback(@PathVariable String service) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(Map.of(
                         "status", "503",

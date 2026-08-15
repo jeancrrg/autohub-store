@@ -1,4 +1,4 @@
-package com.autohubstore.gateway.adapter.in.web;
+package com.autohubstore.gateway.filter;
 
 import org.springframework.http.HttpCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,12 +12,12 @@ public class JwtServerAuthenticationConverter implements ServerAuthenticationCon
     private static final String ACCESS_TOKEN_COOKIE = "access_token";
 
     @Override
-    public Mono<Authentication> convert(final ServerWebExchange exchange) {
-        final HttpCookie cookie = exchange.getRequest().getCookies().getFirst(ACCESS_TOKEN_COOKIE);
+    public Mono<Authentication> convert(ServerWebExchange exchange) {
+        HttpCookie cookie = exchange.getRequest().getCookies().getFirst(ACCESS_TOKEN_COOKIE);
         if (cookie == null || cookie.getValue().isBlank()) {
             return Mono.empty();
         }
-        final String token = cookie.getValue();
+        String token = cookie.getValue();
         return Mono.just(new UsernamePasswordAuthenticationToken(token, token));
     }
 

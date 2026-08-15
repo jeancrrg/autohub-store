@@ -1,4 +1,4 @@
-package com.autohubstore.gateway.adapter.in.web;
+package com.autohubstore.gateway.model;
 
 public record ServiceRouteDefinition(String serviceId, String pathPrefix, String serviceUrl) {
 

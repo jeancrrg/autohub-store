@@ -1,6 +1,7 @@
-package com.autohubstore.gateway.adapter.in.web;
+package com.autohubstore.gateway.filter;
 
-import com.autohubstore.gateway.domain.port.in.CheckRateLimitUseCase;
+import com.autohubstore.gateway.model.RateLimitKey;
+import com.autohubstore.gateway.service.RateLimitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -23,7 +24,7 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     private static final String UNKNOWN_CLIENT = "unknown";
     private static final int FILTER_ORDER_OFFSET = 10;
 
-    private final CheckRateLimitUseCase checkRateLimitUseCase;
+    private final RateLimitService rateLimitService;
 
     @Override
     public int getOrder() {
@@ -31,33 +32,33 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(final ServerWebExchange exchange, final GatewayFilterChain chain) {
-        final String path = exchange.getRequest().getPath().value();
-        final String clientIp = resolveClientIp(exchange);
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String path = exchange.getRequest().getPath().value();
+        String clientIp = resolveClientIp(exchange);
 
         return exchange.getPrincipal()
                 .cast(Authentication.class)
                 .map(auth -> buildAuthenticatedKey(auth, path))
                 .defaultIfEmpty(buildAnonymousKey(clientIp, path))
-                .flatMap(rlKey -> checkRateLimitUseCase.isAllowed(rlKey.key(), rlKey.authenticated()))
+                .flatMap(rlKey -> rateLimitService.isAllowed(rlKey.key(), rlKey.authenticated()))
                 .flatMap(allowed -> allowed ? chain.filter(exchange) : rejectRequest(exchange));
     }
 
-    private String resolveClientIp(final ServerWebExchange exchange) {
+    private String resolveClientIp(ServerWebExchange exchange) {
         return Optional.ofNullable(exchange.getRequest().getRemoteAddress())
                 .map(InetSocketAddress::getHostString)
                 .orElse(UNKNOWN_CLIENT);
     }
 
-    private RateLimitKey buildAuthenticatedKey(final Authentication auth, final String path) {
+    private RateLimitKey buildAuthenticatedKey(Authentication auth, String path) {
         return new RateLimitKey(auth.getName() + ":" + path, auth.isAuthenticated());
     }
 
-    private RateLimitKey buildAnonymousKey(final String clientIp, final String path) {
+    private RateLimitKey buildAnonymousKey(String clientIp, String path) {
         return new RateLimitKey(clientIp + ":" + path, false);
     }
 
-    private Mono<Void> rejectRequest(final ServerWebExchange exchange) {
+    private Mono<Void> rejectRequest(ServerWebExchange exchange) {
         exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
         exchange.getResponse().getHeaders().add(RETRY_AFTER_HEADER, RETRY_AFTER_SECONDS);
         return exchange.getResponse().setComplete();

@@ -1,4 +1,4 @@
-package com.autohubstore.gateway.adapter.in.web;
+package com.autohubstore.gateway.model;
 
 public record RateLimitKey(String key, boolean authenticated) {
 

@@ -1,5 +1,6 @@
-package com.autohubstore.gateway.adapter.in.web;
+package com.autohubstore.gateway.config;
 
+import com.autohubstore.gateway.model.ServiceRouteDefinition;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.route.RouteLocator;
@@ -37,10 +38,10 @@ public class GatewayRoutesConfig {
     private final ServiceRouteFactory routeFactory;
 
     @Bean
-    public RouteLocator routeLocator(final RouteLocatorBuilder builder) {
+    public RouteLocator routeLocator(RouteLocatorBuilder builder) {
         RouteLocatorBuilder.Builder routes = builder.routes();
-        final List<ServiceRouteDefinition> definitions = createRouteDefinitions();
-        for (final ServiceRouteDefinition definition : definitions) {
+        List<ServiceRouteDefinition> definitions = createRouteDefinitions();
+        for (ServiceRouteDefinition definition : definitions) {
             routes = routeFactory.apply(routes, definition);
         }
         return routes.build();

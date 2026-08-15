@@ -1,6 +1,6 @@
 # API Gateway
 
-**Build Tool:** Maven | **Arquitetura:** Hexagonal (Ports & Adapters) | **Porta:** 8001 | **Status:** Implementado
+**Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8001 | **Status:** Implementado
 
 ## Objetivo
 
@@ -113,41 +113,37 @@ Ponto de entrada único do AutoHubStore. Roteia requisições para os microsserv
 </dependencyManagement>
 ```
 
-## Estrutura de Pacotes (Hexagonal — Ports & Adapters)
+## Estrutura de Pacotes (MVC)
 
 ```
 com.autohubstore.gateway/
 ├── GatewayApplication.java
-├── domain/
-│   ├── model/
-│   │   └── JwtClaims.java                    # Value Object — claims do token JWT
-│   ├── port/
-│   │   ├── in/
-│   │   │   ├── ValidateTokenUseCase.java      # Driving port: validate(token) → JwtClaims
-│   │   │   └── CheckRateLimitUseCase.java     # Driving port: isAllowed(key, auth) → Mono<Boolean>
-│   │   └── out/
-│   │       └── RateLimitPort.java             # Driven port: increment + setExpiry
-│   └── service/
-│       ├── JwtValidationService.java          # Domain service — sem @Service
-│       └── RateLimitDomainService.java        # Domain service — sem @Service
-└── adapter/
-    ├── config/
-    │   └── DomainConfig.java                  # Instancia beans do domínio com @Configuration
-    ├── in/
-    │   └── web/
-    │       ├── SecurityConfig.java            # @EnableWebFluxSecurity + AuthenticationWebFilter
-    │       ├── GatewayRoutesConfig.java       # RouteLocator (Java DSL)
-    │       ├── CorsConfig.java                # CorsWebFilter
-    │       ├── RateLimitFilter.java           # GlobalFilter — chama CheckRateLimitUseCase
-    │       └── FallbackController.java        # @RestController — respostas 503
-    └── out/
-        ├── redis/
-        │   └── RateLimitRedisAdapter.java     # Implementa RateLimitPort via Redis reativo
-        └── web/
-            └── GatewayExceptionHandler.java   # ErrorWebExceptionHandler — erros em JSON
+├── controller/
+│   └── FallbackController.java            # @RestController — respostas 503
+├── service/
+│   ├── JwtService.java                    # @Service — valida/parseia JWT (JJWT)
+│   └── RateLimitService.java              # @Service — rate limit via Redis reativo
+├── filter/
+│   ├── RateLimitFilter.java               # GlobalFilter — chama RateLimitService
+│   ├── JwtServerAuthenticationConverter.java  # Extrai token do cookie httpOnly
+│   └── JwtReactiveAuthenticationManager.java  # Autentica via JwtService
+├── model/
+│   ├── JwtClaims.java                     # Claims do token JWT
+│   ├── RateLimitKey.java                  # Chave + flag autenticado do rate limit
+│   └── ServiceRouteDefinition.java        # Definição de rota por serviço downstream
+├── exception/
+│   └── GatewayExceptionHandler.java       # ErrorWebExceptionHandler — erros em JSON
+└── config/
+    ├── SecurityConfig.java                # @EnableWebFluxSecurity + AuthenticationWebFilter
+    ├── GatewayRoutesConfig.java           # RouteLocator (Java DSL)
+    ├── ServiceRouteFactory.java           # Monta rota + circuit breaker por ServiceRouteDefinition
+    └── CorsConfig.java                    # CorsWebFilter
 ```
 
-> **Princípio Hexagonal:** O domínio (`domain/`) não tem nenhuma dependência do Spring. As classes `JwtValidationService` e `RateLimitDomainService` são POJOs puros instanciados via `DomainConfig`. Os adapters (`adapter/`) contêm toda a cola com o framework.
+> Gateway não tem JPA/Kafka, então adapta o padrão MVC dos demais serviços: `filter/` no
+> lugar de `repository`/`messaging`, para os `GlobalFilter`/security filters do Spring Cloud
+> Gateway. `JwtService` e `RateLimitService` são `@Service` Spring-gerenciados de verdade
+> (sem porta/interface intermediária).
 
 ## Configuração de Rotas (application.yml)
 
@@ -277,6 +273,6 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
 
 ## Estratégia de Testes
 
-- **Unitários:** JwtValidationService (token válido, expirado, inválido, ausente), RateLimitService
+- **Unitários:** JwtService (token válido, expirado, inválido, ausente), RateLimitService
 - **Integração:** WebTestClient testando roteamento e respostas de erro (401, 429)
 - **Segurança:** Endpoint protegido sem token → 401; rate limit excedido → 429

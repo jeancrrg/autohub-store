@@ -1,4 +1,4 @@
-package com.autohubstore.gateway.domain.model;
+package com.autohubstore.gateway.model;
 
 import java.util.List;
 
