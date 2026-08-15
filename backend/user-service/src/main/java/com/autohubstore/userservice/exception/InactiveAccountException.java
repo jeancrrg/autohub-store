@@ -4,7 +4,7 @@ public class InactiveAccountException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    public InactiveAccountException(final String message) {
+    public InactiveAccountException(String message) {
         super(message);
     }
 

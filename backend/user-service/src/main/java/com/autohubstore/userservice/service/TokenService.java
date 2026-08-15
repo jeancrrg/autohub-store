@@ -28,10 +28,10 @@ public class TokenService {
     private final long passwordResetTtlMinutes;
 
     public TokenService(
-            final RefreshTokenRepository refreshTokenRepository,
-            final PasswordResetTokenRepository passwordResetTokenRepository,
-            @Value("${jwt.refresh-expiration-ms:604800000}") final long refreshTokenTtlMs,
-            @Value("${auth.password-reset-ttl-minutes:15}") final long passwordResetTtlMinutes) {
+            RefreshTokenRepository refreshTokenRepository,
+            PasswordResetTokenRepository passwordResetTokenRepository,
+            @Value("${jwt.refresh-expiration-ms:604800000}") long refreshTokenTtlMs,
+            @Value("${auth.password-reset-ttl-minutes:15}") long passwordResetTtlMinutes) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.refreshTokenTtlSeconds = refreshTokenTtlMs / MILLIS_PER_SECOND;
@@ -39,7 +39,7 @@ public class TokenService {
     }
 
     @Transactional
-    public RefreshToken createRefreshToken(final UUID userId) {
+    public RefreshToken createRefreshToken(UUID userId) {
         refreshTokenRepository.revokeAllByUserId(userId);
         String tokenValue = generateSecureToken();
         Instant expiresAt = Instant.now().plusSeconds(refreshTokenTtlSeconds);
@@ -48,7 +48,7 @@ public class TokenService {
     }
 
     @Transactional
-    public RefreshToken rotateRefreshToken(final String tokenValue) {
+    public RefreshToken rotateRefreshToken(String tokenValue) {
         RefreshToken existing = refreshTokenRepository.findByToken(tokenValue)
                 .orElseThrow(() -> new InvalidTokenException("Refresh token não encontrado"));
 
@@ -66,14 +66,14 @@ public class TokenService {
     }
 
     @Transactional
-    public PasswordResetToken createPasswordResetToken(final UUID userId) {
+    public PasswordResetToken createPasswordResetToken(UUID userId) {
         String tokenValue = generateSecureToken();
         PasswordResetToken token = PasswordResetToken.create(userId, tokenValue, passwordResetTtlMinutes);
         return passwordResetTokenRepository.save(token);
     }
 
     @Transactional
-    public PasswordResetToken consumePasswordResetToken(final String tokenValue) {
+    public PasswordResetToken consumePasswordResetToken(String tokenValue) {
         PasswordResetToken token = passwordResetTokenRepository.findByToken(tokenValue)
                 .orElseThrow(() -> new InvalidTokenException("Token de reset não encontrado"));
 
@@ -86,7 +86,7 @@ public class TokenService {
     }
 
     @Transactional
-    public void revokeRefreshToken(final String tokenValue) {
+    public void revokeRefreshToken(String tokenValue) {
         refreshTokenRepository.findByToken(tokenValue).ifPresent(token -> {
             token.revoke();
             refreshTokenRepository.save(token);

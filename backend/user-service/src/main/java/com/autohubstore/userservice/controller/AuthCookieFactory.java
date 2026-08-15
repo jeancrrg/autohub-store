@@ -14,7 +14,7 @@ public class AuthCookieFactory {
     private static final long REFRESH_TOKEN_TTL_SECONDS = 604800L;
     private static final int ZERO_MAX_AGE = 0;
 
-    public ResponseCookie buildAccessTokenCookie(final String token, final long ttlSeconds) {
+    public ResponseCookie buildAccessTokenCookie(String token, long ttlSeconds) {
         return ResponseCookie.from(ACCESS_TOKEN_COOKIE, token)
                 .httpOnly(true)
                 .secure(true)
@@ -24,7 +24,7 @@ public class AuthCookieFactory {
                 .build();
     }
 
-    public ResponseCookie buildRefreshTokenCookie(final String token) {
+    public ResponseCookie buildRefreshTokenCookie(String token) {
         return ResponseCookie.from(REFRESH_TOKEN_COOKIE, token)
                 .httpOnly(true)
                 .secure(true)

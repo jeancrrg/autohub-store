@@ -44,7 +44,7 @@ public class RefreshToken {
     @Column(name = "revoked", nullable = false)
     private boolean revoked;
 
-    public static RefreshToken create(final UUID userId, final String token, final Instant expiresAt) {
+    public static RefreshToken create(UUID userId, String token, Instant expiresAt) {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.userId = userId;
         refreshToken.token = token;

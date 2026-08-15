@@ -29,15 +29,15 @@ public class AuthController implements AuthControllerDocs {
     private final AuthCookieFactory cookieFactory;
 
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@Valid @RequestBody final LoginRequest request) {
+    public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse tokens = authService.login(request);
         return withSessionCookies(tokens);
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @CookieValue(value = "access_token", required = false) final String accessToken,
-            @CookieValue(value = "refresh_token", required = false) final String refreshToken) {
+            @CookieValue(value = "access_token", required = false) String accessToken,
+            @CookieValue(value = "refresh_token", required = false) String refreshToken) {
         authService.logout(accessToken, refreshToken);
         return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, cookieFactory.expiredAccessTokenCookie().toString())
@@ -47,24 +47,24 @@ public class AuthController implements AuthControllerDocs {
 
     @PostMapping("/refresh")
     public ResponseEntity<Void> refresh(
-            @CookieValue(value = "refresh_token", required = true) final String refreshToken) {
+            @CookieValue(value = "refresh_token", required = true) String refreshToken) {
         LoginResponse tokens = authService.refresh(refreshToken);
         return withSessionCookies(tokens);
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody final ForgotPasswordRequest request) {
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         authService.forgotPassword(request);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@Valid @RequestBody final ResetPasswordRequest request) {
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    private ResponseEntity<Void> withSessionCookies(final LoginResponse tokens) {
+    private ResponseEntity<Void> withSessionCookies(LoginResponse tokens) {
         return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE,
                         cookieFactory.buildAccessTokenCookie(tokens.accessToken(), tokens.expiresIn()).toString())

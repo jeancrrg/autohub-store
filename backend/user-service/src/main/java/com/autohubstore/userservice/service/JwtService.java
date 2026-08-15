@@ -26,13 +26,13 @@ public class JwtService {
     private final long accessTokenTtlMs;
 
     public JwtService(
-            @Value("${jwt.secret}") final String secret,
-            @Value("${jwt.expiration-ms:3600000}") final long accessTokenTtlMs) {
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.expiration-ms:3600000}") long accessTokenTtlMs) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessTokenTtlMs = accessTokenTtlMs;
     }
 
-    public String generateAccessToken(final UUID userId, final String email, final List<String> roles) {
+    public String generateAccessToken(UUID userId, String email, List<String> roles) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
@@ -45,7 +45,7 @@ public class JwtService {
                 .compact();
     }
 
-    public TokenClaims extractClaims(final String token) {
+    public TokenClaims extractClaims(String token) {
         Claims claims = parseClaims(token);
         @SuppressWarnings("unchecked")
         List<String> roles = claims.get("roles", List.class);
@@ -57,7 +57,7 @@ public class JwtService {
         );
     }
 
-    public boolean isTokenExpired(final String token) {
+    public boolean isTokenExpired(String token) {
         try {
             return parseClaims(token).getExpiration().before(new Date());
         } catch (ExpiredJwtException e) {
@@ -65,7 +65,7 @@ public class JwtService {
         }
     }
 
-    public long getRemainingTtlSeconds(final String token) {
+    public long getRemainingTtlSeconds(String token) {
         try {
             Date expiration = parseClaims(token).getExpiration();
             long remaining = expiration.getTime() - System.currentTimeMillis();
@@ -75,7 +75,7 @@ public class JwtService {
         }
     }
 
-    private Claims parseClaims(final String token) {
+    private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()

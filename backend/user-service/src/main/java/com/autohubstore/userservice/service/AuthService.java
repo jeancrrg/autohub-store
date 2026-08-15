@@ -33,7 +33,7 @@ public class AuthService {
     @Value("${jwt.expiration-ms:3600000}")
     private long accessTokenTtlMs;
 
-    public LoginResponse login(final LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
         UserResponse user = userService.validateCredentials(request.email(), request.password());
 
         String accessToken = jwtService.generateAccessToken(user.id(), user.email(), List.of(user.role().name()));
@@ -42,7 +42,7 @@ public class AuthService {
         return LoginResponse.of(accessToken, refreshToken.getToken(), accessTokenTtlSeconds());
     }
 
-    public void logout(final String accessToken, final String refreshToken) {
+    public void logout(String accessToken, String refreshToken) {
         if (accessToken != null && !accessToken.isBlank()) {
             TokenClaims claims = jwtService.extractClaims(accessToken);
             long remainingTtl = jwtService.getRemainingTtlSeconds(accessToken);
@@ -56,7 +56,7 @@ public class AuthService {
         }
     }
 
-    public LoginResponse refresh(final String refreshToken) {
+    public LoginResponse refresh(String refreshToken) {
         RefreshToken newToken = tokenService.rotateRefreshToken(refreshToken);
         UserResponse user = userService.findUser(newToken.getUserId());
 
@@ -65,7 +65,7 @@ public class AuthService {
         return LoginResponse.of(accessToken, newToken.getToken(), accessTokenTtlSeconds());
     }
 
-    public void forgotPassword(final ForgotPasswordRequest request) {
+    public void forgotPassword(ForgotPasswordRequest request) {
         if (!userService.existsByEmail(request.email())) {
             return;
         }
@@ -83,7 +83,7 @@ public class AuthService {
         );
     }
 
-    public void resetPassword(final ResetPasswordRequest request) {
+    public void resetPassword(ResetPasswordRequest request) {
         PasswordResetToken token = tokenService.consumePasswordResetToken(request.token());
         userService.updatePassword(token.getUserId(), request.newPassword());
     }

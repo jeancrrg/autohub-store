@@ -17,7 +17,7 @@ public class PasswordResetEventPublisher {
 
     private final KafkaTemplate<String, PasswordResetRequestedEvent> passwordResetKafkaTemplate;
 
-    public void publishPasswordResetRequested(final PasswordResetRequestedEvent event) {
+    public void publishPasswordResetRequested(PasswordResetRequestedEvent event) {
         passwordResetKafkaTemplate.send(TOPIC, event.userId().toString(), event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {

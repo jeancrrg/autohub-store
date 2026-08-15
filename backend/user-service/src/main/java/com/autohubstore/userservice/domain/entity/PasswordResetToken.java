@@ -46,7 +46,7 @@ public class PasswordResetToken {
     @Column(name = "used", nullable = false)
     private boolean used;
 
-    public static PasswordResetToken create(final UUID userId, final String token, final long ttlMinutes) {
+    public static PasswordResetToken create(UUID userId, String token, long ttlMinutes) {
         PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.userId = userId;
         resetToken.token = token;

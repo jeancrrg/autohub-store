@@ -9,7 +9,7 @@ public record LoginResponse(
 
     private static final String BEARER = "Bearer";
 
-    public static LoginResponse of(final String accessToken, final String refreshToken, final long expiresIn) {
+    public static LoginResponse of(String accessToken, String refreshToken, long expiresIn) {
         return new LoginResponse(accessToken, refreshToken, BEARER, expiresIn);
     }
 

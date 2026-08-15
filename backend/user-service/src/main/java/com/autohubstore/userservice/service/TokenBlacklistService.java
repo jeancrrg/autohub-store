@@ -15,12 +15,12 @@ public class TokenBlacklistService {
 
     private final StringRedisTemplate redisTemplate;
 
-    public void blacklist(final String jti, final long ttlSeconds) {
+    public void blacklist(String jti, long ttlSeconds) {
         redisTemplate.opsForValue()
                 .set(KEY_PREFIX + jti, "revoked", Duration.ofSeconds(ttlSeconds));
     }
 
-    public boolean isBlacklisted(final String jti) {
+    public boolean isBlacklisted(String jti) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(KEY_PREFIX + jti));
     }
 
