@@ -1,6 +1,6 @@
 import { apiClient } from './client'
 import type { Product } from '@/types/product'
-import type { AdminCategory } from '@/types/category'
+import type { Category } from '@/types/category'
 import type { Brand } from '@/types/brand'
 
 type ProductImageResponse = {
@@ -86,7 +86,7 @@ type CategoryResponse = {
     createdAt: string
 }
 
-export async function fetchCategories(): Promise<AdminCategory[]> {
+export async function fetchCategories(): Promise<Category[]> {
     const { data } = await apiClient.get<CategoryResponse[]>('/api/v1/catalog/categories')
     return data
 }

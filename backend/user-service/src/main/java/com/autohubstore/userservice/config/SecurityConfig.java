@@ -17,12 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * Cadeia de segurança do User Service. Antes da fusão com o Auth Service, este serviço
- * apenas confiava no JWT já validado pelo API Gateway (permitAll). Agora que login,
- * refresh e reset de senha vivem neste mesmo serviço, a validação do JWT (cookie
- * access_token) roda aqui também, protegendo os endpoints de perfil/endereço.
- */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
