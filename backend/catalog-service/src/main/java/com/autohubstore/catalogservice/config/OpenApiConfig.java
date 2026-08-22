@@ -49,14 +49,7 @@ public class OpenApiConfig {
                         **Autenticação:** endpoints de leitura são públicos. Endpoints de escrita (admin)
                         requerem Bearer JWT com role ADMIN, validado pelo API Gateway.
                         """)
-                .version("0.0.1")
-                .contact(new Contact()
-                        .name("AutoHubStore")
-                        .email("dev@autohubstore.com")
-                        .url("https://github.com/autohubstore"))
-                .license(new License()
-                        .name("MIT License")
-                        .url("https://opensource.org/licenses/MIT"));
+                .version("1.0.0");
     }
 
     private SecurityScheme bearerSecurityScheme() {
@@ -64,7 +57,7 @@ public class OpenApiConfig {
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
                 .bearerFormat("JWT")
-                .description("JWT Bearer token emitido pelo Auth Service. Formato: `Bearer <token>`");
+                .description("JWT Bearer token emitido pelo User Service. Formato: `Bearer <token>`");
     }
 
 }
