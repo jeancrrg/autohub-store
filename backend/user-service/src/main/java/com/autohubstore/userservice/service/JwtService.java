@@ -12,37 +12,22 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Só valida (nunca emite) access tokens — emissão é responsabilidade do Auth Service.
+ * Usado pelo {@link com.autohubstore.userservice.config.security.JwtAuthenticationFilter}
+ * para resolver a identidade de quem chama {@code /api/v1/users/**}.
+ */
 @Service
 public class JwtService {
 
-    private static final long MILLIS_PER_SECOND = 1000L;
-
     private final SecretKey secretKey;
-    private final long accessTokenTtlMs;
 
-    public JwtService(
-            @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration-ms:3600000}") long accessTokenTtlMs) {
+    public JwtService(@Value("${jwt.secret}") String secret) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.accessTokenTtlMs = accessTokenTtlMs;
-    }
-
-    public String generateAccessToken(UUID userId, String email, List<String> roles) {
-        Instant now = Instant.now();
-        return Jwts.builder()
-                .id(UUID.randomUUID().toString())
-                .subject(userId.toString())
-                .claim("email", email)
-                .claim("roles", roles)
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(accessTokenTtlMs)))
-                .signWith(secretKey)
-                .compact();
     }
 
     public TokenClaims extractClaims(String token) {
@@ -62,16 +47,6 @@ public class JwtService {
             return parseClaims(token).getExpiration().before(new Date());
         } catch (ExpiredJwtException e) {
             return true;
-        }
-    }
-
-    public long getRemainingTtlSeconds(String token) {
-        try {
-            Date expiration = parseClaims(token).getExpiration();
-            long remaining = expiration.getTime() - System.currentTimeMillis();
-            return Math.max(0, remaining / MILLIS_PER_SECOND);
-        } catch (ExpiredJwtException e) {
-            return 0;
         }
     }
 

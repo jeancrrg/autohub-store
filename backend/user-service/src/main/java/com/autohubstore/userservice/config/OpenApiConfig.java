@@ -21,10 +21,10 @@ public class OpenApiConfig {
                 .info(apiInfo())
                 .servers(List.of(
                         new Server()
-                                .url("http://localhost:8002")
+                                .url("http://localhost:8003")
                                 .description("Desenvolvimento local"),
                         new Server()
-                                .url("http://user-service:8002")
+                                .url("http://user-service:8003")
                                 .description("Docker Compose (rede interna)")
                 ))
                 .components(new Components()
@@ -36,18 +36,21 @@ public class OpenApiConfig {
         return new Info()
                 .title("User Service API")
                 .description("""
-                        Microsserviço responsável por identidade, cadastro, perfil e endereços de usuários
-                        do AutoHubStore (fusão Auth + User).
+                        Microsserviço responsável por cadastro, perfil e endereços de usuários do
+                        AutoHubStore. Não lida com autenticação (login, tokens, sessão) — isso é
+                        responsabilidade do Auth Service, que consome os endpoints internos deste
+                        serviço em `/internal/v1/users/**` para validar/atualizar credencial.
 
                         **Responsabilidades:**
-                        - Login, logout, refresh e reset de senha (JWT + refresh token + blacklist Redis)
                         - Cadastro de novos usuários com hash BCrypt de senha
                         - Consulta e atualização de perfil (`/api/v1/users/me`, `/api/v1/users/{id}`)
                         - CRUD de endereços de entrega
-                        - Publicação dos eventos `user.created` e `user.password-reset` no Kafka
+                        - Publicação do evento `user.created` no Kafka
+                        - Endpoints internos (`/internal/v1/users/**`, não expostos pelo Gateway)
+                          consumidos pelo Auth Service via OpenFeign
 
-                        **Autenticação:** endpoints de cadastro e `/api/v1/auth/*` são públicos. Os demais
-                        exigem cookie `access_token` (httpOnly) válido, emitido por este próprio serviço.
+                        **Autenticação:** o cadastro é público. Os demais endpoints exigem cookie
+                        `access_token` (httpOnly) válido, emitido pelo Auth Service.
                         """)
                 .version("0.0.1")
                 .contact(new Contact()

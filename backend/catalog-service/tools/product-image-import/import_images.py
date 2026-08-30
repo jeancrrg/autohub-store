@@ -18,7 +18,7 @@ import os
 SCRIPT_DIR = Path(__file__).resolve().parent
 load_dotenv(SCRIPT_DIR / ".env")
 
-API_BASE_URL = os.getenv("CATALOG_API_BASE_URL", "http://localhost:8003").rstrip("/")
+API_BASE_URL = os.getenv("CATALOG_API_BASE_URL", "http://localhost:8004").rstrip("/")
 IMAGES_DIR = SCRIPT_DIR / os.getenv("IMAGES_DIR", "images")
 REQUEST_TIMEOUT_SECONDS = 15
 

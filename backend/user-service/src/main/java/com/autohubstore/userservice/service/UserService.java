@@ -60,11 +60,6 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("email=" + email)));
     }
 
-    @Transactional(readOnly = true)
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
-    }
-
     @Transactional
     public UserResponse updateUser(UUID id, UpdateUserRequest request) {
         User user = findOrThrow(id);

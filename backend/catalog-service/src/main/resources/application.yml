@@ -46,7 +46,7 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
-  port: 8003
+  port: 8004
 
 management:
   endpoints:

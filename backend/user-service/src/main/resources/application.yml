@@ -37,15 +37,10 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
-  port: 8002
+  port: 8003
 
 jwt:
   secret: ${JWT_SECRET:autohubstore-secret-key-must-be-at-least-256-bits-long-for-hs256}
-  expiration-ms: ${JWT_EXPIRATION_MS:3600000}
-  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
-
-auth:
-  password-reset-ttl-minutes: ${PASSWORD_RESET_TOKEN_TTL_MINUTES:15}
 
 management:
   endpoints:

@@ -50,8 +50,8 @@ copy .env.example .env      # Windows
 # cp .env.example .env      # Linux/Mac
 ```
 
-Ajuste `.env` se o catalog-service não estiver em `http://localhost:8003`
-(porta configurada em `application.yml`, `server.port: 8003`).
+Ajuste `.env` se o catalog-service não estiver em `http://localhost:8004`
+(porta configurada em `application.yml`, `server.port: 8004`).
 
 ## Rodando
 
@@ -84,7 +84,7 @@ não duplica imagem em nenhum produto.
 
 2. **Pela API** — conferir um produto específico:
    ```bash
-   curl http://localhost:8003/api/v1/catalog/products/slug/vonixx-v-mol-shampoo-automotivo
+   curl http://localhost:8004/api/v1/catalog/products/slug/vonixx-v-mol-shampoo-automotivo
    ```
    O campo `images` deve vir com 1 item, `isPrimary: true`, e `url` no
    formato `/catalog-images/{productId}/{uuid}.webp`.

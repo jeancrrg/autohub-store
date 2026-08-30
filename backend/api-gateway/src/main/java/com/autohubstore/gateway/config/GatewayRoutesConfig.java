@@ -14,6 +14,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GatewayRoutesConfig {
 
+    @Value("${services.auth.url:lb://auth-service}")
+    private String authServiceUrl;
+
     @Value("${services.user.url:lb://user-service}")
     private String userServiceUrl;
 
@@ -50,7 +53,7 @@ public class GatewayRoutesConfig {
     private List<ServiceRouteDefinition> createRouteDefinitions() {
         return List.of(
                 new ServiceRouteDefinition("user-service", "/api/v1/users/**", userServiceUrl),
-                new ServiceRouteDefinition("user-service-auth", "/api/v1/auth/**", userServiceUrl),
+                new ServiceRouteDefinition("auth-service", "/api/v1/auth/**", authServiceUrl),
                 new ServiceRouteDefinition("catalog-service", "/api/v1/catalog/**", catalogServiceUrl),
                 new ServiceRouteDefinition("search-service", "/api/v1/search/**", searchServiceUrl),
                 new ServiceRouteDefinition("cart-service", "/api/v1/cart/**", cartServiceUrl),

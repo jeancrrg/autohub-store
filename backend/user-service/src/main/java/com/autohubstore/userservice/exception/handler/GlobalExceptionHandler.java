@@ -4,7 +4,6 @@ import com.autohubstore.userservice.exception.AddressNotFoundException;
 import com.autohubstore.userservice.exception.EmailAlreadyExistsException;
 import com.autohubstore.userservice.exception.InactiveAccountException;
 import com.autohubstore.userservice.exception.InvalidCredentialsException;
-import com.autohubstore.userservice.exception.InvalidTokenException;
 import com.autohubstore.userservice.exception.UserNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -70,14 +69,6 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleInactiveAccount(InactiveAccountException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
         problem.setTitle("Forbidden");
-        problem.setDetail(ex.getMessage());
-        return problem;
-    }
-
-    @ExceptionHandler(InvalidTokenException.class)
-    public ProblemDetail handleInvalidToken(InvalidTokenException ex) {
-        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
-        problem.setTitle("Unauthorized");
         problem.setDetail(ex.getMessage());
         return problem;
     }

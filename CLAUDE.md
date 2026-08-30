@@ -4,6 +4,12 @@
 
 **AutoHubStore** é um e-commerce automotivo fictício desenvolvido como projeto de estudo avançado em Backend Java. Objetivo: evoluir para nível Pleno I e Pleno II aplicando microsserviços, DDD, Clean Architecture, Event-Driven Architecture e Cloud Native. Toda arquitetura e decisões técnicas são elaboradas com rigor de produto real.
 
+> **12 microsserviços** ao total. Ordem de criação e detalhes completos das decisões de escopo em
+> [docs/planning/action-plan.md § Decisões de Consolidação](docs/planning/action-plan.md#decisões-de-consolidação).
+> Destaque: **Auth Service** é o 2º serviço criado (logo após o Gateway) — extraído do User
+> Service para isolar Autenticação (sessão/token) de Perfil (CRUD cadastral); **Compatibility
+> Service** é o 12º e último.
+
 ---
 
 ## Status Atual (Fase 1 — Fundação)
@@ -30,7 +36,7 @@ autohub-store/
 │   └── api-gateway/           # IMPLEMENTADO — Spring Boot 3.x, Java 25, Maven, Hexagonal
 │   # (futuros serviços criados em backend/<nome-do-servico>/)
 ├── infra/
-│   ├── docker-compose.yml     # PostgreSQL x5, Redis, Kafka, Elasticsearch, Cassandra + monitoring
+│   ├── docker-compose.yml     # PostgreSQL x6, Redis, Kafka, Elasticsearch, Cassandra + monitoring
 │   └── prometheus.yml
 ├── docs/
 │   ├── apps/                  # Documentação técnica e didática de cada app
@@ -39,34 +45,37 @@ autohub-store/
 │       ├── action-plan.md     # Plano de ação das 10 fases (inclui Decisões de Consolidação)
 │       └── specs/             # Specs detalhadas por microsserviço
 │           ├── 01-api-gateway.md
-│           ├── 02-user-service.md
-│           └── ... (03 a 10)
+│           ├── 02-auth-service.md
+│           └── ... (03 a 12)
 ├── README.md
 └── CLAUDE.md                  # este arquivo
 ```
 
 ---
 
-## 10 Microsserviços
+## 12 Microsserviços
 
-> Escopo revisado: Auth Service foi fundido em User Service (mesmo bounded context de Identidade)
-> e um novo Inventory Service foi extraído do Catalog Service (controle de estoque exige forte
-> consistência/reserva, incompatível com o papel de leitura/cache do Catalog). Detalhes e
-> justificativa completa em
+> Escopo revisado: Inventory Service foi extraído do Catalog Service (controle de estoque exige
+> forte consistência/reserva, incompatível com o papel de leitura/cache do Catalog), Compatibility
+> Service também foi extraído do Catalog (bounded context próprio de fitment peça↔veículo), e
+> Auth Service foi extraído do User Service (Autenticação e Perfil são bounded contexts distintos,
+> mesmo dependendo um do outro via OpenFeign). Detalhes e justificativa completa em
 > [docs/planning/action-plan.md § Decisões de Consolidação](docs/planning/action-plan.md#decisões-de-consolidação).
 
 | # | Serviço | Porta | Banco | Arquitetura | Build | Status |
 |---|---|---|---|---|---|---|
 | 1 | **API Gateway** | 8001 | Redis (rate limit) | MVC | Maven | Implementado |
-| 2 | **User Service** | 8002 | PostgreSQL + Redis | Clean Architecture | Maven | Planejado |
-| 3 | **Catalog Service** | 8003 | PostgreSQL + Redis | MVC | Gradle | Planejado |
-| 4 | **Search Service** | 8004 | Elasticsearch | MVC | Gradle | Planejado |
-| 5 | **Cart Service** | 8005 | Redis | MVC | Gradle | Planejado |
-| 6 | **Inventory Service** | 8006 | PostgreSQL | Hexagonal | Maven | Planejado |
-| 7 | **Order Service** | 8007 | PostgreSQL | Hexagonal | Maven | Planejado |
-| 8 | **Payment Service** | 8008 | PostgreSQL | MVC | Maven | Planejado |
-| 9 | **Notification Service** | 8009 | — (stateless) | MVC | Gradle | Planejado |
-| 10 | **Analytics Service** | 8010 | Cassandra | MVC | Gradle | Planejado |
+| 2 | **Auth Service** | 8002 | PostgreSQL + Redis | MVC | Maven | Em implementação |
+| 3 | **User Service** | 8003 | PostgreSQL | Clean Architecture | Maven | Em implementação |
+| 4 | **Catalog Service** | 8004 | PostgreSQL + Redis | MVC | Gradle | Em implementação |
+| 5 | **Search Service** | 8005 | Elasticsearch | MVC | Gradle | Planejado |
+| 6 | **Cart Service** | 8006 | Redis | MVC | Gradle | Planejado |
+| 7 | **Inventory Service** | 8007 | PostgreSQL | Hexagonal | Maven | Planejado |
+| 8 | **Order Service** | 8008 | PostgreSQL | Hexagonal | Maven | Planejado |
+| 9 | **Payment Service** | 8009 | PostgreSQL | MVC | Maven | Planejado |
+| 10 | **Notification Service** | 8010 | — (stateless) | MVC | Gradle | Planejado |
+| 11 | **Analytics Service** | 8011 | Cassandra | MVC | Gradle | Planejado |
+| 12 | **Compatibility Service** | 8012 | MongoDB | MVC | Gradle | Planejado |
 
 > Alternância Maven/Gradle é intencional: objetivo educacional de aprender ambos em contexto real.
 
@@ -143,7 +152,7 @@ com.autohubstore.userservice/
     └── config/      # Spring config
 ```
 
-### MVC — API Gateway e demais 6 serviços (Catalog, Search, Cart, Payment, Notification, Analytics)
+### MVC — API Gateway e demais 8 serviços (Auth, Catalog, Search, Cart, Payment, Notification, Analytics, Compatibility)
 ```
 com.autohubstore.<servicename>/
 ├── controller/    # @RestController
@@ -158,6 +167,10 @@ com.autohubstore.<servicename>/
 > `repository`/`messaging` para os `GlobalFilter`/security filters do Spring
 > Cloud Gateway (`RateLimitFilter`, `JwtServerAuthenticationConverter`,
 > `JwtReactiveAuthenticationManager`).
+>
+> Auth Service adapta o padrão MVC substituindo `repository/` (JPA para `refresh_tokens` e
+> `password_reset_tokens`) por um `external/` adicional com `UserServiceClient` (`@FeignClient`)
+> — não tem tabela de usuário própria, valida/atualiza credencial chamando o User Service.
 
 ---
 
@@ -262,7 +275,8 @@ Order ←───────────── Kafka (stock-insufficient) ─�
 
 | Serviço | Porta | Descrição |
 |---|---|---|
-| postgres-user | 5433 | Banco do User Service (fusão Auth+User; `postgres-auth`/5432 descontinuado) |
+| postgres-auth | 5432 | Banco do Auth Service (`auth_db`) |
+| postgres-user | 5433 | Banco do User Service (`user_db`) |
 | postgres-catalog | 5434 | Banco do Catalog Service |
 | postgres-order | 5435 | Banco do Order Service |
 | postgres-payment | 5436 | Banco do Payment Service |
@@ -285,8 +299,8 @@ Order ←───────────── Kafka (stock-insufficient) ─�
 | Fase | Objetivo | Microsserviço(s) |
 |---|---|---|
 | 1 | Fundação e infraestrutura | API Gateway ✅ |
-| 2 | Identidade e usuários | User Service (fusão Auth+User) |
-| 3 | Catálogo e busca | Catalog Service, Search Service |
+| 2 | Identidade e autenticação | User Service, Auth Service |
+| 3 | Catálogo, busca e compatibilidade | Catalog Service, Search Service, Compatibility Service |
 | 4 | Carrinho | Cart Service |
 | 5 | Estoque e pedidos | Inventory Service, Order Service |
 | 6 | Pagamentos | Payment Service |
@@ -342,6 +356,7 @@ npm run dev
 | `docs/apps/api-gateway.md` | Explicação didática completa do Gateway (Hexagonal, JWT, rate limit, circuit breaker) |
 | `docs/planning/action-plan.md` | Plano de ação das 10 fases com critérios de conclusão |
 | `docs/planning/specs/01-api-gateway.md` | Spec técnica do API Gateway (deps, endpoints, estrutura) |
-| `docs/planning/specs/02-user-service.md` | Spec do User Service — Identidade+Perfil fundidos (Clean Architecture, JWT, eventos Kafka) |
-| `docs/planning/specs/06-inventory-service.md` | Spec do Inventory Service — reserva de estoque (Hexagonal, Saga via Kafka) |
-| `docs/planning/specs/03-10-*.md` | Specs dos demais microsserviços |
+| `docs/planning/specs/02-auth-service.md` | Spec do Auth Service — login/logout/refresh/reset senha (MVC, JWT, OpenFeign → User Service) |
+| `docs/planning/specs/03-user-service.md` | Spec do User Service — cadastro, perfil, endereços (Clean Architecture, eventos Kafka) |
+| `docs/planning/specs/07-inventory-service.md` | Spec do Inventory Service — reserva de estoque (Hexagonal, Saga via Kafka) |
+| `docs/planning/specs/04-12-*.md` | Specs dos demais microsserviços |

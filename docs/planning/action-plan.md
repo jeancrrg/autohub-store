@@ -3,7 +3,7 @@
 ## Visão Geral
 
 O AutoHubStore é um e-commerce automotivo construído com arquitetura de microsserviços.
-São **11 microsserviços** em **Java 25** (LTS), seguindo diferentes arquiteturas para fins educacionais.
+São **12 microsserviços** em **Java 25** (LTS), seguindo diferentes arquiteturas para fins educacionais.
 
 **Repositório:** monorepo em `autohub-store/`  
 **Backend:** `backend/<nome-do-servico>/`  
@@ -17,13 +17,14 @@ valor didático (projeto de estudo solo). Detalhes completos da análise nas spe
 
 | Decisão | Motivo |
 |---|---|
-| **Auth Service fundido em User Service** | Mesmo bounded context ("Identidade"); Auth já dependia de User via Feign só pra validar credencial — separação era overhead artificial sem ganho de domínio. Serviço fundido mantém Clean Architecture. Ver [02-user-service.md](specs/02-user-service.md). |
-| **Cart Service mantido separado de Order** | Bounded contexts diferentes: Cart é sessão de compra efêmera (Redis, TTL, mutável), Order é agregado transacional durável (Postgres, máquina de estados, auditoria). Fundir quebraria ADR-002 (database per service) e mataria a demo de circuit breaker Cart↔Catalog. Ver [05-cart-service.md](specs/05-cart-service.md) e [07-order-service.md](specs/07-order-service.md). |
-| **Inventory Service criado (extraído do Catalog)** | Estoque é recurso de escrita contenciosa que exige forte consistência (evitar overselling) — incompatível com o papel de leitura/cache do Catalog. Novo serviço aplica padrão Saga (reserve/confirm/release via Kafka) entre Order, Payment e Inventory. Ver [06-inventory-service.md](specs/06-inventory-service.md). |
-| **Compatibility Service criado (extraído do Catalog)** | Responder "essa peça é compatível com quais veículos?" é um bounded context próprio (Fitment/Compatibility), com modelo de dado naturalmente semi-estruturado (marca/modelo/ano/motorização variam por categoria de peça — nem toda peça tem os mesmos atributos de aplicação) e volume de leitura alto e desacoplado do CRUD transacional de produto. Mistura isso no Catalog inflaria o schema relacional com combinações esparsas. Novo serviço usa MongoDB (schema flexível por categoria de peça) e é consultado via OpenFeign pelo Catalog Service na página de produto. |
+| **Auth Service extraído do User Service** | Revisão da fusão original: Autenticação (sessão/token, superfície de ataque própria, cadência de mudança ligada a segurança) e Perfil (CRUD cadastral) são bounded contexts distintos mesmo dependendo um do outro. Auth Service volta a chamar User Service via OpenFeign só pra validar/atualizar credencial (`password_hash` nunca sai do User Service) — mesmo padrão de antes da fusão, agora com o desacoplamento mantido. Ver [02-auth-service.md](specs/02-auth-service.md) e [03-user-service.md](specs/03-user-service.md). |
+| **Cart Service mantido separado de Order** | Bounded contexts diferentes: Cart é sessão de compra efêmera (Redis, TTL, mutável), Order é agregado transacional durável (Postgres, máquina de estados, auditoria). Fundir quebraria ADR-002 (database per service) e mataria a demo de circuit breaker Cart↔Catalog. Ver [06-cart-service.md](specs/06-cart-service.md) e [08-order-service.md](specs/08-order-service.md). |
+| **Inventory Service criado (extraído do Catalog)** | Estoque é recurso de escrita contenciosa que exige forte consistência (evitar overselling) — incompatível com o papel de leitura/cache do Catalog. Novo serviço aplica padrão Saga (reserve/confirm/release via Kafka) entre Order, Payment e Inventory. Ver [07-inventory-service.md](specs/07-inventory-service.md). |
+| **Compatibility Service criado (extraído do Catalog)** | Responder "essa peça é compatível com quais veículos?" é um bounded context próprio (Fitment/Compatibility), com modelo de dado naturalmente semi-estruturado (marca/modelo/ano/motorização variam por categoria de peça — nem toda peça tem os mesmos atributos de aplicação) e volume de leitura alto e desacoplado do CRUD transacional de produto. Mistura isso no Catalog inflaria o schema relacional com combinações esparsas. Novo serviço usa MongoDB (schema flexível por categoria de peça) e é consultado via OpenFeign pelo Catalog Service na página de produto. Ver [12-compatibility-service.md](specs/12-compatibility-service.md). |
 
-Resultado líquido: 10 → 9 (fusão Auth+User) → 10 (novo Inventory) → 11 (novo Compatibility).
-Contagem final de serviços é 11, com escopo mais correto por serviço.
+Resultado líquido: 10 → 9 (fusão Auth+User) → 10 (novo Inventory) → 11 (novo Compatibility) →
+12 (Auth Service separado de volta do User Service). Contagem final de serviços é 12, com Auth
+Service como 2º serviço criado (logo após o Gateway) e Compatibility Service como 12º e último.
 
 ---
 
@@ -66,7 +67,7 @@ infra/checkstyle/checkstyle.xml
 
 O arquivo contém regras universais de estilo (limite de linha, imports, complexidade, nomenclatura, boas práticas) que se aplicam igualmente a todas as arquiteturas (MVC, Clean, Hexagonal) e ambos os build tools. O build **falha** em qualquer violação (`failsOnError = true`).
 
-### Configuração obrigatória — Maven (api-gateway, user-service, order-service, payment-service, inventory-service)
+### Configuração obrigatória — Maven (api-gateway, auth-service, user-service, order-service, payment-service, inventory-service)
 
 Adicionar nas `<properties>` e no bloco `<build><plugins>` do `pom.xml`:
 
@@ -136,16 +137,17 @@ checkstyle {
 | # | Serviço | Build Tool | Arquitetura |
 |---|---|---|---|
 | 1 | API Gateway | **Maven** | MVC |
-| 2 | User Service | **Maven** | MVC |
-| 3 | Catalog Service | **Gradle** | MVC |
-| 4 | Search Service | **Gradle** | MVC |
-| 5 | Cart Service | **Gradle** | MVC |
-| 6 | Inventory Service | **Maven** | **Hexagonal** |
-| 7 | Order Service | **Maven** | **Hexagonal** |
-| 8 | Payment Service | **Maven** | MVC |
-| 9 | Notification Service | **Gradle** | MVC |
-| 10 | Analytics Service | **Gradle** | MVC |
-| 11 | Compatibility Service | **Gradle** | MVC |
+| 2 | Auth Service | **Maven** | MVC |
+| 3 | User Service | **Maven** | **Clean Architecture** |
+| 4 | Catalog Service | **Gradle** | MVC |
+| 5 | Search Service | **Gradle** | MVC |
+| 6 | Cart Service | **Gradle** | MVC |
+| 7 | Inventory Service | **Maven** | **Hexagonal** |
+| 8 | Order Service | **Maven** | **Hexagonal** |
+| 9 | Payment Service | **Maven** | MVC |
+| 10 | Notification Service | **Gradle** | MVC |
+| 11 | Analytics Service | **Gradle** | MVC |
+| 12 | Compatibility Service | **Gradle** | MVC |
 
 > **Objetivo educacional:** A divisão de build tools permite aprender tanto Maven quanto Gradle em contexto real. A variação de arquiteturas demonstra Clean Architecture, Hexagonal (Ports & Adapters) e MVC no mesmo projeto.
 
@@ -153,7 +155,7 @@ checkstyle {
 
 ## Padrões de Pacotes por Arquitetura
 
-### MVC (API Gateway, Catalog, Search, Cart, Payment, Notification, Analytics, Compatibility)
+### MVC (API Gateway, Auth, Catalog, Search, Cart, Payment, Notification, Analytics, Compatibility)
 
 ```
 com.autohubstore.<servicename>/
@@ -184,20 +186,25 @@ com.autohubstore.<servicename>/
 ```
 com.autohubstore.userservice/
 ├── domain/
-│   ├── model/          # Entidades e Value Objects
+│   ├── model/          # Entidades e Value Objects (User, Address — sem credencial de token)
 │   ├── event/          # Domain Events
 │   ├── repository/     # Interfaces (output boundary)
 │   └── service/        # Domain Services
 ├── application/
-│   ├── usecase/        # Use Cases (input boundary)
+│   ├── usecase/        # Use Cases (input boundary) — inclui verify-credentials/update-password
 │   ├── dto/            # DTOs
 │   └── mapper/         # Mappers
 └── infrastructure/
-    ├── web/            # Controllers REST
+    ├── web/            # Controllers REST (público + /internal/v1 pro Auth Service)
     ├── persistence/    # Implementações JPA
     ├── messaging/      # Kafka producers
     └── config/         # Spring config
 ```
+
+> **Auth Service** não tem domínio próprio de credencial — segue o pacote MVC padrão (ver acima),
+> com `external/UserServiceClient.java` (`@FeignClient`) no lugar de acesso direto a repositório de
+> usuário. Detalhe completo em
+> [docs/planning/specs/02-auth-service.md](specs/02-auth-service.md#estrutura-de-pacotes-mvc).
 
 ### Hexagonal — Inventory Service e Order Service (Ports & Adapters)
 
@@ -225,22 +232,23 @@ com.autohubstore.orderservice/
 | # | Serviço | Porta | Banco | Kafka | Status |
 |---|---|---|---|---|---|
 | 1 | API Gateway | 8001 | Redis (rate limit) | — | Implementado |
-| 2 | User Service | 8002 | PostgreSQL (`user_db`) + Redis | Producer | Em implementação |
-| 3 | Catalog Service | 8003 | PostgreSQL (`catalog_db`) + Redis | Producer | Em implementação |
-| 4 | Search Service | 8004 | Elasticsearch | Consumer | Planejado |
-| 5 | Cart Service | 8005 | Redis | — | Planejado |
-| 6 | Inventory Service | 8006 | PostgreSQL (`inventory_db`) | Producer + Consumer | Planejado |
-| 7 | Order Service | 8007 | PostgreSQL (`order_db`) | Producer + Consumer | Planejado |
-| 8 | Payment Service | 8008 | PostgreSQL (`payment_db`) | Producer | Planejado |
-| 9 | Notification Service | 8009 | — (stateless) | Consumer | Planejado |
-| 10 | Analytics Service | 8010 | Cassandra | Consumer | Planejado |
-| 11 | Compatibility Service | 8011 | MongoDB (`compatibility_db`) | Consumer | Planejado |
+| 2 | Auth Service | 8002 | PostgreSQL (`auth_db`) + Redis | Producer | Em implementação |
+| 3 | User Service | 8003 | PostgreSQL (`user_db`) | Producer | Em implementação |
+| 4 | Catalog Service | 8004 | PostgreSQL (`catalog_db`) + Redis | Producer | Em implementação |
+| 5 | Search Service | 8005 | Elasticsearch | Consumer | Planejado |
+| 6 | Cart Service | 8006 | Redis | — | Planejado |
+| 7 | Inventory Service | 8007 | PostgreSQL (`inventory_db`) | Producer + Consumer | Planejado |
+| 8 | Order Service | 8008 | PostgreSQL (`order_db`) | Producer + Consumer | Planejado |
+| 9 | Payment Service | 8009 | PostgreSQL (`payment_db`) | Producer | Planejado |
+| 10 | Notification Service | 8010 | — (stateless) | Consumer | Planejado |
+| 11 | Analytics Service | 8011 | Cassandra | Consumer | Planejado |
+| 12 | Compatibility Service | 8012 | MongoDB (`compatibility_db`) | Consumer | Planejado |
 
 > **Nomes de banco:** seguem exatamente `POSTGRES_DB` definido em `infra/docker-compose.yml`
-> (`user_db`, `catalog_db`, `order_db`, `payment_db`, `inventory_db`) — evita erro
+> (`auth_db`, `user_db`, `catalog_db`, `order_db`, `payment_db`, `inventory_db`) — evita erro
 > `FATAL: database "..." does not exist` no Flyway ao subir serviço local contra a infra do compose.
-> `postgres-auth` foi removido do compose (fundido em `postgres-user`); `postgres-inventory`
-> (porta 5437) foi adicionado.
+> `postgres-auth` (porta 5432) foi reinstalado no compose — a fusão Auth+User foi revertida, Auth
+> Service volta a ter banco próprio; `postgres-inventory` (porta 5437) permanece.
 
 ---
 
@@ -248,6 +256,7 @@ com.autohubstore.orderservice/
 
 ```
 API Gateway ─────────────────────────────→ Todos os serviços (roteamento)
+Auth Service ──── OpenFeign ──────────────→ User Service (verify-credentials, by-email, update-password)
 Cart Service ──── OpenFeign ─────────────→ Catalog Service
 Catalog Service ── OpenFeign ────────────→ Inventory Service (disponibilidade)
 Catalog Service ── OpenFeign ────────────→ Compatibility Service (veículos compatíveis)
@@ -267,7 +276,7 @@ Order ←────────── Kafka ───────────�
 | Tópico | Producer | Consumer |
 |---|---|---|
 | `user.created` | User Service | Notification Service |
-| `user.password-reset` | User Service | Notification Service |
+| `user.password-reset` | Auth Service | Notification Service |
 | `catalog.product-created` | Catalog Service | Search Service, Inventory Service, Compatibility Service |
 | `catalog.product-updated` | Catalog Service | Search Service |
 | `catalog.product-viewed` | Catalog Service | Analytics Service |
@@ -285,7 +294,8 @@ Arquivo: `infra/docker-compose.yml`
 
 | Serviço | Porta | Descrição |
 |---|---|---|
-| postgres-user | 5433 | Banco do User Service (fusão Auth+User) |
+| postgres-auth | 5432 | Banco do Auth Service (`auth_db`) |
+| postgres-user | 5433 | Banco do User Service (`user_db`) |
 | postgres-catalog | 5434 | Banco do Catalog Service |
 | postgres-order | 5435 | Banco do Order Service |
 | postgres-payment | 5436 | Banco do Payment Service |
@@ -322,25 +332,32 @@ Arquivo: `infra/docker-compose.yml`
 **Critério de conclusão:** `docker compose up` sobe toda infra sem erros; ambos os templates compilam e testam.
 
 **Microsserviço criado:** API Gateway (Maven + MVC)  
-**Spec:** [docs/microservices/01-api-gateway.md](microservices/01-api-gateway.md)
+**Spec:** [docs/planning/specs/01-api-gateway.md](specs/01-api-gateway.md)
 
 ---
 
-### Fase 2 — Identidade e Usuários
+### Fase 2 — Identidade e Autenticação
 
-**Objetivo:** Fluxo completo de cadastro, login, JWT e gestão de perfil.
+**Objetivo:** Fluxo completo de cadastro, login, JWT e gestão de perfil, com Autenticação e Perfil
+como serviços separados (ver [Decisões de Consolidação](#decisões-de-consolidação)).
 
 **Entregas:**
-1. **User Service** (Maven + Clean Architecture) — login, logout, refresh, reset senha, cadastro, perfil, endereços (serviço único, fusão dos antigos Auth+User — ver [Decisões de Consolidação](#decisões-de-consolidação))
-2. JWT com claims customizados, validação no Gateway
-3. Blacklist de tokens no Redis
-4. Eventos `user.created` e `user.password-reset` publicados no Kafka
-5. Testes unitários e de integração (Testcontainers)
-6. Swagger
+1. **User Service** (Maven + Clean Architecture) — cadastro, perfil, endereços; endpoints internos
+   `verify-credentials`/`by-email`/`update-password` consumidos pelo Auth Service; evento
+   `user.created` publicado no Kafka
+2. **Auth Service** (Maven + MVC) — login, logout, refresh (rotation), forgot/reset password;
+   chama User Service via OpenFeign para validar/atualizar credencial; JWT com claims
+   customizados, validação no Gateway; blacklist de tokens no Redis; evento
+   `user.password-reset` publicado no Kafka
+3. Testes unitários e de integração (Testcontainers) nos dois serviços
+4. Swagger nos dois serviços
 
-**Critério de conclusão:** Fluxo cadastro → login → refresh → logout funcionando; reset de senha via MailHog.
+**Critério de conclusão:** Fluxo cadastro (User Service) → login → refresh → logout (Auth
+Service) funcionando; reset de senha via MailHog.
 
-**Spec:** [docs/microservices/02-user-service.md](microservices/02-user-service.md)
+**Specs:**
+- User Service → [docs/planning/specs/03-user-service.md](specs/03-user-service.md)
+- Auth Service → [docs/planning/specs/02-auth-service.md](specs/02-auth-service.md)
 
 ---
 
@@ -380,9 +397,9 @@ referência a `id: number` de produto restante no frontend.
 "veículos compatíveis" a partir do `productId` na página de produto do Catalog.
 
 **Specs:**
-- Catalog Service → [docs/microservices/03-catalog-service.md](microservices/03-catalog-service.md)
-- Search Service → [docs/microservices/04-search-service.md](microservices/04-search-service.md)
-- Compatibility Service → [specs/11-compatibility-service.md](specs/11-compatibility-service.md)
+- Catalog Service → [docs/planning/specs/04-catalog-service.md](specs/04-catalog-service.md)
+- Search Service → [docs/planning/specs/05-search-service.md](specs/05-search-service.md)
+- Compatibility Service → [docs/planning/specs/12-compatibility-service.md](specs/12-compatibility-service.md)
 
 ---
 
@@ -393,7 +410,7 @@ referência a `id: number` de produto restante no frontend.
 **Entregas:**
 1. **Cart Service** (Gradle + MVC) — Redis, OpenFeign + Resilience4j, TTL 7 dias
 
-**Spec:** [docs/microservices/05-cart-service.md](microservices/05-cart-service.md)
+**Spec:** [docs/planning/specs/06-cart-service.md](specs/06-cart-service.md)
 
 ---
 
@@ -408,8 +425,8 @@ referência a `id: number` de produto restante no frontend.
 **Critério de conclusão:** Reserva de estoque decrementa corretamente sob concorrência; pedido cancela automaticamente quando estoque insuficiente.
 
 **Specs:**
-- Inventory Service → [docs/microservices/06-inventory-service.md](microservices/06-inventory-service.md)
-- Order Service → [docs/microservices/07-order-service.md](microservices/07-order-service.md)
+- Inventory Service → [docs/planning/specs/07-inventory-service.md](specs/07-inventory-service.md)
+- Order Service → [docs/planning/specs/08-order-service.md](specs/08-order-service.md)
 
 ---
 
@@ -420,7 +437,7 @@ referência a `id: number` de produto restante no frontend.
 **Entregas:**
 1. **Payment Service** (Maven + MVC) — simulação 70/30, idempotência, eventos Kafka
 
-**Spec:** [docs/microservices/08-payment-service.md](microservices/08-payment-service.md)
+**Spec:** [docs/planning/specs/09-payment-service.md](specs/09-payment-service.md)
 
 ---
 
@@ -431,7 +448,7 @@ referência a `id: number` de produto restante no frontend.
 **Entregas:**
 1. **Notification Service** (Gradle + MVC) — Thymeleaf, DLT, retry com backoff exponencial
 
-**Spec:** [docs/microservices/09-notification-service.md](microservices/09-notification-service.md)
+**Spec:** [docs/planning/specs/10-notification-service.md](specs/10-notification-service.md)
 
 ---
 
@@ -442,7 +459,7 @@ referência a `id: number` de produto restante no frontend.
 **Entregas:**
 1. **Analytics Service** (Gradle + MVC) — Cassandra counters, Kafka consumer, dashboard API
 
-**Spec:** [docs/microservices/10-analytics-service.md](microservices/10-analytics-service.md)
+**Spec:** [docs/planning/specs/11-analytics-service.md](specs/11-analytics-service.md)
 
 ---
 
