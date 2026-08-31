@@ -20,7 +20,7 @@ import org.springframework.http.ResponseEntity;
         """)
 public interface AuthControllerDocs {
 
-    @Operation(summary = "Login", description = "Valida credenciais (via User Service) e emite access/refresh token como cookies httpOnly.")
+    @Operation(summary = "Login", description = "Valida credenciais e emite access/refresh token como cookies httpOnly.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login efetuado"),
             @ApiResponse(responseCode = "401", description = "Credenciais inválidas",

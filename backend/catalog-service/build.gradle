@@ -80,6 +80,8 @@ dependencyManagement {
         dependency 'commons-beanutils:commons-beanutils:1.11.0'
         dependency 'at.yawk.lz4:lz4-java:1.11.1'
         dependency 'org.codehaus.plexus:plexus-utils:4.0.3'
+        dependency 'org.scala-lang:scala-library:2.13.9'
+        dependency 'org.apache.commons:commons-compress:1.28.0'
     }
 }
 
