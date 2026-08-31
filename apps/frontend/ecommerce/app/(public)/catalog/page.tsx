@@ -10,6 +10,7 @@ export default function CatalogPage() {
     const { data: products, isLoading, isError } = useProducts()
     const searchParams = useSearchParams()
     const category = searchParams.get('category') ?? ''
+    const brand = searchParams.get('brand') ?? ''
 
     return (
         <div className={styles.container}>
@@ -25,7 +26,9 @@ export default function CatalogPage() {
 
             {isLoading && <p>Carregando produtos...</p>}
             {isError && <p>Não foi possível carregar os produtos.</p>}
-            {products && <ProductGrid allProducts={products} initialCategory={category} />}
+            {products && (
+                <ProductGrid allProducts={products} initialCategory={category} initialBrand={brand} />
+            )}
         </div>
     )
 }

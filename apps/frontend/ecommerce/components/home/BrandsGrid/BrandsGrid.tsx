@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useBrands } from '@/hooks/useBrands'
 import styles from './BrandsGrid.module.css'
 
@@ -27,9 +28,13 @@ export function BrandsGrid() {
                 </div>
                 <div className={styles.grid}>
                     {visibleBrands.map((brand) => (
-                        <div key={brand.id} className={styles.brandCard}>
+                        <Link
+                            key={brand.id}
+                            href={`/catalog?brand=${brand.slug}`}
+                            className={styles.brandCard}
+                        >
                             <span className={styles.brandName}>{brand.name}</span>
-                        </div>
+                        </Link>
                     ))}
                 </div>
                 {hiddenCount > 0 && (

@@ -29,12 +29,14 @@ const DEFAULT_FILTERS: Filters = {
 type ProductGridProps = {
     allProducts: Product[]
     initialCategory?: string
+    initialBrand?: string
 }
 
-export function ProductGrid({ allProducts, initialCategory = '' }: ProductGridProps) {
+export function ProductGrid({ allProducts, initialCategory = '', initialBrand = '' }: ProductGridProps) {
     const [filters, setFilters] = useState<Filters>({
         ...DEFAULT_FILTERS,
         category: initialCategory,
+        brands: initialBrand ? [initialBrand] : [],
     })
     const [sortBy, setSortBy] = useState('relevance')
     const [page, setPage] = useState(1)
@@ -43,6 +45,11 @@ export function ProductGrid({ allProducts, initialCategory = '' }: ProductGridPr
         setFilters((prev) => ({ ...prev, category: initialCategory }))
         setPage(1)
     }, [initialCategory])
+
+    useEffect(() => {
+        setFilters((prev) => ({ ...prev, brands: initialBrand ? [initialBrand] : [] }))
+        setPage(1)
+    }, [initialBrand])
 
     const filtered = allProducts
         .filter((p) => !filters.category || p.category === filters.category)

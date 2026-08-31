@@ -39,7 +39,11 @@ export function CategoryGrid() {
 
                 <div className={styles.grid}>
                     {featured.map((cat) => (
-                        <Link key={cat.id} href="/catalog" className={styles.categoryCard}>
+                        <Link
+                            key={cat.id}
+                            href={`/catalog?category=${encodeURIComponent(cat.name)}`}
+                            className={styles.categoryCard}
+                        >
                             <div className={styles.categoryTopBar} />
                             <div className={styles.categoryIcon}>{getCategoryIcon(cat.slug)}</div>
                             <div className={styles.categoryName}>{cat.name}</div>
