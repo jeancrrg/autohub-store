@@ -1,17 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useCategories } from '@/hooks/useCategories'
-import { FEATURED_CATEGORY_SLUGS } from '@/lib/data/featuredCategorySlugs'
 import styles from './Footer.module.css'
 
+const INFO_LINKS = [
+    { label: 'Sobre Nós', anchor: 'sobre-nos' },
+    { label: 'Política de Frete', anchor: 'politica-de-frete' },
+    { label: 'Trocas e Devoluções', anchor: 'trocas-e-devolucoes' },
+    { label: 'Contato', anchor: 'contato' },
+]
+
 export function Footer() {
-    const { data: categories } = useCategories()
-
-    const featured = FEATURED_CATEGORY_SLUGS.map((slug) =>
-        (categories ?? []).find((cat) => cat.slug === slug)
-    ).filter((cat): cat is NonNullable<typeof cat> => cat !== undefined)
-
     return (
         <footer className={styles.footer}>
             <div className={styles.footerGrid}>
@@ -23,26 +22,17 @@ export function Footer() {
                     </p>
                 </div>
 
-                {featured.length > 0 && (
-                    <div>
-                        <p className={styles.colTitle}>CATEGORIAS</p>
-                        {featured.map((cat) => (
-                            <Link key={cat.id} href="/catalog" className={styles.footerLink}>
-                                {cat.name}
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
                 <div>
                     <p className={styles.colTitle}>INFORMAÇÕES</p>
-                    {['Sobre Nós', 'Política de Frete', 'Trocas e Devoluções', 'Contato'].map(
-                        (link) => (
-                            <Link key={link} href="#" className={styles.footerLink}>
-                                {link}
-                            </Link>
-                        )
-                    )}
+                    {INFO_LINKS.map((link) => (
+                        <Link
+                            key={link.anchor}
+                            href={`/informacoes#${link.anchor}`}
+                            className={styles.footerLink}
+                        >
+                            {link.label}
+                        </Link>
+                    ))}
                 </div>
 
                 <div>

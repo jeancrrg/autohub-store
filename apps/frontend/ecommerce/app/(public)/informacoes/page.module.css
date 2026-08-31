@@ -1,0 +1,93 @@
+.container {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 24px;
+}
+
+.breadcrumbLink {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumbLink:hover {
+    color: var(--color-primary);
+}
+
+.breadcrumbCurrent {
+    color: var(--color-dark);
+}
+
+.title {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--color-dark);
+    letter-spacing: 0.05em;
+    margin-bottom: 32px;
+}
+
+.nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.navLink {
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    text-decoration: none;
+    border: 1px solid var(--color-gray-border);
+    border-radius: 4px;
+    padding: 8px 16px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.navLink:hover {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.section {
+    scroll-margin-top: 96px;
+    padding: 32px 0;
+    border-bottom: 1px solid var(--color-gray-border);
+}
+
+.section:last-child {
+    border-bottom: none;
+}
+
+.sectionTitle {
+    font-family: var(--font-rajdhani);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--color-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+}
+
+.sectionText {
+    font-family: var(--font-inter);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: #374151;
+    margin-bottom: 12px;
+}
+
+.sectionText:last-child {
+    margin-bottom: 0;
+}
