@@ -235,6 +235,30 @@ a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml
   - Exceção: método de query derivada do Spring Data (`JpaRepository`) que usa prefixo reservado do parser (`existsBy*`, `countBy*`, `deleteBy*`) mantém o prefixo reservado — não pode virar `find*` sem quebrar o parsing. `findBy*` já está correto e não muda.
   - Getter simples de campo/valor calculado (ex.: `getRemainingTtlSeconds` de um token) não é "busca de dado" — não entra nessa regra.
 
+### Snyk — obrigatório em todo microsserviço novo
+
+Ao criar um microsserviço do zero, depois de adicionar todas as dependências necessárias (`pom.xml`
+ou `build.gradle`), rodar `snyk test` (com `--all-sub-projects --detection-depth=6` para cobrir
+também dependências de escopo `test`) dentro da pasta do serviço antes de considerar a fundação
+pronta.
+
+- Se aparecer qualquer CVE, corrigir atualizando a versão da dependência afetada — nunca ignorar,
+  suprimir ou usar `.snyk` policy para mascarar o resultado.
+- Preferir resolver pela raiz: subir a versão do BOM pai (`spring-boot-starter-parent`,
+  `spring-cloud-dependencies`) antes de pinar dependência transitiva isolada — várias CVEs costumam
+  cair juntas com um único bump de BOM.
+- Dependência transitiva que sobrar depois do bump de BOM (ex.: `commons-compress`, `lz4-java`,
+  `scala-library` vindos de Kafka/Testcontainers/Zookeeper) resolver com override explícito em
+  `dependencyManagement` (Maven) ou bloco `dependencyManagement { dependencies { ... } }` (Gradle,
+  plugin `io.spring.dependency-management`), fixando a versão sem CVE.
+- Repetir `snyk test` depois de cada rodada de correção até o resultado dar `ok: true` / zero
+  vulnerabilidades — nunca declarar a correção concluída sem essa confirmação.
+- Se a única correção disponível para uma CVE exigir salto de versão MAJOR do Spring Boot/Framework/
+  Security/Cloud (ex.: Boot 3.5.x → 4.0.x), aplicar o salto e revisar os pontos de maior risco de
+  quebra de comportamento do serviço (config de segurança, serializadores Jackson, clientes
+  OpenFeign/Kafka, Springdoc — que precisa ir para a linha 3.x quando o Boot for 4.x) — nunca deixar
+  CVE residual sem justificar por que não foi corrigida.
+
 ---
 
 ## Tópicos Kafka
