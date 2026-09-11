@@ -373,6 +373,33 @@ npm run dev
 
 ---
 
+## Time de Engenharia (Agentes Claude Code)
+
+Este projeto opera com um time de agentes autônomos definidos em `.claude/agents/*.md`
+(formato lido nativamente pelo Claude Code).
+
+**Padrão: orquestrador-trabalhador.** Ponto único de entrada é **software-architect** — toda
+tarefa de produto, backend, frontend ou QA deve ser endereçada a ele primeiro; é o único agente
+com a tool `Agent`, e é quem aciona os demais internamente. Nunca invocar backend-engineer,
+frontend-engineer, product-owner ou quality-analyst diretamente a partir da conversa principal.
+
+| Agente | Papel | Aciona |
+|---|---|---|
+| **software-architect** | Gerente — arquitetura, distribuição de tarefas, validação final de aderência a ADRs | product-owner, backend-engineer, frontend-engineer, quality-analyst |
+| **product-owner** | Specs de microsserviço, histórias de usuário, critérios de aceite | — (especialista) |
+| **backend-engineer** | Implementa os microsserviços Java/Spring Boot | — (especialista) |
+| **frontend-engineer** | Implementa e evolui o e-commerce Next.js/React | — (especialista) |
+| **quality-analyst** | Valida entregas de backend/frontend contra os critérios de aceite do PO | — (especialista) |
+
+Regras válidas para todos os agentes do time (reforçam o resto deste `CLAUDE.md`):
+- Nunca rodar git, build ou comando de terminal (`mvn`, `npm`, `docker`, `flyway`) — apenas ler e
+  editar arquivos; quem builda, testa e commita é o usuário.
+- Nunca aprovar/entregar tarefa sem os critérios de aceite da spec do product-owner terem sido
+  validados pelo quality-analyst.
+- Nunca expor segredo/credencial em spec, ADR, código ou log.
+
+---
+
 ## Documentação
 
 | Pasta | Conteúdo |
