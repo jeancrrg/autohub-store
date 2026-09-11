@@ -305,6 +305,113 @@ pronta.
 
 ---
 
+## Padrão de Testes — obrigatório em todo microsserviço (unitário e aceitação)
+
+> Padrão extraído do **API Gateway** (`backend/api-gateway/src/test/`), primeiro serviço do MVP a
+> ter a suíte de testes finalizada e validada. É o padrão oficial para os demais 8 serviços do MVP
+> e para os 3 pós-MVP — `backend-engineer` segue ao criar/evoluir testes, `quality-analyst` segue
+> ao revisar/re-executar. Nenhum dos dois reinventa estrutura, nomenclatura ou convenção Gherkin
+> diferente da descrita aqui sem alinhar antes com o software-architect.
+
+### Estrutura de pastas
+
+```
+src/test/
+├── java/com/autohubstore/<service>/
+│   ├── unit/
+│   │   └── <camada>/            # ex.: unit/service/, unit/controller/ — espelha o pacote de produção
+│   └── acceptance/
+│       ├── config/              # CucumberConfig (@CucumberContextConfiguration + @SpringBootTest),
+│       │                        # CucumberTest (runner @Suite), WireMockSupport (se o serviço
+│       │                        # depender de chamada externa síncrona — OpenFeign/HTTP)
+│       ├── steps/                # <Servico>AcceptanceSteps.java — uma classe de steps por .feature
+│       └── util/                  # Http[Acceptance]TestUtil.java — único ponto de disparo HTTP do cenário
+└── resources/
+    └── features/
+        └── <servico>.feature     # um .feature por serviço (ou por bounded context relevante do serviço)
+```
+
+### Testes unitários
+
+- JUnit 5 + Mockito: `@ExtendWith(MockitoExtension.class)`, `@Mock` para colaboradores, `@InjectMocks`
+  para a classe sob teste (ver `unit/service/RateLimitServiceTest.java`); quando não há colaborador a
+  mockar, instanciar a classe direto em `@BeforeEach` (ver `unit/service/JwtServiceTest.java`).
+- Todo método de teste tem `@DisplayName("Deve ... quando ...")` em português, descrevendo
+  comportamento esperado e condição.
+- Nome do **método** de teste sempre em inglês, estilo `should<Comportamento><Condição>` (ex.:
+  `shouldThrowExceptionForExpiredToken`, `shouldBlockRequestExceedingPublicLimit`).
+  Nome da **classe** de teste: `<ClasseSobTeste>Test`.
+  Valor numérico/literal repetido some para `private static final` nomeado, igual à regra de
+  `MagicNumber` do checkstyle (ex.: `ONE_HOUR_MS`, `PUBLIC_LIMIT`, `RATE_LIMIT_WINDOW_REQUESTS`).
+- Fluxo reativo (`Mono`/`Flux`, serviços WebFlux) sempre validado com `reactor.test.StepVerifier`
+  (`.expectNext(...).verifyComplete()`) — nunca `.block()` em teste.
+- `assertThat`/`assertThatThrownBy` de AssertJ para asserção — nunca `assertEquals`/`assertTrue` puro
+  do JUnit.
+
+### Testes de aceitação (Cucumber)
+
+**Arquivo `.feature`:**
+- `# language: pt` sempre na primeira linha do arquivo.
+- Keyword `Entao` **sempre sem acento** (nunca "Então") — as demais (`Dado`, `Quando`, `E`) seguem a
+  grafia padrão em português.
+- Steps redigidos no **infinitivo, com sujeito explícito** e coerente com o papel do ator no cenário
+  (ex.: "o cliente possuir um cookie de acesso valido", "o gateway receber uma requisicao de
+  preflight CORS", "o user-service estar saudavel") — nunca em 1ª pessoa ("eu faço...") nem em forma
+  impessoal sem sujeito ("é enviado...").
+- Path de endpoint (`/api/v1/...`) **nunca aparece como literal no `.feature`** — o texto do cenário
+  fica no nível de negócio ("o endpoint de usuarios", "esse endpoint", "o catalogo"); a resolução do
+  path concreto é sempre feita no step (`private static final String ..._ENDPOINT_PATH = "..."`).
+- `Esquema do Cenario` + tabela `Exemplos` para variações do mesmo fluxo com dados diferentes (ex.:
+  token expirado vs. assinatura inválida no mesmo cenário de "token invalido chega a endpoint
+  protegido") — evita duplicar cenário quase idêntico.
+
+**Classe de steps (`acceptance/steps/<Servico>AcceptanceSteps.java`):**
+- Anotações sempre de `io.cucumber.java.pt.*` (`@Dado`, `@Quando`, `@Entao`) — nunca a variante em
+  inglês (`io.cucumber.java.en.*`).
+- Texto da expressão Cucumber dentro da anotação bate **1:1** com o texto do `.feature` (inclusive
+  sem acento em "Entao").
+- Nome do **método** do step sempre em inglês, prefixado por `given`/`when`/`then` conforme o papel
+  (`givenTheClientHasAValidAccessCookie`, `whenTheClientCallsWithTheAccessCookie`,
+  `thenTheClientReceivesResponseWithStatus`).
+- Path de endpoint, segredo de teste, valor de janela/limite: sempre `private static final String`/
+  `int`/`long` nomeado no topo da classe — nunca literal solto dentro do corpo do step.
+- **Toda chamada HTTP do cenário passa obrigatoriamente pelo util de aceitação**
+  (`Http[Acceptance]TestUtil`, injetado via `@Autowired`) — a classe de steps nunca dispara
+  `WebTestClient`/`MockMvc` diretamente solta no corpo do método de step.
+- Dependência externa síncrona do serviço (ex.: Gateway → User Service) é simulada com WireMock via
+  `WireMockSupport` (`server().stubFor(...)`) — nunca subir a dependência real no teste de aceitação.
+
+**Util de aceitação (`acceptance/util/Http[Acceptance]TestUtil.java`):**
+- `@Component`, injeta o cliente HTTP de teste via `@Autowired`, expõe um método por tipo de chamada
+  do cenário (`executeGetWithCookie`, `executeGetWithoutCookie`, `executeGetRepeatedly`,
+  `executeCorsPreflight`) — é o único lugar do módulo de aceitação que conhece o cliente HTTP.
+- **Stack de cliente HTTP depende do modelo de concorrência do serviço, nunca escolher por
+  preferência:**
+  - **`WebTestClient`** (`org.springframework.test.web.reactive.server`) — serviços **reativos**
+    (WebFlux). No MVP, hoje só o API Gateway.
+  - **`MockMvc`** (`@AutoConfigureMockMvc`, `org.springframework.test.web.servlet`) — todos os
+    **demais serviços MVC/servlet** do MVP e pós-MVP (Auth, User, Catalog, Cart, Inventory, Order,
+    Payment, Notification, e os 3 pós-MVP).
+
+**Configuração de aceitação (`acceptance/config/`):**
+- `CucumberConfig`: `@CucumberContextConfiguration` + `@SpringBootTest(webEnvironment = ...)` +
+  `@AutoConfigureWebTestClient(timeout = "PT10S")` (reativo) **ou** `@AutoConfigureMockMvc` (servlet)
+  + `@ActiveProfiles("test")`. Dependência de infraestrutura do serviço (Redis, PostgreSQL, Kafka)
+  sobe via **Testcontainers** (`GenericContainer`/módulo específico) com `@DynamicPropertySource`
+  apontando a propriedade de conexão para o container — nunca infraestrutura real do
+  `docker-compose.yml` local dentro do teste automatizado.
+- `CucumberTest`: runner via JUnit Platform Suite — `@Suite`, `@IncludeEngines("cucumber")`,
+  `@SelectPackages("features")`, `@ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME,
+  value = "com.autohubstore.<service>.acceptance")`.
+- `WireMockSupport`: classe utilitária estática (`private` construtor, classe `final`), servidor
+  WireMock em porta dinâmica iniciado uma vez em bloco `static { ... }` — só existe quando o serviço
+  tem dependência HTTP síncrona externa a simular (ex.: Auth Service → User Service via OpenFeign,
+  Cart Service → Catalog Service, Order Service → Cart/User Service).
+
+Referência completa e funcional do padrão: `backend/api-gateway/src/test/`.
+
+---
+
 ## Tópicos Kafka
 
 | Tópico | Producer | Consumer(s) |

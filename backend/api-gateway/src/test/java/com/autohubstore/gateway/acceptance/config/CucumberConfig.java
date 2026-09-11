@@ -1,5 +1,6 @@
-package com.autohubstore.gateway.acceptance;
+package com.autohubstore.gateway.acceptance.config;
 
+import com.autohubstore.gateway.GatewayApplication;
 import io.cucumber.spring.CucumberContextConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
@@ -10,10 +11,10 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @CucumberContextConfiguration
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = GatewayApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient(timeout = "PT10S")
 @ActiveProfiles("test")
-public class CucumberSpringConfiguration {
+public class CucumberConfig {
 
     private static final int REDIS_PORT = 6379;
 

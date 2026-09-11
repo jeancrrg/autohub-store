@@ -1,4 +1,4 @@
-package com.autohubstore.gateway.acceptance;
+package com.autohubstore.gateway.acceptance.config;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;

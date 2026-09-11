@@ -1,4 +1,4 @@
-package com.autohubstore.gateway.acceptance;
+package com.autohubstore.gateway.acceptance.config;
 
 import io.cucumber.junit.platform.engine.Constants;
 import org.junit.platform.suite.api.ConfigurationParameter;

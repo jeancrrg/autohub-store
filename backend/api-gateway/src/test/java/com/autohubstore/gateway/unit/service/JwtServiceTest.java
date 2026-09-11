@@ -1,6 +1,7 @@
-package com.autohubstore.gateway.service;
+package com.autohubstore.gateway.unit.service;
 
 import com.autohubstore.gateway.model.JwtClaims;
+import com.autohubstore.gateway.service.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
@@ -8,7 +9,10 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
@@ -17,6 +21,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@ExtendWith(MockitoExtension.class)
 class JwtServiceTest {
 
     private static final String SECRET = "dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3Rpbmctb25seS0zMmJ5dGVz";
@@ -33,7 +38,8 @@ class JwtServiceTest {
     }
 
     @Test
-    void deveValidarTokenValidoERetornarClaims() {
+    @DisplayName("Deve validar token valido e retornar claims")
+    void shouldValidateValidTokenAndReturnClaims() {
         String userId = "11111111-1111-1111-1111-111111111111";
         String email = "cliente@autohubstore.com";
         String token = buildToken(userId, email, List.of("CUSTOMER"), signingKey, ONE_HOUR_MS);
@@ -46,7 +52,8 @@ class JwtServiceTest {
     }
 
     @Test
-    void deveLancarExcecaoParaTokenExpirado() {
+    @DisplayName("Deve lancar excecao para token expirado")
+    void shouldThrowExceptionForExpiredToken() {
         String token = buildToken("user-id", "user@autohubstore.com", List.of("CUSTOMER"), signingKey,
                 -ONE_HOUR_MS);
 
@@ -55,22 +62,25 @@ class JwtServiceTest {
     }
 
     @Test
-    void deveLancarExcecaoParaTokenComAssinaturaInvalida() {
-        SecretKey outraChave = Keys.hmacShaKeyFor(Decoders.BASE64.decode(OTHER_SECRET));
-        String token = buildToken("user-id", "user@autohubstore.com", List.of("CUSTOMER"), outraChave, ONE_HOUR_MS);
+    @DisplayName("Deve lancar excecao para token com assinatura invalida")
+    void shouldThrowExceptionForTokenWithInvalidSignature() {
+        SecretKey otherKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(OTHER_SECRET));
+        String token = buildToken("user-id", "user@autohubstore.com", List.of("CUSTOMER"), otherKey, ONE_HOUR_MS);
 
         assertThatThrownBy(() -> jwtService.validate(token))
                 .isInstanceOf(SignatureException.class);
     }
 
     @Test
-    void deveLancarExcecaoParaTokenMalformado() {
+    @DisplayName("Deve lancar excecao para token malformado")
+    void shouldThrowExceptionForMalformedToken() {
         assertThatThrownBy(() -> jwtService.validate("token-nao-jwt"))
                 .isInstanceOf(MalformedJwtException.class);
     }
 
     @Test
-    void deveLancarExcecaoParaTokenAusente() {
+    @DisplayName("Deve lancar excecao para token ausente")
+    void shouldThrowExceptionForMissingToken() {
         assertThatThrownBy(() -> jwtService.validate(""))
                 .isInstanceOf(IllegalArgumentException.class);
     }
