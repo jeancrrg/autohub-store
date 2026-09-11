@@ -468,6 +468,11 @@ Regras válidas para todos os agentes do time (reforçam o resto deste `CLAUDE.m
   validados pelo quality-analyst, e sem os 8 itens do Critério de Conclusão de Microsserviço
   satisfeitos (testes unitários, aceitação Cucumber, cobertura ≥ 70%, checkstyle, Snyk, build,
   DER atualizado, `docs/apps/<nome-servico>.md`).
+- **Toda criação de microsserviço novo ou validação de "está finalizado" termina exibindo ao
+  usuário a tabela de evidência dos 8 itens** (formato em
+  [action-plan.md § Tabela de evidência — obrigatória ao final](docs/planning/action-plan.md#tabela-de-evidência--obrigatória-ao-final)),
+  com status ✅/❌ de cada item — nunca declarar "Concluído" sem mostrar essa tabela, e mostrá-la
+  também quando algum item falhar/estiver pendente.
 - Nunca expor segredo/credencial em spec, ADR, código ou log.
 - JDK do projeto para qualquer execução local dos agentes com Bash: `C:\Users\jeanc\.jdks\ms-25.0.4`
   (`JAVA_HOME`).

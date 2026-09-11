@@ -3,20 +3,18 @@
 %% "entidades" para fins de diagrama, sem persistência relacional.
 erDiagram
     JWT_CLAIMS {
-        string userId
+        string userId "subject do JWT"
         string email
-        string roles
-        long expiresAt
+        string roles "lista de papeis, ex CUSTOMER"
     }
     RATE_LIMIT_KEY {
-        string identifier "IP ou userId"
-        string endpoint
-        int windowSeconds
+        string key "IP ou userId, concatenado com o path"
+        boolean authenticated "define limite 100 ou 200 req-min"
     }
     SERVICE_ROUTE_DEFINITION {
         string serviceId
-        string pathPredicate
-        string uri
+        string pathPrefix "predicado Path=/api/v1/xxx/**"
+        string serviceUrl "lb://servico ou URL fixa"
     }
 
     JWT_CLAIMS ||--o{ RATE_LIMIT_KEY : "identifica usuário autenticado para"

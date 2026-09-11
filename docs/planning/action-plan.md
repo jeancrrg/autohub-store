@@ -52,6 +52,27 @@ verdadeiros simultaneamente:
 Entrega sem os 8 itens passando **não é considerada finalizada**, independentemente de o código
 compilar ou o endpoint responder manualmente.
 
+### Tabela de evidência — obrigatória ao final
+
+Toda criação de um novo microsserviço **ou** validação de "está de fato finalizado" — feita pelo
+`software-architect`/`quality-analyst` — deve terminar exibindo ao usuário uma tabela com os 8
+itens e seu status (passou/falhou/pendente), no formato:
+
+| # | Item | Status | Evidência |
+|---|---|---|---|
+| 1 | Testes unitários | ✅/❌ | |
+| 2 | Aceitação (Cucumber) | ✅/❌ | |
+| 3 | Cobertura ≥70% | ✅/❌ | |
+| 4 | Checkstyle | ✅/❌ | |
+| 5 | Snyk `ok: true` | ✅/❌ | |
+| 6 | Build | ✅/❌ | |
+| 7 | DER atualizado | ✅/❌ | |
+| 8 | `docs/apps/<nome-servico>.md` | ✅/❌ | |
+
+Só se declara "Concluído" com os 8/8 marcados ✅. Tabela incompleta (algum item ❌/pendente) deve
+ser exibida do mesmo jeito, deixando claro o que falta — nunca omitir a tabela nem declarar
+conclusão sem ela.
+
 ### Fluxo de responsabilidade
 
 - `backend-engineer`/`frontend-engineer` escrevem os testes (unitários + aceitação) e corrigem
