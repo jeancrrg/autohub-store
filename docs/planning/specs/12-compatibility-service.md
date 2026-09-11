@@ -1,6 +1,11 @@
 # Compatibility Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8012 | **Status:** Planejado
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8012 | **Status:** Pós-MVP (fora do escopo atual)
+
+> **Pós-MVP.** Este serviço **não faz parte dos 9 microsserviços do MVP** — escopo confirmado em
+> [docs/planning/action-plan.md § Decisões de Consolidação](../action-plan.md#decisões-de-consolidação).
+> Consulta de fitment peça↔veículo é valor agregado sobre o catálogo, não pré-requisito do fluxo de
+> compra. Spec mantida para a fase Pós-MVP.
 
 ## Objetivo
 

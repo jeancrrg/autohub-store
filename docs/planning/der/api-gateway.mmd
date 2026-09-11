@@ -1,0 +1,23 @@
+%% API Gateway — sem banco de dados próprio (stateless, roteamento).
+%% Estruturas em memória/Redis relevantes ao domínio do Gateway, documentadas como
+%% "entidades" para fins de diagrama, sem persistência relacional.
+erDiagram
+    JWT_CLAIMS {
+        string userId
+        string email
+        string roles
+        long expiresAt
+    }
+    RATE_LIMIT_KEY {
+        string identifier "IP ou userId"
+        string endpoint
+        int windowSeconds
+    }
+    SERVICE_ROUTE_DEFINITION {
+        string serviceId
+        string pathPredicate
+        string uri
+    }
+
+    JWT_CLAIMS ||--o{ RATE_LIMIT_KEY : "identifica usuário autenticado para"
+    SERVICE_ROUTE_DEFINITION ||--o{ RATE_LIMIT_KEY : "aplica limite por"

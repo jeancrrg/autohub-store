@@ -1,0 +1,21 @@
+%% Inventory Service — inventory_db (PostgreSQL).
+erDiagram
+    STOCK_ITEMS {
+        uuid id PK
+        uuid product_id UK "referência ao Catalog Service, sem FK cross-database"
+        int available_quantity
+        int reserved_quantity
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    STOCK_RESERVATIONS {
+        uuid id PK
+        uuid order_id "referência ao Order Service, sem FK cross-database"
+        uuid product_id "referência ao Catalog Service, sem FK cross-database"
+        int quantity
+        string status "RESERVED, CONFIRMED, RELEASED"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    STOCK_ITEMS ||--o{ STOCK_RESERVATIONS : "reserva parte de"

@@ -1,0 +1,12 @@
+%% Payment Service — payment_db (PostgreSQL).
+erDiagram
+    PAYMENTS {
+        uuid id PK
+        uuid order_id "referência ao Order Service, sem FK cross-database. Único índice parcial para PENDING/APPROVED (idempotência)"
+        uuid user_id "referência ao User Service, sem FK cross-database"
+        numeric amount
+        string status "PENDING, APPROVED, REJECTED"
+        timestamptz processed_at
+        string rejection_reason
+        timestamptz created_at
+    }

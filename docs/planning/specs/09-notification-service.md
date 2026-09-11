@@ -1,10 +1,51 @@
 # Notification Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8010 | **Status:** Planejado
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8009 | **Status:** Planejado
+
+**DER:** [docs/planning/der/notification-service.mmd](../der/notification-service.mmd) (sem banco
+próprio — diagrama documenta os records de evento Kafka consumidos)
 
 ## Objetivo
 
 Consumir eventos Kafka e enviar e-mails com templates Thymeleaf. Completamente stateless — sem banco de dados. Retry automático com backoff exponencial e Dead Letter Topic para falhas persistentes.
+
+## PRD Resumido
+
+Sem um serviço dedicado de notificação, cada microsserviço precisaria implementar seu próprio envio
+de e-mail, duplicando lógica de template e configuração de SMTP. O Notification Service resolve
+isso consumindo os eventos de domínio relevantes (cadastro, reset de senha, pedido, pagamento) e
+centralizando o envio de e-mail com retry e Dead Letter Topic. Não é chamado diretamente pelo
+cliente final nem por outro serviço via API — reage exclusivamente a eventos Kafka publicados por
+User Service, Auth Service, Order Service e Payment Service. Valor de negócio: garante que o
+cliente final seja informado das etapas-chave da sua jornada (boas-vindas, redefinição de senha,
+confirmação de pedido, resultado do pagamento) mesmo sob falhas transitórias de envio.
+
+## Use Cases
+
+- Como cliente final recém-cadastrado, quero receber um e-mail de boas-vindas, para confirmar que
+  minha conta foi criada com sucesso.
+- Como cliente final que solicitou redefinição de senha, quero receber um e-mail com o link/token de
+  reset, para recuperar acesso à minha conta.
+- Como cliente final que finalizou uma compra, quero receber um e-mail de confirmação do pedido,
+  para ter um comprovante com os itens e o total.
+- Como cliente final cujo pagamento foi aprovado, quero receber um e-mail de confirmação, para saber
+  que a compra foi concluída com sucesso.
+- Como cliente final cujo pagamento foi recusado, quero receber um e-mail com o motivo e
+  orientações, para entender o que houve e tentar novamente.
+- Como operador da plataforma, quero que e-mails com falha de envio sejam reenviados
+  automaticamente (retry com backoff) e, se persistirem, enviados a um Dead Letter Topic, para não
+  perder silenciosamente uma notificação importante.
+
+## Critérios de Aceite
+
+| Cenário | Dado | Quando | Então |
+|---|---|---|---|
+| Envio de boas-vindas | Evento `user.created` publicado pelo User Service | Notification Service consome o evento | `EmailService` é chamado com o template `welcome.html` e o nome do usuário, e o e-mail chega no MailHog |
+| Envio de reset de senha | Evento `user.password-reset` publicado pelo Auth Service | Notification Service consome o evento | `EmailService` é chamado com o template `password-reset.html` contendo o token e TTL de 15 min |
+| Envio de confirmação de pedido | Evento `order.created` publicado pelo Order Service | Notification Service consome o evento | `EmailService` é chamado com o template `order-confirmed.html` contendo itens e total do pedido |
+| Envio de pagamento aprovado/rejeitado | Evento `payment.approved` ou `payment.rejected` publicado pelo Payment Service | Notification Service consome o evento correspondente | `EmailService` é chamado com o template `payment-approved.html` ou `payment-rejected.html`, respectivamente |
+| Retry e Dead Letter Topic | `JavaMailSender` configurado para lançar exceção nas 3 tentativas | Notification Service consome um evento e todas as tentativas de envio falham (backoff 1s → 2s → 4s) | Mensagem é publicada no tópico `.DLT` correspondente após a 3ª falha |
+| Template renderiza dados corretos | Evento com dados de exemplo (nome, itens, valores) | Thymeleaf renderiza o template do tipo de evento | HTML gerado contém os dados do evento (nome do usuário, itens do pedido, valor) corretamente interpolados |
 
 ## Banco de Dados: Nenhum (stateless)
 
@@ -36,6 +77,9 @@ plugins {
     id 'org.springframework.boot' version '3.3.5'
     id 'io.spring.dependency-management' version '1.1.6'
 }
+
+group = 'com.autohubstore'
+version = '1.0.0'
 
 java {
     toolchain {
@@ -139,12 +183,24 @@ MAIL_SMTP_STARTTLS=false
 # MAIL_PASSWORD=<sendgrid-api-key>
 ```
 
+**Resposta JSON em `snake_case`:** adicionar em `application.yml` (campo Java continua
+`lowerCamelCase`, só a serialização de saída HTTP vira `snake_case` — ver
+[CLAUDE.md § Convenções de Código](../../../CLAUDE.md#convenções-de-código)). Vale para o
+endpoint de health/documentação Swagger deste serviço, já que ele não expõe payload de domínio
+próprio (é stateless, só consumidor Kafka):
+
+```yaml
+spring:
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+```
+
 ## Docker
 
 ```dockerfile
 FROM eclipse-temurin:25-jre AS runtime
 COPY build/libs/notification-service.jar app.jar
-EXPOSE 8010
+EXPOSE 8009
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 
@@ -169,7 +225,7 @@ checkstyle {
     configFile = rootProject.file('infra/checkstyle/checkstyle.xml')
     ignoreFailures = false
     showViolations = true
-    sourceSets = [sourceSets.main] // não aplica nos testes
+    sourceSets = [sourceSets.main, sourceSets.test] // valida também src/test/
 }
 ```
 
@@ -179,3 +235,9 @@ checkstyle {
 - **Integração:** Testcontainers Kafka; publicar evento → verificar `EmailService.send()` chamado com dados corretos
 - **DLT:** Testar que após 3 falhas de envio (exception lançada) a mensagem vai para o DLT
 - **Templates:** Testar rendering Thymeleaf com dados de exemplo → verificar conteúdo HTML gerado
+
+**Critério de conclusão:** serviço só é considerado pronto quando atender aos 8 itens do
+[action-plan.md § Critério de Conclusão de Microsserviço](../action-plan.md#critério-de-conclusão-de-microsserviço)
+— unitários, aceitação (Cucumber), cobertura ≥ 70%, checkstyle sem violação, Snyk `ok: true`, build
+com sucesso, DER em `docs/planning/der/` atualizado e documentação publicada em
+`docs/apps/notification-service.md`.

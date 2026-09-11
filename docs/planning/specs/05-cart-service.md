@@ -1,10 +1,51 @@
 # Cart Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8006 | **Status:** Planejado
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8005 | **Status:** Planejado
+
+**DER:** [docs/planning/der/cart-service.mmd](../der/cart-service.mmd) (sem banco relacional —
+diagrama documenta a estrutura do Hash Redis)
 
 ## Objetivo
 
 Carrinho de compras por usuário persistido no Redis com snapshot de preço, TTL de 7 dias e circuit breaker para resiliência quando o Catalog Service estiver indisponível.
+
+## PRD Resumido
+
+Sem um carrinho persistido, o cliente perderia os itens selecionados ao trocar de dispositivo ou
+sessão, e sem snapshot de preço o valor do item mudaria retroativamente se o admin alterasse o
+preço no catálogo. O Cart Service resolve isso mantendo o carrinho por usuário no Redis com preço
+travado no momento da adição. Usado diretamente pelo cliente final autenticado e consumido pelo
+Order Service (via chamada que limpa o carrinho após criar o pedido). Depende do Catalog Service
+via OpenFeign para validar produto e capturar o preço no momento da adição. Valor de negócio:
+experiência de compra consistente entre sessões, proteção contra oscilação de preço durante a
+navegação, e resiliência via circuit breaker quando o Catalog está fora do ar.
+
+## Use Cases
+
+- Como cliente autenticado, quero visualizar meu carrinho com itens, subtotais e total, para
+  revisar minha compra antes de finalizar o pedido.
+- Como cliente autenticado, quero adicionar um item ao carrinho informando produto e quantidade,
+  para separar o que pretendo comprar.
+- Como cliente autenticado, quero atualizar a quantidade de um item já no carrinho, para ajustar
+  minha compra sem removê-lo e adicioná-lo novamente.
+- Como cliente autenticado, quero remover um item do carrinho, para desistir da compra daquele
+  produto.
+- Como Order Service, quero limpar o carrinho de um usuário após criar o pedido, para que os itens
+  já comprados não continuem aparecendo como pendentes.
+- Como cliente autenticado, quero que meu carrinho continue disponível por até 7 dias de
+  inatividade, para não perder a seleção entre visitas.
+
+## Critérios de Aceite
+
+| Cenário | Dado | Quando | Então |
+|---|---|---|---|
+| Adicionar item com sucesso | Produto existe e está disponível no Catalog Service | Cliente chama `POST /api/v1/cart/items` com `productId` e `quantity` válidos | Serviço grava o item no Hash Redis `cart:{userId}` com snapshot do preço atual, renova o TTL para 7 dias e retorna o carrinho atualizado |
+| Atualizar quantidade | Item já existe no carrinho do usuário | Cliente chama `PUT /api/v1/cart/items/{productId}` com nova `quantity` | Serviço atualiza a quantidade mantendo o preço do snapshot original (não busca novo preço no Catalog) e recalcula o subtotal |
+| Remover item | Item existe no carrinho | Cliente chama `DELETE /api/v1/cart/items/{productId}` | Serviço remove o campo do Hash Redis e o item deixa de aparecer em `GET /api/v1/cart` |
+| Produto inexistente | `productId` informado não existe no Catalog Service | Cliente chama `POST /api/v1/cart/items` com esse `productId` | Serviço retorna erro (4xx) sem adicionar item ao carrinho |
+| TTL renovado | Carrinho já existe com TTL residual menor que 7 dias | Cliente realiza qualquer operação de escrita no carrinho | TTL da chave `cart:{userId}` é renovado para 7 dias completos |
+| Circuit breaker aberto | Catalog Service indisponível (falhas acima do limiar configurado) | Cliente chama `POST /api/v1/cart/items` | Serviço retorna 503 sem adicionar item, nunca gravando item sem validação do Catalog |
+| Limpeza pelo Order Service | Carrinho do usuário com itens | Order Service chama `DELETE /api/v1/cart` após criar o pedido | Hash Redis `cart:{userId}` é removido, e `GET /api/v1/cart` volta a retornar carrinho vazio |
 
 ## Banco de Dados: Redis
 
@@ -37,6 +78,9 @@ plugins {
     id 'org.springframework.boot' version '3.3.5'
     id 'io.spring.dependency-management' version '1.1.6'
 }
+
+group = 'com.autohubstore'
+version = '1.0.0'
 
 java {
     toolchain {
@@ -161,12 +205,22 @@ CATALOG_SERVICE_URL=http://catalog-service:8004
 CART_TTL_DAYS=7
 ```
 
+**Resposta JSON em `snake_case`:** adicionar em `application.yml` (campo Java continua
+`lowerCamelCase`, só a serialização de saída HTTP vira `snake_case` — ver
+[CLAUDE.md § Convenções de Código](../../../CLAUDE.md#convenções-de-código)):
+
+```yaml
+spring:
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+```
+
 ## Docker
 
 ```dockerfile
 FROM eclipse-temurin:25-jre AS runtime
 COPY build/libs/cart-service.jar app.jar
-EXPOSE 8006
+EXPOSE 8005
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 
@@ -191,7 +245,7 @@ checkstyle {
     configFile = rootProject.file('infra/checkstyle/checkstyle.xml')
     ignoreFailures = false
     showViolations = true
-    sourceSets = [sourceSets.main] // não aplica nos testes
+    sourceSets = [sourceSets.main, sourceSets.test] // valida também src/test/
 }
 ```
 
@@ -201,3 +255,9 @@ checkstyle {
 - **Integração:** Testcontainers Redis; WireMock para simular Catalog Service
 - **Circuit Breaker:** Testar abertura após N falhas consecutivas do Catalog → retorna 503
 - **TTL:** Verificar que chave Redis tem TTL renovado a cada adição de item
+
+**Critério de conclusão:** serviço só é considerado pronto quando atender aos 8 itens do
+[action-plan.md § Critério de Conclusão de Microsserviço](../action-plan.md#critério-de-conclusão-de-microsserviço)
+— unitários, aceitação (Cucumber), cobertura ≥ 70%, checkstyle sem violação, Snyk `ok: true`, build
+com sucesso, DER em `docs/planning/der/` atualizado e documentação publicada em
+`docs/apps/cart-service.md`.

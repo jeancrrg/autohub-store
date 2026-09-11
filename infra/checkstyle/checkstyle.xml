@@ -229,11 +229,27 @@
         </module>
 
         <!--
-            Proíbe blocos catch completamente vazios (sem código e sem comentário).
-            Exceção: permite catch com comentário que explique a supressão.
+            Proíbe blocos catch completamente vazios — sem exceção, nem via comentário
+            explicativo, nem via nome de variável convencional (ignored/expected).
+            Todo catch deve tratar, logar ou relançar algo; projeto não usa comentários
+            (documentação vive em docs/apps/), então não há bypass possível.
         -->
         <module name="EmptyCatchBlock">
-            <property name="exceptionVariableName" value="ignored|expected"/>
+            <property name="exceptionVariableName" value="a^"/>
+            <property name="commentFormat" value="a^"/>
+        </module>
+
+        <!--
+            Proíbe declarar `record` dentro de outra classe (tipo aninhado).
+            Record top-level (arquivo próprio) continua permitido; se fizer sentido como
+            DTO imutável, deve ser extraído para seu próprio arquivo .java.
+        -->
+        <module name="DescendantToken">
+            <property name="tokens" value="CLASS_DEF"/>
+            <property name="limitedTokens" value="RECORD_DEF"/>
+            <property name="maximumNumber" value="0"/>
+            <property name="maximumMessage"
+                      value="Não declarar record dentro de uma classe — extrair para arquivo próprio."/>
         </module>
 
         <!--

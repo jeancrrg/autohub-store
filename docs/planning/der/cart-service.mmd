@@ -1,0 +1,16 @@
+%% Cart Service — sem banco relacional (Redis Hash por usuário, TTL 7 dias).
+%% Documentado como entidades para fins de diagrama — não é schema SQL.
+erDiagram
+    CART {
+        string userId PK "chave do Hash: cart:{userId}"
+        numeric totalAmount "calculado"
+        int itemCount "calculado"
+    }
+    CART_ITEM {
+        string productId "field: item:{productId}:*"
+        string productName "snapshot"
+        numeric unitPrice "snapshot, imutável"
+        int quantity
+    }
+
+    CART ||--o{ CART_ITEM : "contém"

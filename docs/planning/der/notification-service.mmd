@@ -1,0 +1,36 @@
+%% Notification Service — sem banco de dados (stateless). Diagrama documenta os
+%% records de evento Kafka consumidos, não schema de persistência.
+erDiagram
+    USER_CREATED_EVENT {
+        uuid userId
+        string email
+        string fullName
+        timestamptz createdAt
+    }
+    PASSWORD_RESET_EVENT {
+        uuid userId
+        string email
+        string resetToken
+        timestamptz expiresAt
+    }
+    ORDER_CREATED_EVENT {
+        uuid orderId
+        uuid userId
+        numeric totalAmount
+        timestamptz createdAt
+    }
+    PAYMENT_APPROVED_EVENT {
+        uuid paymentId
+        uuid orderId
+        uuid userId
+        numeric amount
+        timestamptz processedAt
+    }
+    PAYMENT_REJECTED_EVENT {
+        uuid paymentId
+        uuid orderId
+        uuid userId
+        numeric amount
+        string reason
+        timestamptz processedAt
+    }

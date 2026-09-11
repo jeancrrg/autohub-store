@@ -1,6 +1,8 @@
 # Inventory Service
 
-**Build Tool:** Maven | **Arquitetura:** Hexagonal (Ports & Adapters) | **Porta:** 8007 | **Status:** Planejado
+**Build Tool:** Maven | **Arquitetura:** Hexagonal (Ports & Adapters) | **Porta:** 8006 | **Status:** Planejado
+
+**DER:** [docs/planning/der/inventory-service.mmd](../der/inventory-service.mmd)
 
 ## Objetivo
 
@@ -10,6 +12,45 @@ forte consistência e controle de concorrência, incompatível com o papel de le
 Catalog. A arquitetura Hexagonal isola a máquina de estados de reserva dos detalhes de
 infraestrutura (REST, Kafka, JPA), assim como o Order Service. Ver decisão em
 [docs/planning/action-plan.md](../action-plan.md#decisões-de-consolidação).
+
+## PRD Resumido
+
+Sem um serviço dedicado com controle de concorrência forte, dois pedidos simultâneos poderiam
+reservar a mesma última unidade em estoque (overselling), gerando pedido que não pode ser
+entregue. O Inventory Service resolve isso concentrando a semântica de reserva/confirmação/
+liberação de estoque em um domínio isolado, seguindo o padrão Saga orquestrado via Kafka. Não é
+usado diretamente pelo cliente final — é consumido pelo Catalog Service e Cart Service (consulta de
+disponibilidade) e reage a eventos do Order Service e Payment Service. Valor de negócio: garante
+que nenhum pedido seja confirmado sem estoque real disponível, e que estoque reservado seja
+automaticamente liberado quando o pagamento falha ou o pedido é cancelado.
+
+## Use Cases
+
+- Como Order Service, quero que o estoque de cada item de um pedido seja reservado
+  automaticamente ao publicar `order.created`, para garantir que a quantidade vendida não exceda o
+  disponível.
+- Como Order Service, quero ser avisado quando o estoque for insuficiente para uma reserva, para
+  cancelar o pedido automaticamente (compensação Saga) sem cobrar o cliente.
+- Como Payment Service (indiretamente, via Order), quero que a reserva de estoque seja confirmada
+  definitivamente quando o pagamento for aprovado, para que a baixa de estoque só vire permanente
+  após a venda ser efetivada.
+- Como Payment Service (indiretamente, via Order), quero que a reserva de estoque seja liberada
+  quando o pagamento for rejeitado, para repor a quantidade disponível para outros clientes.
+- Como Catalog Service e Cart Service, quero consultar a disponibilidade de um produto, para exibir
+  a badge de estoque ou validar a adição ao carrinho.
+- Como administrador, quero ajustar manualmente a quantidade em estoque de um produto, para
+  registrar entrada de mercadoria ou corrigir divergências.
+
+## Critérios de Aceite
+
+| Cenário | Dado | Quando | Então |
+|---|---|---|---|
+| Reserva com sucesso | `available_quantity` do produto é suficiente para a quantidade pedida | Serviço consome evento `order.created` com esse item | Cria `stock_reservation` com status `RESERVED`, decrementa `available_quantity` e incrementa `reserved_quantity`; nenhum evento de erro é publicado |
+| Reserva insuficiente | `available_quantity` do produto é menor que a quantidade pedida | Serviço consome evento `order.created` com esse item | Nenhuma reserva `RESERVED` é criada para o item; serviço publica `inventory.stock-insufficient` com `requestedQuantity` e `availableQuantity` corretos |
+| Confirmação de reserva | Existe reserva `RESERVED` vinculada ao `orderId` | Serviço consome evento `payment.approved` para esse pedido | Reserva transiciona para `CONFIRMED`, dedução do estoque passa a ser definitiva (`reserved_quantity` decrementado, `available_quantity` não é reposto) |
+| Liberação de reserva | Existe reserva `RESERVED` vinculada ao `orderId` | Serviço consome evento `payment.rejected` para esse pedido | Reserva transiciona para `RELEASED` e `available_quantity` é reposto na quantidade da reserva |
+| Ajuste manual de estoque | Produto já possui registro de estoque | Admin chama `PUT /api/v1/inventory/{productId}` com nova `quantity` | Serviço atualiza `available_quantity` e retorna o estado atualizado |
+| Concorrência no último item | `available_quantity = 1` para um produto | Duas reservas simultâneas chegam para o mesmo produto, cada uma pedindo 1 unidade | Apenas uma reserva é criada com sucesso (`RESERVED`); a outra resulta em `inventory.stock-insufficient`, nunca ambas bem-sucedidas |
 
 ## Banco de Dados: PostgreSQL (`inventory_db`)
 
@@ -39,6 +80,9 @@ infraestrutura (REST, Kafka, JPA), assim como o Order Service. Ver decisão em
 ## Dependências Maven (pom.xml)
 
 ```xml
+<!-- <project> -->
+<version>1.0.0</version>
+
 <properties>
     <java.version>25</java.version>
 </properties>
@@ -214,6 +258,16 @@ KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 KAFKA_GROUP_ID=inventory-service-group
 ```
 
+**Resposta JSON em `snake_case`:** adicionar em `application.yml` (campo Java continua
+`lowerCamelCase`, só a serialização de saída HTTP vira `snake_case` — ver
+[CLAUDE.md § Convenções de Código](../../../CLAUDE.md#convenções-de-código)):
+
+```yaml
+spring:
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+```
+
 > **Infra:** container `postgres-inventory` (porta `5437`) já disponível em `infra/docker-compose.yml`.
 
 ## Docker
@@ -221,7 +275,7 @@ KAFKA_GROUP_ID=inventory-service-group
 ```dockerfile
 FROM eclipse-temurin:25-jre AS runtime
 COPY target/inventory-service.jar app.jar
-EXPOSE 8007
+EXPOSE 8006
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 
@@ -257,7 +311,7 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
         <configLocation>${checkstyle.config.location}</configLocation>
         <failsOnError>true</failsOnError>
         <consoleOutput>true</consoleOutput>
-        <includeTestSourceDirectory>false</includeTestSourceDirectory>
+        <includeTestSourceDirectory>true</includeTestSourceDirectory>
     </configuration>
     <executions>
         <execution>
@@ -275,3 +329,9 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
 - **Integração:** Testcontainers (PostgreSQL + Kafka); publicar `order.created` → verificar reserva criada e `available_quantity` decrementado; publicar `payment.approved` → reserva `CONFIRMED`; publicar `payment.rejected` → estoque reposto
 - **Concorrência:** Duas reservas simultâneas para o último item em estoque → apenas uma reserva bem-sucedida (lock otimista/`SELECT FOR UPDATE`)
 - **Saga:** Reserva insuficiente → `inventory.stock-insufficient` publicado com dados corretos
+
+**Critério de conclusão:** serviço só é considerado pronto quando atender aos 8 itens do
+[action-plan.md § Critério de Conclusão de Microsserviço](../action-plan.md#critério-de-conclusão-de-microsserviço)
+— unitários, aceitação (Cucumber), cobertura ≥ 70%, checkstyle sem violação, Snyk `ok: true`, build
+com sucesso, DER em `docs/planning/der/` atualizado e documentação publicada em
+`docs/apps/inventory-service.md`.

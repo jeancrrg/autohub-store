@@ -2,6 +2,8 @@
 
 **Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8002 | **Status:** Em implementação
 
+**DER:** [docs/planning/der/auth-service.mmd](../der/auth-service.mmd)
+
 ## Objetivo
 
 Autenticação: login, logout, refresh token com rotation, blacklist de tokens revogados no Redis e
@@ -15,6 +17,44 @@ credencial.
 Não possui tabela `users` — não é dono do dado de credencial (`password_hash`). Toda leitura/
 escrita de credencial passa por chamada OpenFeign ao [User Service](03-user-service.md), que
 mantém o dado (Database per Service — ADR-002).
+
+## PRD Resumido
+
+Sem um serviço próprio de autenticação, sessão/token ficaria acoplada ao CRUD de perfil no User
+Service, misturando um dado de alta sensibilidade (credencial) com um dado de baixa sensibilidade
+(cadastro), com cadência de mudança e superfície de ataque diferentes. O Auth Service resolve isso
+isolando login, logout, refresh e reset de senha em um bounded context próprio. Usado por todo
+cliente final autenticado (via frontend, através do Gateway) e depende do User Service via
+OpenFeign para validar/atualizar credencial. Valor de negócio: reduz a área exposta a ataques de
+credencial, permite evoluir a estratégia de token (rotation, blacklist) sem tocar no domínio de
+perfil, e sustenta o fluxo de recuperação de senha via e-mail.
+
+## Use Cases
+
+- Como cliente final, quero fazer login com e-mail e senha, para acessar áreas autenticadas da loja
+  sem expor o token diretamente no meu navegador (cookie httpOnly).
+- Como cliente final autenticado, quero fazer logout, para revogar meu refresh token e invalidar
+  meu access token imediatamente, mesmo antes de expirar.
+- Como cliente final com sessão ativa, quero que meu token seja renovado via refresh automático,
+  para continuar navegando sem precisar logar novamente a cada hora.
+- Como cliente que esqueceu a senha, quero solicitar redefinição por e-mail, para recuperar acesso
+  à minha conta sem precisar de suporte manual.
+- Como cliente que recebeu o link de redefinição, quero confirmar a nova senha com o token
+  temporário, para voltar a acessar minha conta com segurança.
+- Como Auth Service, quero validar credenciais e atualizar senha chamando o User Service via
+  OpenFeign, para nunca persistir ou expor o `password_hash` fora do dono do dado.
+
+## Critérios de Aceite
+
+| Cenário | Dado | Quando | Então |
+|---|---|---|---|
+| Login com sucesso | Usuário cadastrado no User Service com credencial válida | Cliente chama `POST /api/v1/auth/login` com e-mail/senha corretos | Serviço retorna 200 com `Set-Cookie` `access_token` e `refresh_token` httpOnly, sem token no corpo da resposta |
+| Login com credencial inválida | Usuário existe, mas senha está incorreta | Cliente chama `POST /api/v1/auth/login` | Serviço retorna 401 sem emitir nenhum token |
+| Refresh com rotation | Cliente possui `refresh_token` válido e não revogado | Cliente chama `POST /api/v1/auth/refresh` | Serviço invalida o refresh token antigo e emite novo par de tokens (access + refresh) |
+| Logout revoga sessão | Cliente autenticado com `access_token` e `refresh_token` válidos | Cliente chama `POST /api/v1/auth/logout` | Refresh token é marcado como revogado, access token entra na blacklist Redis, e cookies retornam com `maxAge=0` |
+| Acesso com token na blacklist | Access token foi colocado na blacklist Redis após logout | Cliente tenta acessar endpoint protegido reusando o token antigo | Serviço retorna 401 |
+| Reset de senha completo | Cliente solicitou `forgot-password` e recebeu token temporário válido (TTL 15 min) | Cliente chama `POST /api/v1/auth/reset-password` com o token e nova senha dentro do prazo | User Service persiste o novo hash da senha e o token de reset é marcado como usado |
+| Circuit breaker aberto no User Service | User Service indisponível (falhas consecutivas acima do limiar) | Cliente chama `login`, `forgot-password` ou `reset-password` | Auth Service retorna 503 sem emitir token, nunca autenticando sem confirmação do User Service |
 
 ## Banco de Dados: PostgreSQL (`auth_db`) + Redis
 
@@ -48,6 +88,9 @@ mantém o dado (Database per Service — ADR-002).
 ## Dependências Maven (pom.xml)
 
 ```xml
+<!-- <project> -->
+<version>1.0.0</version>
+
 <properties>
     <java.version>25</java.version>
 </properties>
@@ -307,6 +350,16 @@ KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 PASSWORD_RESET_TOKEN_TTL_MINUTES=15
 ```
 
+**Resposta JSON em `snake_case`:** adicionar em `application.yml` (campo Java continua
+`lowerCamelCase`, só a serialização de saída HTTP vira `snake_case` — ver
+[CLAUDE.md § Convenções de Código](../../../CLAUDE.md#convenções-de-código)):
+
+```yaml
+spring:
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+```
+
 ## Docker
 
 ```dockerfile
@@ -348,7 +401,7 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
         <configLocation>${checkstyle.config.location}</configLocation>
         <failsOnError>true</failsOnError>
         <consoleOutput>true</consoleOutput>
-        <includeTestSourceDirectory>false</includeTestSourceDirectory>
+        <includeTestSourceDirectory>true</includeTestSourceDirectory>
     </configuration>
     <executions>
         <execution>
@@ -369,3 +422,9 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
 - **Circuit Breaker:** Testar abertura após N falhas consecutivas do User Service → 503
 - **Segurança:** Acesso sem token → 401; token expirado → 401; token na blacklist → 401
 - **Validação:** Campos obrigatórios ausentes → 400; credenciais inválidas → 401
+
+**Critério de conclusão:** serviço só é considerado pronto quando atender aos 8 itens do
+[action-plan.md § Critério de Conclusão de Microsserviço](../action-plan.md#critério-de-conclusão-de-microsserviço)
+— unitários, aceitação (Cucumber), cobertura ≥ 70%, checkstyle sem violação, Snyk `ok: true`, build
+com sucesso, DER em `docs/planning/der/` atualizado e documentação publicada em
+`docs/apps/auth-service.md`.

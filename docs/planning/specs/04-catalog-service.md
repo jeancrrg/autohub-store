@@ -2,15 +2,64 @@
 
 **Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8004 | **Status:** Em implementação
 
+**DER:** [docs/planning/der/catalog-service.mmd](../der/catalog-service.mmd)
+
 ## Objetivo
 
-Gerenciar produtos e categorias com cache Redis para reduzir latência e publicação de eventos Kafka para sincronizar o Search Service e alimentar o Analytics Service.
+Gerenciar produtos e categorias com cache Redis para reduzir latência e publicação de eventos
+Kafka para sincronização com serviços consumidores. Search Service e Compatibility Service (que
+consomem `catalog.product-created`/`updated` para busca full-text e fitment peça↔veículo) são
+**pós-MVP** — não bloqueiam esta fase.
 
 > **Estoque não é mais responsabilidade deste serviço.** `stock_quantity` foi extraído para o
 > [Inventory Service](06-inventory-service.md) — Catalog é orientado a leitura/cache e não tem
 > semântica de reserva/concorrência necessária para controlar quantidade de forma segura sob
 > checkout simultâneo. Ver decisão em
 > [docs/planning/action-plan.md](../action-plan.md#decisões-de-consolidação).
+
+## PRD Resumido
+
+Sem um catálogo centralizado, cada serviço precisaria manter sua própria cópia de nome, preço e
+categoria de produto, gerando inconsistência entre o que o cliente vê e o que é cobrado. O Catalog
+Service resolve isso concentrando os dados descritivos do produto com cache para leitura rápida.
+Usado diretamente pelo cliente final (navegação e busca por categoria) e pelo administrador (CRUD
+de produtos/categorias/imagens); consumido também pelo Cart Service (OpenFeign, validação de
+produto/preço) e depende do Inventory Service (OpenFeign) para exibir disponibilidade. Valor de
+negócio: reduz latência de navegação via cache Redis, mantém SKU e slug como identificadores de
+negócio estáveis, e desacopla estoque (alta concorrência) da leitura de catálogo.
+
+## Use Cases
+
+- Como cliente final, quero listar produtos paginados e filtrar por categoria, para encontrar peças
+  automotivas que atendam minha necessidade.
+- Como cliente final, quero ver os detalhes de um produto pelo slug amigável, para acessar a página
+  do produto por uma URL legível e compartilhável.
+- Como cliente final, quero ver a badge de disponibilidade em estoque na página do produto, para
+  saber se posso comprar antes de adicionar ao carrinho.
+- Como administrador, quero cadastrar um novo produto com SKU e slug gerados/validados
+  automaticamente, para publicá-lo no catálogo sem colisão de identificadores.
+- Como administrador, quero fazer upload de uma ou mais imagens para um produto já criado, para
+  completar a ficha do produto em um fluxo de dois passos.
+- Como administrador, quero remover uma imagem específica de um produto, para corrigir a galeria
+  sem recriar o produto inteiro.
+- Como administrador, quero atualizar ou remover um produto existente, para manter o catálogo
+  atualizado.
+- Como administrador, quero criar e organizar categorias em hierarquia pai/filho, para estruturar a
+  navegação do catálogo.
+- Como Inventory Service, quero ser avisado da criação de um produto via evento Kafka
+  `catalog.product-created`, para inicializar o registro de estoque correspondente.
+
+## Critérios de Aceite
+
+| Cenário | Dado | Quando | Então |
+|---|---|---|---|
+| Listagem com cache | Produto já consultado uma vez (cache `product:{id}` populado) | Cliente chama `GET /api/v1/catalog/products/{id}` novamente dentro do TTL de 5 min | Serviço responde a partir do Redis, sem nova consulta ao PostgreSQL |
+| Criação de produto com sucesso | Categoria existente e `sku`/`slug` únicos ou omitidos | Admin chama `POST /api/v1/catalog/products` com dados válidos | Serviço cria o produto, gera `slug` (e `sku` se omitido), retorna 201 e publica `catalog.product-created` |
+| Criação com SKU duplicado | Já existe produto com o mesmo `sku` | Admin chama `POST /api/v1/catalog/products` reusando o SKU | Serviço retorna 409, sem criar produto nem publicar evento |
+| Upload de imagem válida | Produto já criado, sem imagens | Admin chama `POST /api/v1/catalog/products/{id}/images` com arquivo `image/png` de até 5MB | Serviço grava o objeto no MinIO, persiste registro em `product_images` com `is_primary=true` na primeira imagem, e retorna 201 |
+| Upload de imagem inválida | Produto já criado | Admin envia arquivo `application/pdf` ou maior que 5MB | Serviço rejeita com 415 (tipo) ou 413 (tamanho), sem gravar no MinIO |
+| Atualização invalida cache | Produto já em cache | Admin chama `PUT /api/v1/catalog/products/{id}` alterando o preço | Serviço atualiza o registro, aplica `@CacheEvict` na chave `product:{id}` e evento `catalog.product-updated` é publicado com o novo preço |
+| Integração com Inventory Service | Produto criado, Inventory Service consumindo `catalog.product-created` | Cliente consulta `GET /api/v1/catalog/products/{id}` | Resposta inclui `stockQuantity` obtido via OpenFeign ao Inventory Service |
 
 ## Banco de Dados: PostgreSQL (`catalog_db`) + Redis (cache) + MinIO (imagens)
 
@@ -53,7 +102,7 @@ plugins {
 }
 
 group = 'com.autohubstore'
-version = '0.0.1-SNAPSHOT'
+version = '1.0.0'
 
 java {
     toolchain {
@@ -282,7 +331,17 @@ DB_PASSWORD=<secret>
 REDIS_HOST=redis
 REDIS_PORT=6379
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-INVENTORY_SERVICE_URL=http://inventory-service:8007
+INVENTORY_SERVICE_URL=http://inventory-service:8006
+```
+
+**Resposta JSON em `snake_case`:** adicionar em `application.yml` (campo Java continua
+`lowerCamelCase`, só a serialização de saída HTTP vira `snake_case` — ver
+[CLAUDE.md § Convenções de Código](../../../CLAUDE.md#convenções-de-código)):
+
+```yaml
+spring:
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 ```
 
 ## Docker
@@ -315,7 +374,7 @@ checkstyle {
     configFile = rootProject.file('infra/checkstyle/checkstyle.xml')
     ignoreFailures = false
     showViolations = true
-    sourceSets = [sourceSets.main] // não aplica nos testes
+    sourceSets = [sourceSets.main, sourceSets.test] // valida também src/test/
 }
 ```
 
@@ -324,3 +383,9 @@ checkstyle {
 - **Unitários:** `ProductService` (CRUD, lógica de cache hit/miss), `CategoryService`
 - **Integração:** Testcontainers (PostgreSQL + Redis + Kafka); criar produto → verificar cache e evento publicado
 - **Cache:** Testar que segunda leitura do mesmo produto vem do Redis (sem hit no banco)
+
+**Critério de conclusão:** serviço só é considerado pronto quando atender aos 8 itens do
+[action-plan.md § Critério de Conclusão de Microsserviço](../action-plan.md#critério-de-conclusão-de-microsserviço)
+— unitários, aceitação (Cucumber), cobertura ≥ 70%, checkstyle sem violação, Snyk `ok: true`, build
+com sucesso, DER em `docs/planning/der/` atualizado e documentação publicada em
+`docs/apps/catalog-service.md`.

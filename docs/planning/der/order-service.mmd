@@ -1,0 +1,41 @@
+%% Order Service — order_db (PostgreSQL).
+erDiagram
+    ORDERS {
+        uuid id PK
+        uuid user_id "referência ao User Service, sem FK cross-database"
+        uuid delivery_address_id FK
+        string status "PENDING, WAITING_PAYMENT, PAID, CANCELLED"
+        numeric total_amount
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    ORDER_DELIVERY_ADDRESSES {
+        uuid id PK
+        string street "snapshot"
+        string number "snapshot"
+        string complement "snapshot"
+        string city "snapshot"
+        string state "snapshot"
+        string zip_code "snapshot"
+        timestamptz created_at
+    }
+    ORDER_ITEMS {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id "referência ao Catalog Service, sem FK cross-database"
+        string product_name "snapshot"
+        numeric unit_price "snapshot"
+        int quantity
+        numeric subtotal "coluna gerada"
+    }
+    ORDER_STATUS_HISTORY {
+        uuid id PK
+        uuid order_id FK
+        string status
+        timestamptz changed_at
+        string note
+    }
+
+    ORDER_DELIVERY_ADDRESSES ||--|| ORDERS : "endereço de entrega de"
+    ORDERS ||--o{ ORDER_ITEMS : "contém"
+    ORDERS ||--o{ ORDER_STATUS_HISTORY : "registra transições em"

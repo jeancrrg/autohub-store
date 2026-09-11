@@ -1,0 +1,25 @@
+%% User Service — user_db (PostgreSQL).
+erDiagram
+    USERS {
+        uuid id PK
+        string email UK
+        string full_name
+        string password_hash "nunca sai deste serviço"
+        string status
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    ADDRESSES {
+        uuid id PK
+        uuid user_id FK
+        string street
+        string number
+        string complement
+        string city
+        string state
+        string zip_code
+        boolean is_default
+        timestamptz created_at
+    }
+
+    USERS ||--o{ ADDRESSES : "possui"

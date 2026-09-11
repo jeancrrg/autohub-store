@@ -1,6 +1,11 @@
 # Search Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8005 | **Status:** Planejado
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8010 | **Status:** Pós-MVP (fora do escopo atual)
+
+> **Pós-MVP.** Este serviço **não faz parte dos 9 microsserviços do MVP** — escopo confirmado em
+> [docs/planning/action-plan.md § Decisões de Consolidação](../action-plan.md#decisões-de-consolidação).
+> Busca full-text é incremento de valor sobre o Catalog Service já funcional, não bloqueia o
+> happy path de compra do MVP. Spec mantida para a fase Pós-MVP.
 
 ## Objetivo
 
@@ -182,7 +187,7 @@ KAFKA_GROUP_ID=search-service-group
 ```dockerfile
 FROM eclipse-temurin:25-jre AS runtime
 COPY build/libs/search-service.jar app.jar
-EXPOSE 8005
+EXPOSE 8010
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 

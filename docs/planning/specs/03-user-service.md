@@ -2,6 +2,8 @@
 
 **Build Tool:** Maven | **Arquitetura:** Clean Architecture | **Porta:** 8003 | **Status:** Em implementação
 
+**DER:** [docs/planning/der/user-service.mmd](../der/user-service.mmd)
+
 ## Objetivo
 
 Gerenciar cadastro, perfil e endereços de usuários. Não lida com autenticação (login, tokens,
@@ -11,6 +13,48 @@ para bounded context próprio. Ver decisão em
 
 Expõe endpoints internos (não roteados pelo Gateway) consumidos pelo Auth Service via OpenFeign
 para validar credenciais e atualizar senha — o `password_hash` nunca sai deste serviço.
+
+## PRD Resumido
+
+Sem um dono único do dado cadastral, cadastro/perfil/endereço ficariam espalhados ou duplicados
+entre serviços que precisam desses dados (Auth, Order). O User Service resolve isso concentrando
+CRUD de perfil e endereço em um bounded context próprio, mantendo o `password_hash` isolado de
+qualquer serviço externo. Usado diretamente pelo cliente final (cadastro, edição de perfil,
+endereços de entrega) e, via endpoints internos, pelo Auth Service (OpenFeign) para autenticação.
+Valor de negócio: garante consistência do cadastro (e-mail único), sustenta a base de identidade
+usada por Order Service (endereço de entrega) e Notification Service (Kafka `user.created`).
+
+## Use Cases
+
+- Como visitante, quero me cadastrar informando e-mail, nome e senha, para criar minha conta no
+  AutoHubStore.
+- Como cliente autenticado, quero consultar e atualizar meus dados de perfil, para manter meu
+  cadastro correto.
+- Como cliente autenticado, quero cadastrar, listar e remover endereços de entrega, para escolher
+  onde recebo meus pedidos.
+- Como Order Service, quero consultar o endereço de um usuário, para montar o pedido com o destino
+  de entrega correto (fora do escopo direto desta spec — ver [07-order-service.md](07-order-service.md)).
+- Como Auth Service, quero verificar credenciais de um usuário (e-mail + senha) via endpoint
+  interno, para autenticar sem ter acesso direto ao `user_db`.
+- Como Auth Service, quero buscar um usuário por e-mail via endpoint interno, para confirmar
+  existência de conta no fluxo de recuperação de senha.
+- Como Auth Service, quero atualizar a senha de um usuário via endpoint interno, para concluir o
+  fluxo de reset de senha sem que o `password_hash` trafegue por outro serviço.
+- Como Notification Service, quero ser avisado da criação de um novo usuário via evento Kafka
+  `user.created`, para disparar o e-mail de boas-vindas.
+
+## Critérios de Aceite
+
+| Cenário | Dado | Quando | Então |
+|---|---|---|---|
+| Cadastro com sucesso | E-mail ainda não cadastrado | Cliente chama `POST /api/v1/users` com dados válidos | Serviço cria usuário com senha hasheada em BCrypt, retorna 201 com o perfil criado e publica evento `user.created` no Kafka |
+| Cadastro com e-mail duplicado | Já existe usuário com o mesmo e-mail | Cliente chama `POST /api/v1/users` reusando o e-mail | Serviço retorna 409, sem criar novo registro nem publicar evento |
+| Validação de campos obrigatórios | Corpo da requisição sem `email`, `fullName` ou `password` | Cliente chama `POST /api/v1/users` | Serviço retorna 400 com mensagem explícita do campo ausente |
+| Atualização de perfil | Usuário existente autenticado | Cliente chama `PUT /api/v1/users/{id}` com novos dados válidos | Serviço atualiza o registro e retorna 200 com o perfil atualizado |
+| CRUD de endereço | Usuário autenticado sem endereços cadastrados | Cliente chama `POST /api/v1/users/{id}/addresses` com endereço válido | Serviço cria o endereço vinculado ao `userId` e retorna 201; endereço passa a aparecer em `GET /api/v1/users/{id}/addresses` |
+| Verificação de credenciais correta | Usuário existente com senha conhecida | Auth Service chama `POST /internal/v1/users/verify-credentials` com e-mail e senha corretos | Serviço retorna 200 com `userId` e `roles`, sem expor `password_hash` |
+| Verificação de credenciais incorreta | Usuário existente, senha informada não confere com o hash | Auth Service chama `POST /internal/v1/users/verify-credentials` | Serviço retorna 401 |
+| Atualização de senha via fluxo interno | Token de reset já validado pelo Auth Service | Auth Service chama `PUT /internal/v1/users/{id}/password` com nova senha | Serviço persiste novo hash BCrypt, sobrescrevendo o anterior |
 
 ## Banco de Dados: PostgreSQL (`user_db`)
 
@@ -40,6 +84,9 @@ para validar credenciais e atualizar senha — o `password_hash` nunca sai deste
 ## Dependências Maven (pom.xml)
 
 ```xml
+<!-- <project> -->
+<version>1.0.0</version>
+
 <properties>
     <java.version>25</java.version>
 </properties>
@@ -230,6 +277,16 @@ DB_PASSWORD=<secret>
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 ```
 
+**Resposta JSON em `snake_case`:** adicionar em `application.yml` (campo Java continua
+`lowerCamelCase`, só a serialização de saída HTTP vira `snake_case` — ver
+[CLAUDE.md § Convenções de Código](../../../CLAUDE.md#convenções-de-código)):
+
+```yaml
+spring:
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+```
+
 ## Docker
 
 ```dockerfile
@@ -271,7 +328,7 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
         <configLocation>${checkstyle.config.location}</configLocation>
         <failsOnError>true</failsOnError>
         <consoleOutput>true</consoleOutput>
-        <includeTestSourceDirectory>false</includeTestSourceDirectory>
+        <includeTestSourceDirectory>true</includeTestSourceDirectory>
     </configuration>
     <executions>
         <execution>
@@ -291,3 +348,9 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
 - **Endpoints internos:** `verify-credentials` com senha correta/incorreta; `update-password` persiste
   novo hash
 - **Validação:** Campos obrigatórios ausentes → 400; e-mail duplicado → 409
+
+**Critério de conclusão:** serviço só é considerado pronto quando atender aos 8 itens do
+[action-plan.md § Critério de Conclusão de Microsserviço](../action-plan.md#critério-de-conclusão-de-microsserviço)
+— unitários, aceitação (Cucumber), cobertura ≥ 70%, checkstyle sem violação, Snyk `ok: true`, build
+com sucesso, DER em `docs/planning/der/` atualizado e documentação publicada em
+`docs/apps/user-service.md`.

@@ -2,9 +2,46 @@
 
 **Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8001 | **Status:** Implementado
 
+**DER:** [docs/planning/der/api-gateway.mmd](../der/api-gateway.mmd) (sem persistência própria —
+diagrama documenta estruturas em memória/Redis: `JwtClaims`, `RateLimitKey`, rotas)
+
 ## Objetivo
 
 Ponto de entrada único do AutoHubStore. Roteia requisições para os microsserviços, valida JWT centralizadamente, aplica rate limiting por IP/usuário e configura CORS para o frontend.
+
+## PRD Resumido
+
+Sem um ponto de entrada único, cada um dos 9 microsserviços precisaria implementar sua própria
+validação de JWT, rate limiting e CORS — duplicação de lógica de segurança e superfície de ataque
+maior. O Gateway resolve isso concentrando essas responsabilidades em um único lugar auditável.
+Usado indiretamente por todo cliente final (via frontend Next.js) e por qualquer chamada
+administrativa à API; os demais 8 microsserviços do MVP dependem dele como única porta de entrada
+externa. Valor de negócio: reduz retrabalho de segurança por serviço, protege a infraestrutura
+contra abuso de tráfego e permite trocar/escalar serviços internos sem o cliente perceber mudança
+de endereço.
+
+## Use Cases
+
+- Como cliente final, quero que minhas requisições sejam roteadas automaticamente ao microsserviço
+  correto, para não precisar conhecer a topologia interna do sistema.
+- Como cliente autenticado, quero que meu JWT seja validado antes de chegar ao serviço de destino,
+  para que endpoints protegidos rejeitem acesso não autorizado de forma centralizada.
+- Como frontend Next.js, quero que o Gateway repasse o `Set-Cookie` do Auth Service, para manter o
+  fluxo de login/refresh/logout transparente ao meu client HTTP.
+- Como operador da plataforma, quero rate limiting por IP e por usuário autenticado, para proteger
+  os microsserviços contra abuso de tráfego e picos de requisições.
+- Como frontend hospedado em outra origem, quero que o Gateway aplique CORS com credentials
+  corretamente, para autenticar via cookie httpOnly em requisições cross-origin.
+
+## Critérios de Aceite
+
+| Cenário | Dado | Quando | Então |
+|---|---|---|---|
+| Roteamento com sucesso | Gateway no ar e User Service saudável | Cliente chama `GET /api/v1/users/{id}` com cookie `access_token` válido | Gateway roteia para `user-service` e retorna a resposta original com status 200 |
+| Endpoint protegido sem token | Requisição não envia cookie `access_token` | Cliente chama endpoint protegido | Gateway retorna 401 sem encaminhar a requisição ao serviço downstream |
+| Token expirado ou inválido | Cookie `access_token` expirado ou com assinatura inválida | Requisição chega a endpoint protegido | Gateway retorna 401 |
+| Rate limit excedido | 100 requisições/min já realizadas pelo mesmo IP em endpoint público | A 101ª requisição chega dentro da mesma janela de 60s | Gateway retorna 429 |
+| CORS de origem não permitida | Origem do request não está em `ALLOWED_ORIGINS` | Requisição de preflight CORS chega ao Gateway | Gateway não inclui `Access-Control-Allow-Origin` correspondente na resposta, bloqueando a chamada no browser |
 
 ## Responsabilidades
 
@@ -36,6 +73,9 @@ Ponto de entrada único do AutoHubStore. Roteia requisições para os microsserv
 ## Dependências Maven (pom.xml)
 
 ```xml
+<!-- <project> -->
+<version>1.0.0</version>
+
 <properties>
     <java.version>25</java.version>
     <spring-cloud.version>2023.0.3</spring-cloud.version>
@@ -259,7 +299,7 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
         <configLocation>${checkstyle.config.location}</configLocation>
         <failsOnError>true</failsOnError>
         <consoleOutput>true</consoleOutput>
-        <includeTestSourceDirectory>false</includeTestSourceDirectory>
+        <includeTestSourceDirectory>true</includeTestSourceDirectory>
     </configuration>
     <executions>
         <execution>
@@ -276,3 +316,9 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
 - **Unitários:** JwtService (token válido, expirado, inválido, ausente), RateLimitService
 - **Integração:** WebTestClient testando roteamento e respostas de erro (401, 429)
 - **Segurança:** Endpoint protegido sem token → 401; rate limit excedido → 429
+
+**Critério de conclusão:** serviço só é considerado pronto quando atender aos 8 itens do
+[action-plan.md § Critério de Conclusão de Microsserviço](../action-plan.md#critério-de-conclusão-de-microsserviço)
+— unitários, aceitação (Cucumber), cobertura ≥ 70%, checkstyle sem violação, Snyk `ok: true`, build
+com sucesso, DER em `docs/planning/der/` atualizado e documentação mantida em
+`docs/apps/api-gateway.md`.

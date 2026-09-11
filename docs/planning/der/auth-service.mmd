@@ -1,0 +1,19 @@
+%% Auth Service — auth_db (PostgreSQL). Não possui tabela de usuário/credencial:
+%% user_id é referência simples (UUID) ao User Service (Database per Service — ADR-002).
+erDiagram
+    REFRESH_TOKENS {
+        uuid id PK
+        uuid user_id "referência ao User Service, sem FK cross-database"
+        string token
+        timestamptz expires_at
+        timestamptz created_at
+        boolean revoked
+    }
+    PASSWORD_RESET_TOKENS {
+        uuid id PK
+        uuid user_id "referência ao User Service, sem FK cross-database"
+        string token
+        timestamptz expires_at
+        boolean used
+        timestamptz created_at
+    }

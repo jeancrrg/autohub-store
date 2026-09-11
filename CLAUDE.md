@@ -4,11 +4,13 @@
 
 **AutoHubStore** é um e-commerce automotivo fictício desenvolvido como projeto de estudo avançado em Backend Java. Objetivo: evoluir para nível Pleno I e Pleno II aplicando microsserviços, DDD, Clean Architecture, Event-Driven Architecture e Cloud Native. Toda arquitetura e decisões técnicas são elaboradas com rigor de produto real.
 
-> **12 microsserviços** ao total. Ordem de criação e detalhes completos das decisões de escopo em
+> **MVP com 9 microsserviços.** Escopo confirmado com o usuário — ordem de criação e detalhes
+> completos das decisões em
 > [docs/planning/action-plan.md § Decisões de Consolidação](docs/planning/action-plan.md#decisões-de-consolidação).
 > Destaque: **Auth Service** é o 2º serviço criado (logo após o Gateway) — extraído do User
-> Service para isolar Autenticação (sessão/token) de Perfil (CRUD cadastral); **Compatibility
-> Service** é o 12º e último.
+> Service para isolar Autenticação (sessão/token) de Perfil (CRUD cadastral); **Notification
+> Service** é o 9º e último do MVP. Search Service, Analytics Service e Compatibility Service
+> **ficam fora do MVP** (pós-MVP — specs mantidas em `docs/planning/specs/` para fase futura).
 
 ---
 
@@ -19,7 +21,7 @@
 | API Gateway (`backend/api-gateway/`) | Implementado e funcional |
 | Infraestrutura (`infra/docker-compose.yml`) | Implementada |
 | Frontend (`apps/frontend/ecommerce/`) | Estruturado com mock data (sem integração com API) |
-| Demais 9 microsserviços | Planejados — specs em `docs/planning/specs/` |
+| Demais 8 microsserviços do MVP | Planejados — specs em `docs/planning/specs/` |
 
 **Branch principal de desenvolvimento:** `feature-ecommerce`
 
@@ -39,45 +41,64 @@ autohub-store/
 │   ├── docker-compose.yml     # PostgreSQL x6, Redis, Kafka, Elasticsearch, Cassandra + monitoring
 │   └── prometheus.yml
 ├── docs/
-│   ├── apps/                  # Documentação técnica e didática de cada app
-│   │   └── api-gateway.md     # Explicação detalhada do Gateway (Hexagonal, JWT, rate limit)
+│   ├── apps/                  # Documentação técnica e didática de cada app — gate de conclusão
+│   │   │                      # (ver § Critério de Conclusão): cada um dos 9 serviços do MVP
+│   │   │                      # precisa do próprio <nome-servico>.md antes de fechar como pronto
+│   │   └── api-gateway.md     # Explicação detalhada do Gateway (Hexagonal, JWT, rate limit) — único já escrito
 │   └── planning/              # Planejamento e specs
-│       ├── action-plan.md     # Plano de ação das 10 fases (inclui Decisões de Consolidação)
+│       ├── action-plan.md     # Plano de ação de fases (40% spec+arquitetura / 20% dev / 40% testes)
+│       ├── der/                # Diagramas DER (Mermaid) por microsserviço do MVP
+│       │   └── <nome-servico>.mmd
 │       └── specs/             # Specs detalhadas por microsserviço
-│           ├── 01-api-gateway.md
-│           ├── 02-auth-service.md
-│           └── ... (03 a 12)
+│           ├── 01-api-gateway.md, 02-auth-service.md, 03-user-service.md, 04-catalog-service.md
+│           ├── 05-cart-service.md, 06-inventory-service.md, 07-order-service.md
+│           ├── 08-payment-service.md, 09-notification-service.md         # MVP (9 serviços)
+│           └── 10-search-service.md, 11-analytics-service.md,
+│               12-compatibility-service.md                                # pós-MVP
 ├── README.md
 └── CLAUDE.md                  # este arquivo
 ```
 
 ---
 
-## 12 Microsserviços
+## 9 Microsserviços (MVP)
 
-> Escopo revisado: Inventory Service foi extraído do Catalog Service (controle de estoque exige
-> forte consistência/reserva, incompatível com o papel de leitura/cache do Catalog), Compatibility
-> Service também foi extraído do Catalog (bounded context próprio de fitment peça↔veículo), e
-> Auth Service foi extraído do User Service (Autenticação e Perfil são bounded contexts distintos,
-> mesmo dependendo um do outro via OpenFeign). Detalhes e justificativa completa em
+> Escopo do MVP confirmado com o usuário: **9 serviços**. Inventory Service foi extraído do
+> Catalog Service (controle de estoque exige forte consistência/reserva, incompatível com o papel
+> de leitura/cache do Catalog) e Auth Service foi extraído do User Service (Autenticação e Perfil
+> são bounded contexts distintos, mesmo dependendo um do outro via OpenFeign). Detalhes e
+> justificativa completa em
 > [docs/planning/action-plan.md § Decisões de Consolidação](docs/planning/action-plan.md#decisões-de-consolidação).
+> Cada serviço só é considerado **pronto** quando atender aos 8 itens do checklist — unitários,
+> aceitação (Cucumber), cobertura ≥ 70%, checkstyle sem violação, Snyk `ok: true`, build com
+> sucesso, DER atualizado e `docs/apps/<nome-servico>.md` publicado — ver
+> [action-plan.md § Critério de Conclusão](docs/planning/action-plan.md#critério-de-conclusão-de-microsserviço).
 
-| # | Serviço | Porta | Banco | Arquitetura | Build | Status |
-|---|---|---|---|---|---|---|
-| 1 | **API Gateway** | 8001 | Redis (rate limit) | MVC | Maven | Implementado |
-| 2 | **Auth Service** | 8002 | PostgreSQL + Redis | MVC | Maven | Em implementação |
-| 3 | **User Service** | 8003 | PostgreSQL | Clean Architecture | Maven | Em implementação |
-| 4 | **Catalog Service** | 8004 | PostgreSQL + Redis | MVC | Gradle | Em implementação |
-| 5 | **Search Service** | 8005 | Elasticsearch | MVC | Gradle | Planejado |
-| 6 | **Cart Service** | 8006 | Redis | MVC | Gradle | Planejado |
-| 7 | **Inventory Service** | 8007 | PostgreSQL | Hexagonal | Maven | Planejado |
-| 8 | **Order Service** | 8008 | PostgreSQL | Hexagonal | Maven | Planejado |
-| 9 | **Payment Service** | 8009 | PostgreSQL | MVC | Maven | Planejado |
-| 10 | **Notification Service** | 8010 | — (stateless) | MVC | Gradle | Planejado |
-| 11 | **Analytics Service** | 8011 | Cassandra | MVC | Gradle | Planejado |
-| 12 | **Compatibility Service** | 8012 | MongoDB | MVC | Gradle | Planejado |
+| # | Serviço | Porta | Banco | Arquitetura | Build | Status | DER |
+|---|---|---|---|---|---|---|---|
+| 1 | **API Gateway** | 8001 | Redis (rate limit) | MVC | Maven | Implementado | [der/api-gateway.mmd](docs/planning/der/api-gateway.mmd) |
+| 2 | **Auth Service** | 8002 | PostgreSQL + Redis | MVC | Maven | Em implementação | [der/auth-service.mmd](docs/planning/der/auth-service.mmd) |
+| 3 | **User Service** | 8003 | PostgreSQL | Clean Architecture | Maven | Em implementação | [der/user-service.mmd](docs/planning/der/user-service.mmd) |
+| 4 | **Catalog Service** | 8004 | PostgreSQL + Redis | MVC | Gradle | Em implementação | [der/catalog-service.mmd](docs/planning/der/catalog-service.mmd) |
+| 5 | **Cart Service** | 8005 | Redis | MVC | Gradle | Planejado | [der/cart-service.mmd](docs/planning/der/cart-service.mmd) |
+| 6 | **Inventory Service** | 8006 | PostgreSQL | Hexagonal | Maven | Planejado | [der/inventory-service.mmd](docs/planning/der/inventory-service.mmd) |
+| 7 | **Order Service** | 8007 | PostgreSQL | Hexagonal | Maven | Planejado | [der/order-service.mmd](docs/planning/der/order-service.mmd) |
+| 8 | **Payment Service** | 8008 | PostgreSQL | MVC | Maven | Planejado | [der/payment-service.mmd](docs/planning/der/payment-service.mmd) |
+| 9 | **Notification Service** | 8009 | — (stateless) | MVC | Gradle | Planejado | [der/notification-service.mmd](docs/planning/der/notification-service.mmd) |
 
 > Alternância Maven/Gradle é intencional: objetivo educacional de aprender ambos em contexto real.
+
+### Pós-MVP (numeração 10-12, continuação sequencial após o MVP)
+
+| # | Serviço | Porta | Banco | Motivo de ficar fora do MVP |
+|---|---|---|---|---|
+| 10 | Search Service | 8010 | Elasticsearch | Busca full-text é incremento sobre o Catalog já funcional — não bloqueia o happy path do MVP (listagem/detalhe de produto supre a demo inicial). |
+| 11 | Analytics Service | 8011 | Cassandra | Métricas/dashboard administrativo não bloqueiam a jornada de compra do MVP. |
+| 12 | Compatibility Service | 8012 | MongoDB | Consulta de fitment peça↔veículo é valor agregado sobre o catálogo, não pré-requisito do fluxo de compra. |
+
+Specs desses três (`docs/planning/specs/10-search-service.md`, `11-analytics-service.md`,
+`12-compatibility-service.md`) permanecem no repositório para a fase futura pós-MVP — não foram
+apagadas, apenas marcadas como fora de escopo atual.
 
 ---
 
@@ -91,12 +112,12 @@ autohub-store/
 | Spring Cloud | 2023.x | Gateway, OpenFeign, Config |
 | Spring Security | 6.x | Autenticação e autorização |
 | JJWT | 0.12+ | JWT (User Service + Gateway) |
-| PostgreSQL | 16 | Persistência relacional (5 serviços) |
+| PostgreSQL | 16 | Persistência relacional (6 serviços do MVP: Auth, User, Catalog, Inventory, Order, Payment) |
 | Flyway | 9+ | Migrações de banco |
 | Redis | 7 | Cache, carrinho, blacklist de tokens, rate limit |
 | Apache Kafka | 3.6+ | Mensageria assíncrona (eventos de domínio) |
-| Elasticsearch | 8.x | Busca full-text (Search Service) |
-| Cassandra | 4.x | Analytics (alta taxa de escrita) |
+| Elasticsearch | 8.x | Busca full-text (Search Service — pós-MVP) |
+| Cassandra | 4.x | Analytics (alta taxa de escrita — pós-MVP) |
 | OpenFeign | Spring Cloud | Chamadas REST síncronas entre serviços |
 | Resilience4j | 2.x | Circuit Breaker, Retry, Rate Limiter |
 | OpenTelemetry | 1.x | Traces distribuídos |
@@ -152,7 +173,8 @@ com.autohubstore.userservice/
     └── config/      # Spring config
 ```
 
-### MVC — API Gateway e demais 8 serviços (Auth, Catalog, Search, Cart, Payment, Notification, Analytics, Compatibility)
+### MVC — API Gateway e demais serviços MVC do MVP (Auth, Catalog, Cart, Payment, Notification)
+> Search, Analytics e Compatibility (pós-MVP) seguem o mesmo padrão MVC quando implementados.
 ```
 com.autohubstore.<servicename>/
 ├── controller/    # @RestController
@@ -189,13 +211,34 @@ com.autohubstore.<servicename>/
 - **Variáveis de ambiente com default local:** `${VARIAVEL:valor-default}` no `application.yml`
 - **Virtual Threads:** `spring.threads.virtual.enabled=true` em todos os serviços (Java 25)
 - **Log:** sempre `@Slf4j` (Lombok, `lombok.extern.slf4j.Slf4j`) — nunca instanciar `Logger`/`LoggerFactory` manualmente. Usar campo `log` gerado pela anotação (ex: `log.info(...)`, `log.error(...)`). **Nunca usar `@Log4j`/`@Log4j2`** — projeto roda em SLF4J + Logback (padrão Spring Boot), não Log4j.
+- **Sem `record` declarado dentro de classe** — nested record é proibido (garantido mecanicamente
+  pelo checkstyle, módulo `DescendantToken` de `CLASS_DEF` para `RECORD_DEF`, `maximum=0`). Record
+  continua permitido, mas sempre top-level em arquivo próprio.
+- **Resposta JSON sempre em `snake_case`** — campo Java continua `lowerCamelCase` (convenção normal
+  da linguagem); só a serialização de saída HTTP vira `snake_case`. Configurar globalmente em
+  `application.yml` de cada um dos 9 serviços do MVP que expõem JSON (todos exceto o API Gateway,
+  que só roteia e não serializa payload de domínio):
+  ```yaml
+  spring:
+    jackson:
+      property-naming-strategy: SNAKE_CASE
+  ```
+- **Versão do artefato sempre `1.0.0`** — `<version>1.0.0</version>` na tag `<project>` do `pom.xml`
+  (serviços Maven) ou `version = '1.0.0'` no `build.gradle` (serviços Gradle) de cada um dos 9
+  serviços do MVP — nunca manter o default `0.0.1-SNAPSHOT` do Spring Initializr.
+- **Sem nenhum comentário no código dos microsserviços** — nem `//`, nem `/* */`, nem Javadoc; catch
+  vazio sem comentário já é bloqueado mecanicamente pelo checkstyle (`EmptyCatchBlock` sem exceção,
+  nem `ignored`/`expected`). Documentação técnica do serviço vive em `docs/apps/<nome-servico>.md`
+  (gate de conclusão já existente) — comentário no código fica redundante e é proibido.
 
 ### Checkstyle — obrigatório em todo código gerado
 
 Todo código Java gerado (novo ou alterado) **deve nascer em conformidade** com
 `infra/checkstyle/checkstyle.xml`, compartilhado por todos os microsserviços via
-`maven-checkstyle-plugin` (fase `validate`, `failsOnError=true`). Não gerar código e
-corrigir depois — aplicar direto ao escrever. Regras principais:
+`maven-checkstyle-plugin` (fase `validate`, `failsOnError=true`). O plugin valida também
+`src/test/` (`includeTestSourceDirectory=true`) — código de teste segue as mesmas regras do código
+de produção, sem exceção. Não gerar código e corrigir depois — aplicar direto ao escrever. Regras
+principais:
 
 - **Formatação de classes:**
   - Linha em branco logo após a chave `{` de abertura da declaração da classe (antes do primeiro membro).
@@ -206,7 +249,8 @@ corrigir depois — aplicar direto ao escrever. Regras principais:
 - **Sem números mágicos:** todo literal numérico fora de `-1, 0, 1, 2` vira `private static final` nomeado (`MagicNumber`).
 - **Exceções:**
   - Nunca lançar tipos genéricos (`RuntimeException`, `Exception`, `Throwable`, `Error`) — criar exceção de domínio específica (`IllegalThrows`).
-  - Nunca capturar `RuntimeException`, `Error` ou `Throwable` (`IllegalCatch`); catch vazio exige comentário explicando (`EmptyCatchBlock`).
+  - Nunca capturar `RuntimeException`, `Error` ou `Throwable` (`IllegalCatch`); catch vazio é proibido sem exceção nenhuma (`EmptyCatchBlock` endurecido — nem comentário explicando, nem nome de variável `ignored`/`expected` liberam o bypass).
+- **Sem `record` aninhado:** `record` declarado dentro de outra classe é bloqueado (`DescendantToken`, `CLASS_DEF`→`RECORD_DEF`, `maximum=0`) — só é permitido top-level em arquivo próprio.
 - **Design de classes:** campos de instância sempre `private` (`VisibilityModifier`, exceto `serialVersionUID` e DTOs com Lombok/Jackson/JPA); nunca usar `clone()`/`finalize()`; `equals()` sempre acompanhado de `hashCode()`.
 - **Nomenclatura:** classes/interfaces `UpperCamelCase`; métodos, campos, variáveis e parâmetros `lowerCamelCase`; constantes `UPPER_SNAKE_CASE`; pacotes `minúsculo.sem.underscore`.
 - **Estruturas de controle:** sempre com chaves `{}`, mesmo de uma linha (`NeedBraces`); sem blocos vazios sem comentário; `switch` sempre com `default` e sem fall-through implícito.
@@ -228,7 +272,7 @@ a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml
   - Um `Service` só pode chamar outro `Service` (ou `Repository` do próprio domínio) — nunca acessar `Repository` de outro serviço/domínio diretamente, e nunca acessar `Controller`.
 - **Lombok:** usar para reduzir boilerplate (`@Getter`, `@Setter`, `@RequiredArgsConstructor`, `@Builder`, `@Slf4j`, etc.) em entities, DTOs e services — nunca escrever getters/setters/construtores manuais quando Lombok resolve.
 - **MapStruct:** toda conversão Entity ↔ DTO usa `@Mapper` de MapStruct — nunca mapeamento manual campo a campo em service ou controller.
-- **Validações em Request DTOs:** toda anotação Bean Validation (`@NotNull`, `@NotBlank`, `@Size`, `@Email`, etc.) sempre com `message` explícita — nunca deixar mensagem default do framework.
+- **Validações em Request DTOs:** toda anotação Bean Validation (`@NotNull`, `@NotBlank`, `@Size`, `@Email`, etc.) sempre com `message` explícita — nunca deixar mensagem default do framework. Regra vale para todo request DTO dos 9 serviços do MVP, sem exceção.
 - **`@Override` em controllers:** não usar em métodos de controller (nem quando implementa interface de docs como `*ControllerDocs`) — só quando realmente necessário (ex.: sobrescrita de método de classe abstrata onde o compilador não infere o contrato sozinho).
 - **Retorno de endpoints em controllers:** todo método de controller retorna `ResponseEntity` construído de forma explícita, sempre no formato `return ResponseEntity.status(HttpStatus.X).body(response);` (ou `.status(HttpStatus.X).build();` quando não há corpo) — `HttpStatus` sempre explícito, inclusive para `200 OK`. Nunca usar os atalhos `ResponseEntity.ok(...)`, `.noContent()`, `.created(...)`, `.accepted()`, `.badRequest()`, etc.
 - **Nome de método de leitura (`find`):** todo método que busca/lista dado — `@GetMapping` de controller, método de `Service` chamado por ele, e método de `Repository` — começa com `find` (ex.: `findProducts`, `findProductById`, `findProductBySlug`, `findCategories`, `findUserByEmail`). Nunca `get*`/`list*`/`search*`/outros verbos nessas três camadas.
@@ -266,31 +310,38 @@ pronta.
 | Tópico | Producer | Consumer(s) |
 |---|---|---|
 | `user.created` | User Service | Notification Service |
-| `user.password-reset` | User Service | Notification Service |
-| `catalog.product-created` | Catalog Service | Search Service, Inventory Service |
-| `catalog.product-updated` | Catalog Service | Search Service |
-| `catalog.product-viewed` | Catalog Service | Analytics Service |
-| `order.created` | Order Service | Notification Service, Analytics Service, Inventory Service |
+| `user.password-reset` | Auth Service | Notification Service |
+| `catalog.product-created` | Catalog Service | Inventory Service (_pós-MVP: Search Service, Compatibility Service_) |
+| `catalog.product-updated` | Catalog Service | _pós-MVP: Search Service_ |
+| `catalog.product-viewed` | Catalog Service | _pós-MVP: Analytics Service_ |
+| `order.created` | Order Service | Notification Service, Inventory Service (_pós-MVP: Analytics Service_) |
 | `order.status-changed` | Order Service | — |
 | `payment.approved` | Payment Service | Order Service, Notification Service, Inventory Service |
 | `payment.rejected` | Payment Service | Order Service, Notification Service, Inventory Service |
 | `inventory.stock-insufficient` | Inventory Service | Order Service |
+
+> Consumers marcados como _pós-MVP_ só existem quando Search/Analytics/Compatibility Service forem
+> implementados — não bloqueiam a publicação do evento hoje, apenas não têm consumer ativo no MVP.
 
 ---
 
 ## Mapa de Dependências entre Serviços
 
 ```
-API Gateway ──────────────────────────────────────→ Todos os serviços (roteamento + JWT)
+API Gateway ──────────────────────────────────────→ Todos os serviços do MVP (roteamento + JWT)
+Auth Service ───── OpenFeign ──────────────────────→ User Service (verify-credentials, update-password)
 Cart Service ────── OpenFeign ────────────────────→ Catalog Service
 Catalog Service ─── OpenFeign ────────────────────→ Inventory Service (disponibilidade)
 Order Service ───── OpenFeign ────────────────────→ Cart Service, User Service
-Search Service ←─── Kafka (product.created/updated) ─ Catalog Service
 Inventory      ←─── Kafka (order.created, payment.*) ─ Order Service, Payment Service
-Notification   ←─── Kafka (todos os eventos) ─────── User, Order, Payment
-Analytics      ←─── Kafka (product-viewed, order) ─── Catalog, Order
+Notification   ←─── Kafka (todos os eventos) ─────── User, Auth, Order, Payment
 Payment ──────────── Kafka ────────────────────────→ Order Service (resultado pagamento)
 Order ←───────────── Kafka (stock-insufficient) ──── Inventory Service
+
+# Pós-MVP (não fazem parte do fluxo atual):
+Search Service ←─── Kafka (product.created/updated) ─ Catalog Service
+Analytics      ←─── Kafka (product-viewed, order) ─── Catalog, Order
+Catalog Service ─── OpenFeign ────────────────────→ Compatibility Service (veículos compatíveis)
 ```
 
 ---
@@ -308,30 +359,38 @@ Order ←───────────── Kafka (stock-insufficient) ─�
 | redis | 6379 | Cache + Carrinho + Blacklist + Rate Limit |
 | zookeeper | 2181 | Kafka coordinator |
 | kafka | 9092 | Message broker |
-| elasticsearch | 9200 | Full-text search |
-| kibana | 5601 | UI do Elasticsearch |
-| cassandra | 9042 | Analytics (alta escrita) |
 | prometheus | 9090 | Métricas |
 | grafana | 3011 | Dashboards |
 | jaeger | 16686 | Traces distribuídos |
 | mailhog | 8025 | SMTP local (testes de e-mail) |
 
+> `elasticsearch`/`kibana` (Search Service), `cassandra` (Analytics Service) e `mongo-compatibility`
+> (Compatibility Service) só entram no `docker-compose.yml` quando esses serviços pós-MVP forem
+> implementados — não são necessários para subir o MVP de 9 serviços.
+
 ---
 
-## Roadmap — 10 Fases
+## Roadmap — Fases do MVP (40% Spec+Arquitetura / 20% Dev / 40% Testes)
 
-| Fase | Objetivo | Microsserviço(s) |
+Cada fase de microsserviço segue a mesma divisão de esforço, detalhada por serviço em
+[docs/planning/action-plan.md](docs/planning/action-plan.md): **40% spec+arquitetura** (use cases,
+PRD, critérios de aceite, DER Mermaid), **20% desenvolvimento** (implementação por
+backend-engineer/frontend-engineer) e **40% testes** (unitários, aceitação, e2e, segurança, UI).
+Um serviço só é considerado **pronto** com testes unitários **e** de aceitação passando.
+
+| Fase | Objetivo | Microsserviço(s) do MVP |
 |---|---|---|
 | 1 | Fundação e infraestrutura | API Gateway ✅ |
 | 2 | Identidade e autenticação | User Service, Auth Service |
-| 3 | Catálogo, busca e compatibilidade | Catalog Service, Search Service, Compatibility Service |
+| 2.5 | Integração Frontend ↔ Backend (gate) | — (frontend consome Auth/User/Gateway reais) |
+| 3 | Catálogo | Catalog Service |
 | 4 | Carrinho | Cart Service |
 | 5 | Estoque e pedidos | Inventory Service, Order Service |
 | 6 | Pagamentos | Payment Service |
 | 7 | Notificações | Notification Service |
-| 8 | Analytics | Analytics Service |
-| 9 | Observabilidade | OTel em todos os serviços |
-| 10 | Deploy e produção | VPS Hostinger + Kubernetes |
+| 8 | Observabilidade | OTel em todos os serviços do MVP |
+| 9 | Deploy e produção | VPS Hostinger + Kubernetes |
+| Pós-MVP | Busca, Analytics, Compatibilidade | Search Service, Analytics Service, Compatibility Service |
 
 Detalhes completos: `docs/planning/action-plan.md`
 
@@ -345,9 +404,9 @@ Detalhes completos: `docs/planning/action-plan.md`
 | ADR-002 | Database per Service | Autonomia total, sem acoplamento de banco |
 | ADR-003 | Apache Kafka | Padrão event-driven, replay, Consumer Groups |
 | ADR-004 | Spring Cloud Gateway | Ecossistema Spring nativo, filtros customizáveis |
-| ADR-005 | Elasticsearch para busca | Full-text scoring, analyzers PT, filtros eficientes |
+| ADR-005 | Elasticsearch para busca (pós-MVP) | Full-text scoring, analyzers PT, filtros eficientes |
 | ADR-006 | Clean/Hexagonal Architecture | Domínio testável sem Spring |
-| ADR-007 | Cassandra para Analytics | Otimizado para alta escrita, COUNTER nativo |
+| ADR-007 | Cassandra para Analytics (pós-MVP) | Otimizado para alta escrita, COUNTER nativo |
 | ADR-008 | OpenTelemetry | Vendor-neutral, CNCF standard, nativo Spring Boot 3.x |
 
 ---
@@ -392,11 +451,26 @@ frontend-engineer, product-owner ou quality-analyst diretamente a partir da conv
 | **quality-analyst** | Valida entregas de backend/frontend contra os critérios de aceite do PO | — (especialista) |
 
 Regras válidas para todos os agentes do time (reforçam o resto deste `CLAUDE.md`):
-- Nunca rodar git, build ou comando de terminal (`mvn`, `npm`, `docker`, `flyway`) — apenas ler e
-  editar arquivos; quem builda, testa e commita é o usuário.
+- **Bash é escopado, não universal.** `backend-engineer`, `frontend-engineer` e `quality-analyst`
+  têm acesso a `Bash` limitado a build/teste/lint/checkstyle/Snyk do próprio serviço em que estão
+  trabalhando (`mvn`/`gradle` compile, test, `checkstyle:check`, `snyk test`, `npm run build`/`test`
+  no frontend) — usado para produzir e verificar as 8 evidências do [Critério de Conclusão de
+  Microsserviço](docs/planning/action-plan.md#critério-de-conclusão-de-microsserviço) antes de
+  entregar. `quality-analyst` usa o mesmo Bash escopado para **re-executar** essas verificações de
+  forma independente antes de aprovar, nunca só confiando no relato do dev.
+  `software-architect` e `product-owner` **não têm** Bash — seguem apenas leitura/edição de
+  specs, ADRs e documentação de planejamento.
+- **Nunca**, em nenhum agente (inclusive os com Bash escopado): rodar `git` (nenhum subcomando,
+  inclusive `status`/`diff`/`log` read-only) nem `docker compose up`/`down`/qualquer variação —
+  isso é decisão e ação exclusivas do usuário. `docker compose up -d` de infraestrutura local
+  continua rodado só pelo usuário, nunca por um agente.
 - Nunca aprovar/entregar tarefa sem os critérios de aceite da spec do product-owner terem sido
-  validados pelo quality-analyst.
+  validados pelo quality-analyst, e sem os 8 itens do Critério de Conclusão de Microsserviço
+  satisfeitos (testes unitários, aceitação Cucumber, cobertura ≥ 70%, checkstyle, Snyk, build,
+  DER atualizado, `docs/apps/<nome-servico>.md`).
 - Nunca expor segredo/credencial em spec, ADR, código ou log.
+- JDK do projeto para qualquer execução local dos agentes com Bash: `C:\Users\jeanc\.jdks\ms-25.0.4`
+  (`JAVA_HOME`).
 
 ---
 
@@ -404,10 +478,12 @@ Regras válidas para todos os agentes do time (reforçam o resto deste `CLAUDE.m
 
 | Pasta | Conteúdo |
 |---|---|
-| `docs/apps/api-gateway.md` | Explicação didática completa do Gateway (Hexagonal, JWT, rate limit, circuit breaker) |
-| `docs/planning/action-plan.md` | Plano de ação das 10 fases com critérios de conclusão |
+| `docs/apps/api-gateway.md` | Explicação didática completa do Gateway (Hexagonal, JWT, rate limit, circuit breaker) — único `docs/apps/*.md` já escrito; os demais 8 serviços do MVP ganham o próprio arquivo como gate de conclusão (ver § Critério de Conclusão de Microsserviço) |
+| `docs/planning/action-plan.md` | Plano de ação das fases do MVP (40% spec+arquitetura / 20% dev / 40% testes) com critério de conclusão |
+| `docs/planning/der/*.mmd` | Diagramas DER (Mermaid) por microsserviço do MVP |
 | `docs/planning/specs/01-api-gateway.md` | Spec técnica do API Gateway (deps, endpoints, estrutura) |
 | `docs/planning/specs/02-auth-service.md` | Spec do Auth Service — login/logout/refresh/reset senha (MVC, JWT, OpenFeign → User Service) |
 | `docs/planning/specs/03-user-service.md` | Spec do User Service — cadastro, perfil, endereços (Clean Architecture, eventos Kafka) |
-| `docs/planning/specs/07-inventory-service.md` | Spec do Inventory Service — reserva de estoque (Hexagonal, Saga via Kafka) |
-| `docs/planning/specs/04-12-*.md` | Specs dos demais microsserviços |
+| `docs/planning/specs/06-inventory-service.md` | Spec do Inventory Service — reserva de estoque (Hexagonal, Saga via Kafka) |
+| `docs/planning/specs/04-catalog-service.md`, `05-cart-service.md`, `07-order-service.md`, `08-payment-service.md`, `09-notification-service.md` | Specs dos demais microsserviços do MVP |
+| `docs/planning/specs/10-search-service.md`, `11-analytics-service.md`, `12-compatibility-service.md` | Specs pós-MVP (fora do escopo atual) |

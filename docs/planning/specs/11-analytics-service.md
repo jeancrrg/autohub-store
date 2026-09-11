@@ -1,6 +1,11 @@
 # Analytics Service
 
-**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8011 | **Status:** Planejado
+**Build Tool:** Gradle | **Arquitetura:** MVC | **Porta:** 8011 | **Status:** Pós-MVP (fora do escopo atual)
+
+> **Pós-MVP.** Este serviço **não faz parte dos 9 microsserviços do MVP** — escopo confirmado em
+> [docs/planning/action-plan.md § Decisões de Consolidação](../action-plan.md#decisões-de-consolidação).
+> Dashboard administrativo/ranking de produtos não bloqueia a jornada de compra do MVP. Spec
+> mantida para a fase Pós-MVP.
 
 ## Objetivo
 
