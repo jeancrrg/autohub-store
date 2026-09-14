@@ -3,6 +3,7 @@ package com.autohubstore.authservice.exception.handler;
 import com.autohubstore.authservice.exception.InactiveAccountException;
 import com.autohubstore.authservice.exception.InvalidCredentialsException;
 import com.autohubstore.authservice.exception.InvalidTokenException;
+import com.autohubstore.authservice.exception.UserServiceUnavailableException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,6 +55,15 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         problem.setTitle("Unauthorized");
         problem.setDetail(ex.getMessage());
+        return problem;
+    }
+
+    @ExceptionHandler(UserServiceUnavailableException.class)
+    public ProblemDetail handleUserServiceUnavailable(UserServiceUnavailableException ex) {
+        log.error("User Service indisponivel: {}", ex.getMessage(), ex);
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problem.setTitle("Service Unavailable");
+        problem.setDetail("Servico de usuarios temporariamente indisponivel");
         return problem;
     }
 

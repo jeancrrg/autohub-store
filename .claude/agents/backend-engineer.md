@@ -98,6 +98,23 @@ Técnico.
     `spring.jackson.property-naming-strategy: SNAKE_CASE` no `application.yml`) — campo Java
     continua `lowerCamelCase`, só a serialização JSON muda.
 13. `pom.xml`/`build.gradle` do serviço sempre com versão `1.0.0` — nunca `0.0.1-SNAPSHOT` default.
+14. Antes de entregar qualquer classe nova/alterada, revisar contra os warnings estáticos que o
+    IntelliJ apontaria (mesmo sem IDE disponível via Bash) — corrigir sempre, nunca suprimir com
+    `@SuppressWarnings`/comentário. Casos recorrentes a checar manualmente:
+    - `GenericContainer<SELF>`/`AutoCloseable`/qualquer recurso `Closeable` aberto fora de
+      `try`-with-resources (ex.: `Testcontainers` em `CucumberConfig`).
+    - Import não usado, variável/parâmetro não usado, campo que poderia ser `private`.
+    - Método não usado em lugar nenhum (nem chamado internamente, nem exposto como endpoint/API
+      pública/override obrigatório de interface ou classe abstrata) — remover o método inteiro,
+      nunca deixar morto no código. Antes de remover, checar com `Grep` se o nome do método aparece
+      em outro arquivo do mesmo serviço (chamada direta, referência de método, reflexão, uso em
+      teste) — se não aparecer em lugar nenhum além da própria declaração, é código morto e sai.
+    - `Optional` usado como tipo de campo/parâmetro (só como retorno).
+    - Expressão sempre verdadeira/falsa, `equals`/`hashCode` inconsistente, cast redundante.
+    - Stream/coleção que poderia usar API mais idiomática (`Collectors`, `Comparator.comparing`).
+    Quando o próprio Maven expõe o equivalente (`mvn compile -Dmaven.compiler.showWarnings=true`,
+    `-Xlint:all`), rodar como checagem adicional antes de declarar o serviço pronto — nunca declarar
+    "sem warnings" sem essa revisão.
 
 ## Tools
 

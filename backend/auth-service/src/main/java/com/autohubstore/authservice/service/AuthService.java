@@ -1,6 +1,6 @@
 package com.autohubstore.authservice.service;
 
-import com.autohubstore.authservice.client.UserServiceClient;
+import com.autohubstore.authservice.client.UserServiceGateway;
 import com.autohubstore.authservice.domain.dto.TokenClaims;
 import com.autohubstore.authservice.domain.dto.request.ForgotPasswordRequest;
 import com.autohubstore.authservice.domain.dto.request.LoginRequest;
@@ -23,8 +23,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -33,7 +34,7 @@ public class AuthService {
 
     private static final long MILLIS_PER_SECOND = 1000L;
 
-    private final UserServiceClient userServiceClient;
+    private final UserServiceGateway userServiceGateway;
     private final TokenService tokenService;
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
@@ -48,7 +49,11 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(user.id(), user.email(), List.of(user.role()));
         RefreshToken refreshToken = tokenService.createRefreshToken(user.id());
 
-        return LoginResponse.of(accessToken, refreshToken.getToken(), accessTokenTtlSeconds());
+        return LoginResponse.of(
+                accessToken,
+                refreshToken.getToken(),
+                accessTokenTtlSeconds(),
+                remainingTtlSeconds(refreshToken.getExpiresAt()));
     }
 
     public void logout(String accessToken, String refreshToken) {
@@ -71,13 +76,17 @@ public class AuthService {
 
         String accessToken = jwtService.generateAccessToken(user.id(), user.email(), List.of(user.role()));
 
-        return LoginResponse.of(accessToken, newToken.getToken(), accessTokenTtlSeconds());
+        return LoginResponse.of(
+                accessToken,
+                newToken.getToken(),
+                accessTokenTtlSeconds(),
+                remainingTtlSeconds(newToken.getExpiresAt()));
     }
 
     public void forgotPassword(ForgotPasswordRequest request) {
         UserVerificationResponse user;
         try {
-            user = userServiceClient.findUserByEmail(request.email());
+            user = userServiceGateway.findUserByEmail(request.email());
         } catch (FeignException.NotFound e) {
             return;
         }
@@ -96,12 +105,12 @@ public class AuthService {
 
     public void resetPassword(ResetPasswordRequest request) {
         PasswordResetToken token = tokenService.consumePasswordResetToken(request.token());
-        userServiceClient.updatePassword(token.getUserId(), Map.of("newPassword", request.newPassword()));
+        userServiceGateway.updatePassword(token.getUserId(), request.newPassword());
     }
 
     private UserVerificationResponse verifyCredentials(String email, String password) {
         try {
-            return userServiceClient.verifyCredentials(new ValidateCredentialsRequest(email, password));
+            return userServiceGateway.verifyCredentials(new ValidateCredentialsRequest(email, password));
         } catch (FeignException.Unauthorized e) {
             throw new InvalidCredentialsException("Credenciais inválidas");
         } catch (FeignException.Forbidden e) {
@@ -111,7 +120,7 @@ public class AuthService {
 
     private UserVerificationResponse findUserById(UUID userId) {
         try {
-            return userServiceClient.findUserById(userId);
+            return userServiceGateway.findUserById(userId);
         } catch (FeignException.NotFound e) {
             throw new InvalidTokenException("Usuário do refresh token não encontrado");
         }
@@ -119,6 +128,10 @@ public class AuthService {
 
     private long accessTokenTtlSeconds() {
         return accessTokenTtlMs / MILLIS_PER_SECOND;
+    }
+
+    private long remainingTtlSeconds(Instant expiresAt) {
+        return Math.max(0, Duration.between(Instant.now(), expiresAt).getSeconds());
     }
 
 }

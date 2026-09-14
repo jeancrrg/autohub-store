@@ -24,8 +24,6 @@ import java.util.UUID;
 @Table(name = "password_reset_tokens")
 public class PasswordResetToken {
 
-    private static final int SECONDS_PER_MINUTE = 60;
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -45,15 +43,6 @@ public class PasswordResetToken {
 
     @Column(name = "used", nullable = false)
     private boolean used;
-
-    public static PasswordResetToken create(UUID userId, String token, long ttlMinutes) {
-        PasswordResetToken resetToken = new PasswordResetToken();
-        resetToken.userId = userId;
-        resetToken.token = token;
-        resetToken.expiresAt = Instant.now().plusSeconds(ttlMinutes * SECONDS_PER_MINUTE);
-        resetToken.used = false;
-        return resetToken;
-    }
 
     public void markUsed() {
         this.used = true;

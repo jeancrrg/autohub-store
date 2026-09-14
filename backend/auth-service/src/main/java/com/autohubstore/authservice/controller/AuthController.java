@@ -68,7 +68,8 @@ public class AuthController implements AuthControllerDocs {
                 .header(HttpHeaders.SET_COOKIE,
                         cookieFactory.buildAccessTokenCookie(tokens.accessToken(), tokens.expiresIn()).toString())
                 .header(HttpHeaders.SET_COOKIE,
-                        cookieFactory.buildRefreshTokenCookie(tokens.refreshToken()).toString())
+                        cookieFactory.buildRefreshTokenCookie(tokens.refreshToken(), tokens.refreshExpiresIn())
+                                .toString())
                 .build();
     }
 

@@ -1,6 +1,6 @@
 # Auth Service
 
-**Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8002 | **Status:** Em implementação
+**Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8002 | **Status:** Concluído
 
 **DER:** [docs/planning/der/auth-service.mmd](../der/auth-service.mmd)
 
@@ -210,13 +210,25 @@ POST   /api/v1/auth/reset-password    # Confirmar reset com token temporário
 ## Integração com User Service (OpenFeign)
 
 ```
-POST /internal/v1/users/verify-credentials   # { email, password } → { userId, roles } ou 401
-GET  /internal/v1/users/by-email/{email}     # Existência + userId (fluxo forgot-password)
+POST /internal/v1/users/verify-credentials   # { email, password } → { id, email, role } ou 401/403
+GET  /internal/v1/users/{id}                 # Busca por id (fluxo refresh — re-hidrata claims do token)
+GET  /internal/v1/users/by-email/{email}     # Existência + id (fluxo forgot-password)
 PUT  /internal/v1/users/{id}/password        # { newPassword } (fluxo reset-password)
 ```
 
-Fallback (circuit breaker aberto): `login`/`forgot-password`/`reset-password` retornam 503 —
-nunca emite token sem confirmação do User Service.
+> Implementação real (`UserServiceClient`) devolve `role` (String, singular) e não `roles` (lista)
+> como a versão anterior desta spec descrevia — o Auth Service empacota esse único valor em
+> `List.of(user.role())` só na hora de montar o claim `roles` do JWT. `verify-credentials` também
+> distingue duas falhas do User Service: `401` (credencial inválida) e `403` (conta inativa/
+> bloqueada) — o Auth Service traduz isso em duas exceções de domínio distintas
+> (`InvalidCredentialsException` → 401, `InactiveAccountException` → 403), não documentadas como
+> critério de aceite separado ainda (ver nota de implementação abaixo).
+
+Fallback (circuit breaker aberto): `login`/`forgot-password`/`reset-password` devem retornar 503 —
+nunca emitir token sem confirmação do User Service. **Implementado:** ver
+[Nota de Implementação Atual](#nota-de-implementação-atual-circuit-breaker) — a chamada ao
+`UserServiceClient` passa por `UserServiceGateway`, que aplica `@CircuitBreaker`/`@Retry` e converte
+indisponibilidade real em `UserServiceUnavailableException` (503).
 
 ## Estratégia de Token — httpOnly Cookie
 
@@ -277,36 +289,87 @@ CREATE INDEX idx_password_reset_tokens_user_id ON password_reset_tokens(user_id)
 
 ## Estrutura de Pacotes (MVC)
 
+> Estrutura real implementada — difere da versão anterior desta spec em vários pontos (ver
+> [Nota de Implementação Atual](#nota-de-implementação-atual-circuit-breaker) para o detalhamento do
+> circuit breaker, já concluído).
+
 ```
 com.autohubstore.authservice/
 ├── controller/
-│   └── AuthController.java                     # @RestController — /api/v1/auth
+│   ├── AuthController.java                      # @RestController — /api/v1/auth
+│   ├── AuthCookieFactory.java                    # Monta/expira os ResponseCookie httpOnly
+│   └── docs/
+│       └── AuthControllerDocs.java               # Interface Springdoc (@Operation/@ApiResponses)
 ├── service/
-│   ├── AuthService.java                        # Login, logout, refresh
-│   ├── PasswordResetService.java                # Forgot/reset password
-│   └── TokenService.java                        # Emissão/validação JWT, rotation
+│   ├── AuthService.java                         # Login, logout, refresh, forgot-password, reset-password
+│   ├── TokenService.java                        # Refresh token (create/rotate/revoke) + password reset token
+│   ├── JwtService.java                          # Emissão/validação/claims do access token JWT
+│   └── TokenBlacklistService.java               # Blacklist de access token no Redis
 ├── repository/
 │   ├── RefreshTokenRepository.java              # JpaRepository
 │   └── PasswordResetTokenRepository.java        # JpaRepository
-├── model/
-│   ├── RefreshToken.java                        # @Entity JPA
-│   ├── PasswordResetToken.java                  # @Entity JPA
-│   ├── LoginRequest.java                        # DTO
-│   ├── LoginResponse.java                       # DTO
-│   ├── RefreshRequest.java                      # DTO
-│   ├── ForgotPasswordRequest.java               # DTO
-│   └── ResetPasswordRequest.java                # DTO
+├── domain/
+│   ├── entity/
+│   │   ├── RefreshToken.java                    # @Entity JPA
+│   │   └── PasswordResetToken.java              # @Entity JPA
+│   ├── dto/
+│   │   ├── TokenClaims.java                     # record — claims extraídas do JWT
+│   │   ├── request/
+│   │   │   ├── LoginRequest.java
+│   │   │   ├── ForgotPasswordRequest.java
+│   │   │   ├── ResetPasswordRequest.java
+│   │   │   └── ValidateCredentialsRequest.java  # Request ao User Service (OpenFeign)
+│   │   └── response/
+│   │       ├── LoginResponse.java
+│   │       └── UserVerificationResponse.java    # Response do User Service (OpenFeign)
+│   └── event/
+│       └── PasswordResetRequestedEvent.java     # Payload publicado no Kafka
 ├── exception/
-│   └── GlobalExceptionHandler.java              # @ControllerAdvice
-├── external/
-│   └── UserServiceClient.java                   # @FeignClient(name = "user-service")
+│   ├── InvalidCredentialsException.java
+│   ├── InactiveAccountException.java
+│   ├── InvalidTokenException.java
+│   ├── UserServiceUnavailableException.java     # Lançada pelo UserServiceGateway (fallback 503)
+│   └── handler/
+│       └── GlobalExceptionHandler.java          # @RestControllerAdvice — trata também 503
+├── client/
+│   ├── UserServiceClient.java                   # @FeignClient(name = "user-service")
+│   └── UserServiceGateway.java                  # Envolve o Feign com @CircuitBreaker/@Retry (Resilience4j)
 ├── messaging/
 │   └── PasswordResetEventPublisher.java         # KafkaTemplate producer user.password-reset
 └── config/
-    ├── SecurityConfig.java
-    ├── JwtConfig.java
-    └── KafkaProducerConfig.java
+    ├── KafkaProducerConfig.java
+    └── OpenApiConfig.java
 ```
+
+**Divergências relevantes em relação à versão anterior desta spec:**
+
+- **Não existe `service/PasswordResetService.java` separado.** Forgot/reset password vivem em
+  `AuthService.java`, junto com login/logout/refresh. `TokenService.java` também não é só "JWT
+  rotation" — ele administra tanto `RefreshToken` (create/rotate/revoke) quanto
+  `PasswordResetToken` (create/consume). Geração/validação do JWT em si (claims, TTL) ficou isolada
+  em `JwtService.java`, e a blacklist do access token virou `TokenBlacklistService.java` — nenhum
+  dos dois estava listado na versão anterior desta spec.
+- **Pacotes `model/` → `domain/entity/` e `domain/dto/{request,response}`.** Entities JPA e DTOs de
+  request/response não ficam achatados em `model/` como documentado antes; seguem a convenção
+  `domain/entity`, `domain/dto/request`, `domain/dto/response`, `domain/event` (mais alinhada ao
+  padrão Clean Architecture usado no User Service, embora este serviço continue MVC).
+- **`external/` → `client/`.** `UserServiceClient` (Feign) vive em `client/`, não `external/`.
+- **`exception/GlobalExceptionHandler.java` → `exception/handler/GlobalExceptionHandler.java`**, e o
+  pacote `exception/` ganhou as exceções de domínio (`InvalidCredentialsException`,
+  `InactiveAccountException`, `InvalidTokenException`) que a versão anterior da spec não detalhava.
+- **`config/SecurityConfig.java` e `config/JwtConfig.java` não existem.** O serviço não depende de
+  `spring-boot-starter-security` (ausente do `pom.xml`) — todos os endpoints `/api/v1/auth/*` são
+  públicos por padrão do Spring MVC, sem filtro de segurança próprio (coerente com o texto do
+  Swagger em `OpenApiConfig.java`, mas divergente da tabela de Tecnologias desta spec, que lista
+  Spring Security 6.x como dependência — ver nota de implementação). `config/` real só tem
+  `KafkaProducerConfig.java` e `OpenApiConfig.java`.
+- **Divergência resolvida — Circuit Breaker no `client/`.** A versão anterior desta spec listava só
+  `client/UserServiceClient.java` (Feign puro, chamado direto pelo `AuthService`). A implementação
+  real adicionou `client/UserServiceGateway.java`, que envolve os 4 métodos do
+  `UserServiceClient` (`verifyCredentials`, `findUserById`, `findUserByEmail`, `updatePassword`) com
+  `@CircuitBreaker`/`@Retry` (Resilience4j) e a exceção nova `exception/UserServiceUnavailableException.java`
+  — ver detalhamento em [Nota de Implementação Atual](#nota-de-implementação-atual-circuit-breaker).
+  `AuthService.java` hoje chama `UserServiceGateway`, não mais `UserServiceClient` diretamente.
 
 ## Lógica JWT
 
@@ -333,6 +396,29 @@ resilience4j:
         waitDuration: 500ms
         exponentialBackoffMultiplier: 2
 ```
+
+### Nota de Implementação Atual (Circuit Breaker)
+
+**Implementação concluída — confirmado em revisão de código:**
+
+- `pom.xml` do `auth-service` tem a dependência `spring-cloud-starter-circuitbreaker-resilience4j`.
+- `application.yml` tem o bloco `resilience4j.circuitbreaker.instances.userService` e
+  `resilience4j.retry.instances.userService` (sliding window 10, failure rate 50%, wait duration
+  10s, retry com 3 tentativas), com `ignoreExceptions` configurado para que erros de negócio do
+  Feign (401/403/404) não contem como falha para abertura do circuito.
+- `AuthService.java` não chama mais `UserServiceClient` diretamente — passou a chamar
+  `client/UserServiceGateway.java`, que envolve os 4 métodos do Feign
+  (`verifyCredentials`, `findUserById`, `findUserByEmail`, `updatePassword`) com
+  `@CircuitBreaker`/`@Retry`. O fallback relança inalterada qualquer `FeignException` de negócio
+  (401/403/404), e converte indisponibilidade real (timeout, connection refused, circuito aberto)
+  em `exception/UserServiceUnavailableException.java`, nova.
+- `exception/handler/GlobalExceptionHandler.java` trata `UserServiceUnavailableException`
+  retornando `503 Service Unavailable`, cumprindo o critério de aceite "Circuit breaker aberto no
+  User Service" da tabela acima.
+- Cobertura de teste: `unit/client/UserServiceGatewayTest.java` (4 testes) no nível unitário, e o
+  cenário Cucumber "Circuit breaker aberto no User Service" em
+  `src/test/resources/features/auth-service.feature` no nível de aceitação — ambos passando na
+  última execução.
 
 ## Variáveis de Ambiente
 
@@ -415,8 +501,11 @@ Apontar para o arquivo compartilhado em `infra/checkstyle/checkstyle.xml`. Adici
 
 ## Estratégia de Testes
 
-- **Unitários:** `TokenService` (TTL, rotation, claims); `PasswordResetService` (TTL do token de
-  reset) com mocks do `UserServiceClient`
+- **Unitários:** `TokenService` (TTL, rotation, claims); fluxo de forgot/reset password (parte de
+  `AuthService`, já que não existe `PasswordResetService` separado — ver
+  [Divergências relevantes](#estrutura-de-pacotes-mvc)) com mocks de `UserServiceGateway` (não mais
+  `UserServiceClient` direto, desde a introdução do circuit breaker); `UserServiceGateway` também
+  tem suíte própria (`UserServiceGatewayTest`) cobrindo fallback de negócio vs. indisponibilidade
 - **Integração:** Testcontainers (PostgreSQL + Redis + Kafka) + WireMock para simular User Service,
   cobrindo fluxo login → refresh → logout e forgot-password → reset-password completos
 - **Circuit Breaker:** Testar abertura após N falhas consecutivas do User Service → 503

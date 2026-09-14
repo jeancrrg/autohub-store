@@ -34,7 +34,10 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
 server:
   port: 8002
@@ -49,6 +52,32 @@ jwt:
 
 auth:
   password-reset-ttl-minutes: ${PASSWORD_RESET_TOKEN_TTL_MINUTES:15}
+
+resilience4j:
+  circuitbreaker:
+    circuitBreakerAspectOrder: 1
+    instances:
+      userService:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        ignoreExceptions:
+          - feign.FeignException.Unauthorized
+          - feign.FeignException.Forbidden
+          - feign.FeignException.NotFound
+  retry:
+    retryAspectOrder: 2
+    instances:
+      userService:
+        maxAttempts: 3
+        waitDuration: 500ms
+        exponentialBackoffMultiplier: 2
+        ignoreExceptions:
+          - feign.FeignException.Unauthorized
+          - feign.FeignException.Forbidden
+          - feign.FeignException.NotFound
 
 management:
   endpoints:

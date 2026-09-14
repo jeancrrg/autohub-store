@@ -1,0 +1,18 @@
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3Rpbmctb25seS0zMmJ5dGVz
+  expiration-ms: 3600000
+  refresh-expiration-ms: 604800000
+
+auth:
+  password-reset-ttl-minutes: 15
+
+resilience4j:
+  retry:
+    instances:
+      userService:
+        waitDuration: 10ms
+        exponentialBackoffMultiplier: 1
+
+logging:
+  level:
+    com.autohubstore.authservice: DEBUG

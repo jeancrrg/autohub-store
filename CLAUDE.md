@@ -76,8 +76,8 @@ autohub-store/
 
 | # | Serviço | Porta | Banco | Arquitetura | Build | Status | DER |
 |---|---|---|---|---|---|---|---|
-| 1 | **API Gateway** | 8001 | Redis (rate limit) | MVC | Maven | Implementado | [der/api-gateway.mmd](docs/planning/der/api-gateway.mmd) |
-| 2 | **Auth Service** | 8002 | PostgreSQL + Redis | MVC | Maven | Em implementação | [der/auth-service.mmd](docs/planning/der/auth-service.mmd) |
+| 1 | **API Gateway** | 8001 | Redis (rate limit) | MVC | Maven | Concluído | [der/api-gateway.mmd](docs/planning/der/api-gateway.mmd) |
+| 2 | **Auth Service** | 8002 | PostgreSQL + Redis | MVC | Maven | Concluído | [der/auth-service.mmd](docs/planning/der/auth-service.mmd) |
 | 3 | **User Service** | 8003 | PostgreSQL | Clean Architecture | Maven | Em implementação | [der/user-service.mmd](docs/planning/der/user-service.mmd) |
 | 4 | **Catalog Service** | 8004 | PostgreSQL + Redis | MVC | Gradle | Em implementação | [der/catalog-service.mmd](docs/planning/der/catalog-service.mmd) |
 | 5 | **Cart Service** | 8005 | Redis | MVC | Gradle | Planejado | [der/cart-service.mmd](docs/planning/der/cart-service.mmd) |
@@ -272,6 +272,12 @@ a especificação completa e comentada está em `infra/checkstyle/checkstyle.xml
   - Um `Service` só pode chamar outro `Service` (ou `Repository` do próprio domínio) — nunca acessar `Repository` de outro serviço/domínio diretamente, e nunca acessar `Controller`.
 - **Lombok:** usar para reduzir boilerplate (`@Getter`, `@Setter`, `@RequiredArgsConstructor`, `@Builder`, `@Slf4j`, etc.) em entities, DTOs e services — nunca escrever getters/setters/construtores manuais quando Lombok resolve.
 - **MapStruct:** toda conversão Entity ↔ DTO usa `@Mapper` de MapStruct — nunca mapeamento manual campo a campo em service ou controller.
+- **Criação de entidade sempre via Mapper, nunca método estático dentro da entidade:** entidade JPA
+  nunca declara factory method próprio (ex.: `EntityName.create(...)`) para se auto-construir a
+  partir de parâmetros primitivos — essa lógica de montagem sempre vive num `@Mapper` MapStruct
+  (método `default` quando envolve cálculo/regra, ex.: TTL → `expiresAt`), nunca na entidade nem
+  solta no `Service`. Entidade só mantém campos (Lombok) e métodos de comportamento de domínio que
+  não são construção (ex.: `markUsed()`, `revoke()`, `isValid()`, `@PrePersist`/`@PreUpdate`).
 - **Validações em Request DTOs:** toda anotação Bean Validation (`@NotNull`, `@NotBlank`, `@Size`, `@Email`, etc.) sempre com `message` explícita — nunca deixar mensagem default do framework. Regra vale para todo request DTO dos 9 serviços do MVP, sem exceção.
 - **`@Override` em controllers:** não usar em métodos de controller (nem quando implementa interface de docs como `*ControllerDocs`) — só quando realmente necessário (ex.: sobrescrita de método de classe abstrata onde o compilador não infere o contrato sozinho).
 - **Retorno de endpoints em controllers:** todo método de controller retorna `ResponseEntity` construído de forma explícita, sempre no formato `return ResponseEntity.status(HttpStatus.X).body(response);` (ou `.status(HttpStatus.X).build();` quando não há corpo) — `HttpStatus` sempre explícito, inclusive para `200 OK`. Nunca usar os atalhos `ResponseEntity.ok(...)`, `.noContent()`, `.created(...)`, `.accepted()`, `.badRequest()`, etc.

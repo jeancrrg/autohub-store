@@ -44,15 +44,6 @@ public class RefreshToken {
     @Column(name = "revoked", nullable = false)
     private boolean revoked;
 
-    public static RefreshToken create(UUID userId, String token, Instant expiresAt) {
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.userId = userId;
-        refreshToken.token = token;
-        refreshToken.expiresAt = expiresAt;
-        refreshToken.revoked = false;
-        return refreshToken;
-    }
-
     public void revoke() {
         this.revoked = true;
     }

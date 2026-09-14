@@ -2,6 +2,7 @@ package com.autohubstore.authservice.service;
 
 import com.autohubstore.authservice.domain.entity.PasswordResetToken;
 import com.autohubstore.authservice.domain.entity.RefreshToken;
+import com.autohubstore.authservice.domain.mapper.TokenMapper;
 import com.autohubstore.authservice.exception.InvalidTokenException;
 import com.autohubstore.authservice.repository.PasswordResetTokenRepository;
 import com.autohubstore.authservice.repository.RefreshTokenRepository;
@@ -24,16 +25,19 @@ public class TokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final TokenMapper tokenMapper;
     private final long refreshTokenTtlSeconds;
     private final long passwordResetTtlMinutes;
 
     public TokenService(
             RefreshTokenRepository refreshTokenRepository,
             PasswordResetTokenRepository passwordResetTokenRepository,
+            TokenMapper tokenMapper,
             @Value("${jwt.refresh-expiration-ms:604800000}") long refreshTokenTtlMs,
             @Value("${auth.password-reset-ttl-minutes:15}") long passwordResetTtlMinutes) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.tokenMapper = tokenMapper;
         this.refreshTokenTtlSeconds = refreshTokenTtlMs / MILLIS_PER_SECOND;
         this.passwordResetTtlMinutes = passwordResetTtlMinutes;
     }
@@ -43,7 +47,7 @@ public class TokenService {
         refreshTokenRepository.revokeAllByUserId(userId);
         String tokenValue = generateSecureToken();
         Instant expiresAt = Instant.now().plusSeconds(refreshTokenTtlSeconds);
-        RefreshToken token = RefreshToken.create(userId, tokenValue, expiresAt);
+        RefreshToken token = tokenMapper.toRefreshToken(userId, tokenValue, expiresAt);
         return refreshTokenRepository.save(token);
     }
 
@@ -61,14 +65,14 @@ public class TokenService {
 
         String newTokenValue = generateSecureToken();
         Instant expiresAt = Instant.now().plusSeconds(refreshTokenTtlSeconds);
-        RefreshToken newToken = RefreshToken.create(existing.getUserId(), newTokenValue, expiresAt);
+        RefreshToken newToken = tokenMapper.toRefreshToken(existing.getUserId(), newTokenValue, expiresAt);
         return refreshTokenRepository.save(newToken);
     }
 
     @Transactional
     public PasswordResetToken createPasswordResetToken(UUID userId) {
         String tokenValue = generateSecureToken();
-        PasswordResetToken token = PasswordResetToken.create(userId, tokenValue, passwordResetTtlMinutes);
+        PasswordResetToken token = tokenMapper.toPasswordResetToken(userId, tokenValue, passwordResetTtlMinutes);
         return passwordResetTokenRepository.save(token);
     }
 

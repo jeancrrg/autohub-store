@@ -312,8 +312,8 @@ com.autohubstore.orderservice/
 
 | # | Serviço | Porta | Banco | Kafka | Status |
 |---|---|---|---|---|---|
-| 1 | API Gateway | 8001 | Redis (rate limit) | — | Implementado |
-| 2 | Auth Service | 8002 | PostgreSQL (`auth_db`) + Redis | Producer | Em implementação |
+| 1 | API Gateway | 8001 | Redis (rate limit) | — | Concluído |
+| 2 | Auth Service | 8002 | PostgreSQL (`auth_db`) + Redis | Producer | Concluído |
 | 3 | User Service | 8003 | PostgreSQL (`user_db`) | Producer | Em implementação |
 | 4 | Catalog Service | 8004 | PostgreSQL (`catalog_db`) + Redis | Producer | Em implementação |
 | 5 | Cart Service | 8005 | Redis | — | Planejado |
