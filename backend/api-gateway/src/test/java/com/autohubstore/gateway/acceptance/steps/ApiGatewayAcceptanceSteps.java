@@ -10,10 +10,12 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 
@@ -27,10 +29,16 @@ public class ApiGatewayAcceptanceSteps {
     private static final String RATE_LIMIT_ENDPOINT_PATH = "/api/v1/catalog/products/rate-limit-scenario";
     private static final String CORS_ENDPOINT_PATH = "/api/v1/catalog/products";
     private static final long ONE_HOUR_MS = 3_600_000L;
+    private static final long ONE_HOUR_SECONDS = 3_600L;
     private static final int RATE_LIMIT_WINDOW_REQUESTS = 100;
+    private static final String BLACKLIST_KEY_PREFIX = "token:blacklist:";
+    private static final String KNOWN_JTI = "33333333-3333-3333-3333-333333333333";
 
     @Autowired
     private HttpTestUtil httpAcceptanceTestUtil;
+
+    @Autowired
+    private ReactiveStringRedisTemplate redisTemplate;
 
     private WebTestClient.ResponseSpec lastResponse;
     private String accessTokenCookieValue;
@@ -62,6 +70,18 @@ public class ApiGatewayAcceptanceSteps {
             return;
         }
         accessTokenCookieValue = buildToken(signingKey(OTHER_JWT_SECRET), ONE_HOUR_MS);
+    }
+
+    @Dado("que o cliente possuir um cookie de acesso valido com um jti conhecido")
+    public void givenTheClientHasAValidAccessCookieWithAKnownJti() {
+        accessTokenCookieValue = buildTokenWithJti(signingKey(ACCESS_TOKEN_JWT_SECRET));
+    }
+
+    @Dado("que esse jti estar na blacklist de tokens revogados")
+    public void givenThatJtiIsInTheRevokedTokensBlacklist() {
+        redisTemplate.opsForValue()
+                .set(BLACKLIST_KEY_PREFIX + KNOWN_JTI, "revoked", Duration.ofSeconds(ONE_HOUR_SECONDS))
+                .block();
     }
 
     @Quando("o cliente chamar o endpoint de usuarios com o cookie de acesso")
@@ -113,6 +133,20 @@ public class ApiGatewayAcceptanceSteps {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + validityMs);
         return Jwts.builder()
+                .subject("11111111-1111-1111-1111-111111111111")
+                .claim("email", "cliente@autohubstore.com")
+                .claim("roles", List.of("CUSTOMER"))
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(key)
+                .compact();
+    }
+
+    private String buildTokenWithJti(SecretKey key) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + ApiGatewayAcceptanceSteps.ONE_HOUR_MS);
+        return Jwts.builder()
+                .id(ApiGatewayAcceptanceSteps.KNOWN_JTI)
                 .subject("11111111-1111-1111-1111-111111111111")
                 .claim("email", "cliente@autohubstore.com")
                 .claim("roles", List.of("CUSTOMER"))

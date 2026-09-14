@@ -1,6 +1,6 @@
 # API Gateway
 
-**Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8001 | **Status:** Implementado
+**Build Tool:** Maven | **Arquitetura:** MVC | **Porta:** 8001 | **Status:** Concluído
 
 **DER:** [docs/planning/der/api-gateway.mmd](../der/api-gateway.mmd) (sem persistência própria —
 diagrama documenta estruturas em memória/Redis: `JwtClaims`, `RateLimitKey`, rotas)

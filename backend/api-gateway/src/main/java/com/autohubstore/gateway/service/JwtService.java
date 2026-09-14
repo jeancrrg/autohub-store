@@ -27,11 +27,12 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
 
+        String jti = claims.getId();
         String userId = claims.getSubject();
         String email = claims.get("email", String.class);
         List<String> roles = extractRoles(claims);
 
-        return new JwtClaims(userId, email, roles);
+        return new JwtClaims(jti, userId, email, roles);
     }
 
     private List<String> extractRoles(Claims claims) {

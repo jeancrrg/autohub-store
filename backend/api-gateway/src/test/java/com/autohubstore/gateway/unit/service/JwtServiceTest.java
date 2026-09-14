@@ -52,6 +52,27 @@ class JwtServiceTest {
     }
 
     @Test
+    @DisplayName("Deve extrair o jti do token quando presente")
+    void shouldExtractJtiWhenPresent() {
+        String jti = "22222222-2222-2222-2222-222222222222";
+        String token = buildTokenWithJti(jti, signingKey);
+
+        JwtClaims claims = jwtService.validate(token);
+
+        assertThat(claims.jti()).isEqualTo(jti);
+    }
+
+    @Test
+    @DisplayName("Deve retornar jti nulo quando o token nao possuir esse claim")
+    void shouldReturnNullJtiWhenTokenDoesNotHaveIt() {
+        String token = buildToken("user-id", "user@autohubstore.com", List.of("CUSTOMER"), signingKey, ONE_HOUR_MS);
+
+        JwtClaims claims = jwtService.validate(token);
+
+        assertThat(claims.jti()).isNull();
+    }
+
+    @Test
     @DisplayName("Deve lancar excecao para token expirado")
     void shouldThrowExceptionForExpiredToken() {
         String token = buildToken("user-id", "user@autohubstore.com", List.of("CUSTOMER"), signingKey,
@@ -92,6 +113,20 @@ class JwtServiceTest {
                 .subject(userId)
                 .claim("email", email)
                 .claim("roles", roles)
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(key)
+                .compact();
+    }
+
+    private String buildTokenWithJti(String jti, SecretKey key) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + JwtServiceTest.ONE_HOUR_MS);
+        return Jwts.builder()
+                .id(jti)
+                .subject("11111111-1111-1111-1111-111111111111")
+                .claim("email", "cliente@autohubstore.com")
+                .claim("roles", List.of("CUSTOMER"))
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(key)

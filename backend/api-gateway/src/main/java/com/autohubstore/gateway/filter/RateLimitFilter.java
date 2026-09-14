@@ -3,6 +3,7 @@ package com.autohubstore.gateway.filter;
 import com.autohubstore.gateway.model.RateLimitKey;
 import com.autohubstore.gateway.service.RateLimitService;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -32,7 +33,7 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    public @NonNull Mono<Void> filter(ServerWebExchange exchange, @NonNull GatewayFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
         String clientIp = resolveClientIp(exchange);
 

@@ -1,6 +1,6 @@
 # API Gateway
 
-**Build Tool:** Maven | **Arquitetura:** MVC (adaptada) | **Porta:** 8001 | **Status:** Implementado
+**Build Tool:** Maven | **Arquitetura:** MVC (adaptada) | **Porta:** 8001 | **Status:** Concluído
 
 **Código:** `backend/api-gateway/` | **Spec:** [docs/planning/specs/01-api-gateway.md](../planning/specs/01-api-gateway.md)
 | **DER:** [docs/planning/der/api-gateway.mmd](../planning/der/api-gateway.mmd)

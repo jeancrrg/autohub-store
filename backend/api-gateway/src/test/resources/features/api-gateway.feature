@@ -25,6 +25,12 @@ Funcionalidade: API Gateway
       | expirado                |
       | com assinatura invalida |
 
+  Cenario: Acesso com token na blacklist
+    Dado que o cliente possuir um cookie de acesso valido com um jti conhecido
+    E que esse jti estar na blacklist de tokens revogados
+    Quando o cliente chamar o endpoint de usuarios com o cookie de acesso
+    Entao o cliente deve receber resposta com status 401
+
   Cenario: Rate limit excedido
     Dado que o cliente ja ter realizado 100 requisicoes ao endpoint publico do catalogo na janela atual
     Quando o cliente realizar mais uma requisicao a esse endpoint

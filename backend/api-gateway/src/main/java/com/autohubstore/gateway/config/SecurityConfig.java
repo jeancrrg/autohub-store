@@ -3,6 +3,7 @@ package com.autohubstore.gateway.config;
 import com.autohubstore.gateway.filter.JwtReactiveAuthenticationManager;
 import com.autohubstore.gateway.filter.JwtServerAuthenticationConverter;
 import com.autohubstore.gateway.service.JwtService;
+import com.autohubstore.gateway.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,6 +40,7 @@ public class SecurityConfig {
     };
 
     private final JwtService jwtService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -60,7 +62,8 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationWebFilter jwtAuthenticationFilter() {
-        AuthenticationWebFilter filter = new AuthenticationWebFilter(new JwtReactiveAuthenticationManager(jwtService));
+        JwtReactiveAuthenticationManager jwt = new JwtReactiveAuthenticationManager(jwtService, tokenBlacklistService);
+        AuthenticationWebFilter filter = new AuthenticationWebFilter(jwt);
         filter.setServerAuthenticationConverter(new JwtServerAuthenticationConverter());
         return filter;
     }
