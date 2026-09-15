@@ -4,6 +4,8 @@ spring:
   threads:
     virtual:
       enabled: true
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5433/user_db}

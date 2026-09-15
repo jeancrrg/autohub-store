@@ -1,4 +1,4 @@
-package com.autohubstore.authservice.acceptance.config;
+package com.autohubstore.userservice.acceptance.config;
 
 import io.cucumber.junit.platform.engine.Constants;
 import org.junit.platform.suite.api.ConfigurationParameter;
@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @IncludeEngines("cucumber")
 @SelectPackages("features")
-@ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "com.autohubstore.authservice.acceptance")
+@ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "com.autohubstore.userservice.acceptance")
 public class CucumberTest {
 
 }
