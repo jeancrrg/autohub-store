@@ -33,6 +33,8 @@ public class UserServiceAcceptanceSteps {
     private String registeredEmail;
     private UUID registeredUserId;
     private UUID registeredAddressId;
+    private UUID secondAddressId;
+    private UUID newAddressId;
 
     @Dado("que o cliente informar dados validos de cadastro")
     public void givenTheClientProvidesValidRegistrationData() {
@@ -96,10 +98,76 @@ public class UserServiceAcceptanceSteps {
                 USERS_ENDPOINT_PATH + "/" + registeredUserId, body, registeredUserId);
     }
 
+    @Dado("que exista um usuario cadastrado com um endereco padrao")
+    public void givenThereIsARegisteredUserWithADefaultAddress() {
+        givenThereIsARegisteredUser();
+        Map<String, Object> defaultAddressBody = buildAddressBody();
+        defaultAddressBody.put("is_default", true);
+        String defaultAddressResponseBody = readBody(httpTestUtil.executePostAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses",
+                defaultAddressBody, registeredUserId));
+        registeredAddressId = UUID.fromString(extractJsonField(defaultAddressResponseBody));
+
+        String secondAddressResponseBody = readBody(httpTestUtil.executePostAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses",
+                buildAddressBody(), registeredUserId));
+        secondAddressId = UUID.fromString(extractJsonField(secondAddressResponseBody));
+    }
+
+    @Quando("o cliente enviar a requisicao de atualizacao de outro endereco marcando-o como padrao")
+    public void whenTheClientSendsTheUpdateRequestForAnotherAddressMarkingItAsDefault() {
+        Map<String, Object> body = buildAddressBody();
+        body.put("is_default", true);
+        lastResult = httpTestUtil.executePutAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses/" + secondAddressId,
+                body, registeredUserId);
+    }
+
     @Quando("o cliente enviar a requisicao de criacao de endereco para esse usuario")
     public void whenTheClientSendsTheAddressCreationRequestForThatUser() {
         lastResult = httpTestUtil.executePostAuthenticated(
                 USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses", buildAddressBody(), registeredUserId);
+    }
+
+    @Dado("que exista um usuario cadastrado sem nenhum endereco")
+    public void givenThereIsARegisteredUserWithoutAnyAddress() {
+        givenThereIsARegisteredUser();
+    }
+
+    @Quando("o cliente enviar a requisicao de criacao de um novo endereco marcando-o como padrao")
+    public void whenTheClientSendsTheCreationRequestForANewAddressMarkingItAsDefault() {
+        Map<String, Object> body = buildAddressBody();
+        body.put("is_default", true);
+        lastResult = httpTestUtil.executePostAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses", body, registeredUserId);
+        newAddressId = UUID.fromString(extractJsonField(readBody(lastResult)));
+    }
+
+    @Quando("o cliente enviar a requisicao de criacao de um novo endereco sem marca-lo como padrao")
+    public void whenTheClientSendsTheCreationRequestForANewAddressWithoutMarkingItAsDefault() {
+        Map<String, Object> body = buildAddressBody();
+        body.put("is_default", false);
+        lastResult = httpTestUtil.executePostAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses", body, registeredUserId);
+        newAddressId = UUID.fromString(extractJsonField(readBody(lastResult)));
+    }
+
+    @Quando("o cliente enviar a requisicao de criacao do primeiro endereco marcando-o como padrao")
+    public void whenTheClientSendsTheCreationRequestForTheFirstAddressMarkingItAsDefault() {
+        Map<String, Object> body = buildAddressBody();
+        body.put("is_default", true);
+        lastResult = httpTestUtil.executePostAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses", body, registeredUserId);
+        newAddressId = UUID.fromString(extractJsonField(readBody(lastResult)));
+    }
+
+    @Quando("o cliente enviar novamente a requisicao de atualizacao do endereco padrao marcando-o como padrao")
+    public void whenTheClientSendsAgainTheUpdateRequestForTheDefaultAddressMarkingItAsDefault() {
+        Map<String, Object> body = buildAddressBody();
+        body.put("is_default", true);
+        lastResult = httpTestUtil.executePutAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses/" + registeredAddressId,
+                body, registeredUserId);
     }
 
     @Quando("o cliente enviar a requisicao de remocao desse endereco")
@@ -155,6 +223,61 @@ public class UserServiceAcceptanceSteps {
         }
     }
 
+    @Entao("o endereco anterior nao deve mais estar marcado como padrao")
+    public void thenThePreviousAddressIsNoLongerMarkedAsDefault() {
+        String responseBody = fetchAddressesForRegisteredUser();
+
+        if (isAddressMarkedAsDefault(responseBody, registeredAddressId)) {
+            throw new HttpAcceptanceTestException(
+                    "Endereco anterior ainda esta marcado como padrao: " + registeredAddressId, null);
+        }
+    }
+
+    @Entao("o endereco padrao existente deve continuar marcado como padrao")
+    public void thenTheExistingDefaultAddressRemainsMarkedAsDefault() {
+        String responseBody = fetchAddressesForRegisteredUser();
+
+        if (!isAddressMarkedAsDefault(responseBody, registeredAddressId)) {
+            throw new HttpAcceptanceTestException(
+                    "Endereco padrao existente nao esta mais marcado como padrao: " + registeredAddressId, null);
+        }
+    }
+
+    @Entao("o endereco criado deve estar marcado como padrao")
+    public void thenTheCreatedAddressIsMarkedAsDefault() {
+        String responseBody = fetchAddressesForRegisteredUser();
+
+        if (!isAddressMarkedAsDefault(responseBody, newAddressId)) {
+            throw new HttpAcceptanceTestException(
+                    "Endereco criado nao esta marcado como padrao: " + newAddressId, null);
+        }
+    }
+
+    @Entao("o endereco padrao deve continuar marcado como padrao apos consultar novamente")
+    public void thenTheDefaultAddressRemainsMarkedAsDefaultAfterQueryingAgain() {
+        String responseBody = fetchAddressesForRegisteredUser();
+
+        if (!isAddressMarkedAsDefault(responseBody, registeredAddressId)) {
+            throw new HttpAcceptanceTestException(
+                    "Endereco padrao nao esta mais marcado como padrao: " + registeredAddressId, null);
+        }
+    }
+
+    @Entao("o endereco que nao e padrao nao deve ser afetado")
+    public void thenTheNonDefaultAddressIsNotAffected() {
+        String responseBody = fetchAddressesForRegisteredUser();
+
+        if (isAddressMarkedAsDefault(responseBody, secondAddressId)) {
+            throw new HttpAcceptanceTestException(
+                    "Endereco nao padrao foi indevidamente marcado como padrao: " + secondAddressId, null);
+        }
+    }
+
+    private String fetchAddressesForRegisteredUser() {
+        return readBody(httpTestUtil.executeGetAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses", registeredUserId));
+    }
+
     private String readBody(ResultActions resultActions) {
         try {
             return resultActions.andReturn().getResponse().getContentAsString();
@@ -194,6 +317,14 @@ public class UserServiceAcceptanceSteps {
         int start = responseBody.indexOf(marker) + marker.length();
         int end = responseBody.indexOf('"', start);
         return responseBody.substring(start, end);
+    }
+
+    private boolean isAddressMarkedAsDefault(String responseBody, UUID addressId) {
+        String idMarker = "\"id\":\"" + addressId + "\"";
+        int idIndex = responseBody.indexOf(idMarker);
+        int objectEnd = responseBody.indexOf('}', idIndex);
+        String addressSegment = responseBody.substring(idIndex, objectEnd);
+        return addressSegment.contains("\"is_default\":true");
     }
 
 }

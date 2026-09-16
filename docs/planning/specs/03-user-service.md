@@ -30,8 +30,8 @@ usada por Order Service (endereço de entrega) e Notification Service (Kafka `us
   AutoHubStore.
 - Como cliente autenticado, quero consultar e atualizar meus dados de perfil, para manter meu
   cadastro correto.
-- Como cliente autenticado, quero cadastrar, listar e remover endereços de entrega, para escolher
-  onde recebo meus pedidos.
+- Como cliente autenticado, quero cadastrar, listar, atualizar e remover endereços de entrega, para
+  escolher onde recebo meus pedidos e marcar qual deles é o meu endereço padrão.
 - Como Order Service, quero consultar o endereço de um usuário, para montar o pedido com o destino
   de entrega correto (fora do escopo direto desta spec — ver [07-order-service.md](07-order-service.md)).
 - Como Auth Service, quero verificar credenciais de um usuário (e-mail + senha) via endpoint
@@ -52,6 +52,11 @@ usada por Order Service (endereço de entrega) e Notification Service (Kafka `us
 | Validação de campos obrigatórios | Corpo da requisição sem `email`, `fullName` ou `password` | Cliente chama `POST /api/v1/users` | Serviço retorna 400 com mensagem explícita do campo ausente |
 | Atualização de perfil | Usuário existente autenticado | Cliente chama `PUT /api/v1/users/{id}` com novos dados válidos | Serviço atualiza o registro e retorna 200 com o perfil atualizado |
 | CRUD de endereço | Usuário autenticado sem endereços cadastrados | Cliente chama `POST /api/v1/users/{id}/addresses` com endereço válido | Serviço cria o endereço vinculado ao `userId` e retorna 201; endereço passa a aparecer em `GET /api/v1/users/{id}/addresses` |
+| Endereço padrão único — criação | Usuário já possui um endereço marcado como `is_default=true` | Cliente cria um novo endereço com `POST /api/v1/users/{id}/addresses` informando `is_default=true` | Serviço cria o novo endereço como padrão e desmarca (`is_default=false`) o endereço que era padrão antes, na mesma operação |
+| Endereço padrão único — atualização | Usuário possui um endereço A marcado como padrão e edita o endereço B | Cliente chama `PUT /api/v1/users/{id}/addresses/{addressId}` no endereço B com `is_default=true` | Serviço marca B como padrão e desmarca A (`is_default=false`), sem exigir chamada adicional do cliente |
+| Endereço não padrão não afeta o padrão existente | Usuário possui um endereço marcado como padrão | Cliente cria ou atualiza outro endereço com `is_default=false` (ou omitindo o campo) | Serviço persiste o endereço com `is_default=false` e não altera o endereço padrão já existente |
+| Primeiro endereço do usuário como padrão | Usuário autenticado ainda não possui nenhum endereço cadastrado | Cliente chama `POST /api/v1/users/{id}/addresses` com `is_default=true` | Serviço cria o endereço já como padrão, sem necessidade de desmarcar nenhum outro (não há outro registro) |
+| Marcar como padrão um endereço que já é padrão | Endereço já está com `is_default=true` | Cliente chama `PUT /api/v1/users/{id}/addresses/{addressId}` repetindo `is_default=true` no mesmo endereço | Serviço trata como operação idempotente: retorna 200 sem erro e sem alterar nenhum outro endereço |
 | Verificação de credenciais correta | Usuário existente com senha conhecida | Auth Service chama `POST /internal/v1/users/verify-credentials` com e-mail e senha corretos | Serviço retorna 200 com `userId` e `roles`, sem expor `password_hash` |
 | Verificação de credenciais incorreta | Usuário existente, senha informada não confere com o hash | Auth Service chama `POST /internal/v1/users/verify-credentials` | Serviço retorna 401 |
 | Atualização de senha via fluxo interno | Token de reset já validado pelo Auth Service | Auth Service chama `PUT /internal/v1/users/{id}/password` com nova senha | Serviço persiste novo hash BCrypt, sobrescrevendo o anterior |
@@ -66,6 +71,27 @@ usada por Order Service (endereço de entrega) e Notification Service (Kafka `us
 - Publicação de evento `user.created` no Kafka
 - Endpoints internos para o Auth Service: verificar credenciais, buscar usuário por e-mail,
   atualizar senha
+
+### Regras de Negócio — Endereço Padrão
+
+Um usuário deve ter **no máximo um endereço padrão (`is_default=true`) por vez**. Regra de
+aplicação (o schema, coluna `is_default BOOLEAN` na tabela `addresses`, não impõe unicidade
+sozinho — quem garante a invariante é o `ManageAddressUseCase`, nunca o banco).
+
+- Ao criar (`POST /api/v1/users/{id}/addresses`) ou atualizar (`PUT
+  /api/v1/users/{id}/addresses/{addressId}`) um endereço com `is_default=true`, o serviço
+  desmarca automaticamente (`is_default=false`) qualquer outro endereço do mesmo usuário que já
+  estivesse marcado como padrão, dentro da mesma transação.
+- Criar ou editar um endereço com `is_default=false` (ou o campo omitido) não altera o endereço
+  padrão já existente dos demais endereços do usuário.
+- Se o usuário ainda não tiver nenhum endereço cadastrado e o primeiro endereço vier com
+  `is_default=true`, ele vira o padrão diretamente — não há outro registro para desmarcar.
+- Marcar como padrão um endereço que já é o padrão é **idempotente**: não gera erro, apenas
+  confirma o estado atual (sem desmarcar/marcar nada além do próprio registro).
+- Fora de escopo desta regra: o que acontece quando o usuário remove (`DELETE`) o endereço que
+  era o padrão (ex.: se algum outro passa a ser padrão automaticamente) — não há decisão de
+  negócio confirmada para esse caso; se necessário, deve ser levantado ao usuário do produto antes
+  de implementar.
 
 ## Tecnologias
 
@@ -161,6 +187,7 @@ GET    /api/v1/users/{id}                         # Perfil
 PUT    /api/v1/users/{id}                         # Atualizar perfil
 GET    /api/v1/users/{id}/addresses               # Listar endereços
 POST   /api/v1/users/{id}/addresses               # Criar endereço
+PUT    /api/v1/users/{id}/addresses/{addressId}   # Atualizar endereço (inclui alternar is_default)
 DELETE /api/v1/users/{id}/addresses/{addressId}   # Remover endereço
 
 # Internos (não expostos pelo Gateway — chamados via OpenFeign pelo Auth Service)

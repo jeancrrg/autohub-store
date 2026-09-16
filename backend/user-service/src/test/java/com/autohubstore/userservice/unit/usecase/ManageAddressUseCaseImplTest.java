@@ -78,6 +78,90 @@ class ManageAddressUseCaseImplTest {
     }
 
     @Test
+    @DisplayName("Deve desmarcar endereco anterior quando outro endereco do usuario for atualizado como padrao")
+    void shouldClearPreviousDefaultWhenAnotherAddressIsUpdatedAsDefault() {
+        UUID userId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        AddressRequest request = new AddressRequest("Rua B", "200", null, "Cidade", "SP", ZIP_CODE, true);
+        Address existingAddress = Address.builder().id(addressId).userId(userId).isDefault(false).build();
+        AddressResponse response = new AddressResponse(addressId, "Rua B", "200", null,
+                "Cidade", "SP", ZIP_CODE, true, null);
+
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(existingAddress));
+        when(addressRepository.save(existingAddress)).thenReturn(existingAddress);
+        when(addressMapper.toResponse(existingAddress)).thenReturn(response);
+
+        AddressResponse result = manageAddressUseCase.updateAddress(userId, addressId, request);
+
+        assertThat(result).isEqualTo(response);
+        verify(addressRepository).clearDefaultByUserId(userId);
+        verify(addressMapper).updateDomainFromRequest(request, existingAddress);
+    }
+
+    @Test
+    @DisplayName("Deve manter operacao idempotente quando endereco ja padrao for marcado como padrao novamente")
+    void shouldBeIdempotentWhenAddressAlreadyDefaultIsMarkedAsDefaultAgain() {
+        UUID userId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        AddressRequest request = new AddressRequest("Rua A", "100", null, "Cidade", "SP", ZIP_CODE, true);
+        Address existingAddress = Address.builder().id(addressId).userId(userId).isDefault(true).build();
+        AddressResponse response = new AddressResponse(addressId, "Rua A", "100", null,
+                "Cidade", "SP", ZIP_CODE, true, null);
+
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(existingAddress));
+        when(addressRepository.save(existingAddress)).thenReturn(existingAddress);
+        when(addressMapper.toResponse(existingAddress)).thenReturn(response);
+
+        AddressResponse result = manageAddressUseCase.updateAddress(userId, addressId, request);
+
+        assertThat(result).isEqualTo(response);
+        assertThat(result.isDefault()).isTrue();
+        verify(addressRepository).clearDefaultByUserId(userId);
+    }
+
+    @Test
+    @DisplayName("Deve manter padrao existente quando endereco for atualizado sem marcar como padrao")
+    void shouldKeepExistingDefaultWhenAddressIsUpdatedWithoutBeingMarkedAsDefault() {
+        UUID userId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        AddressRequest request = new AddressRequest("Rua C", "300", null, "Cidade", "SP", ZIP_CODE, false);
+        Address existingAddress = Address.builder().id(addressId).userId(userId).isDefault(false).build();
+        AddressResponse response = new AddressResponse(addressId, "Rua C", "300", null,
+                "Cidade", "SP", ZIP_CODE, false, null);
+
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(existingAddress));
+        when(addressRepository.save(existingAddress)).thenReturn(existingAddress);
+        when(addressMapper.toResponse(existingAddress)).thenReturn(response);
+
+        AddressResponse result = manageAddressUseCase.updateAddress(userId, addressId, request);
+
+        assertThat(result).isEqualTo(response);
+        verify(addressRepository, never()).clearDefaultByUserId(any());
+    }
+
+    @Test
+    @DisplayName("Deve lancar excecao ao atualizar endereco quando ele pertencer a outro usuario")
+    void shouldThrowExceptionWhenUpdatingAddressThatBelongsToAnotherUser() {
+        UUID userId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        AddressRequest request = new AddressRequest("Rua D", "400", null, "Cidade", "SP", ZIP_CODE, true);
+        Address existingAddress = Address.builder().id(addressId).userId(otherUserId).build();
+
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(existingAddress));
+
+        assertThatThrownBy(() -> manageAddressUseCase.updateAddress(userId, addressId, request))
+                .isInstanceOf(AddressNotFoundException.class);
+
+        verify(addressRepository, never()).save(any());
+        verify(addressRepository, never()).clearDefaultByUserId(any());
+    }
+
+    @Test
     @DisplayName("Deve remover endereco quando ele pertencer ao usuario informado")
     void shouldDeleteAddressWhenItBelongsToInformedUser() {
         UUID userId = UUID.randomUUID();

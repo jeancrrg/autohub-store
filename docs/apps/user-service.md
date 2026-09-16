@@ -129,7 +129,23 @@ expostos pelo Gateway.
 | PUT | `/api/v1/users/{id}` | cookie `access_token` | Atualiza nome completo |
 | PUT | `/api/v1/users/{id}/password` | cookie `access_token` | Atualiza senha (hash BCrypt) |
 | GET/POST | `/api/v1/users/{userId}/addresses` | cookie `access_token` | Lista/cria endereço |
+| PUT | `/api/v1/users/{userId}/addresses/{addressId}` | cookie `access_token` | Atualiza endereço (inclui alternar `is_default`) |
 | DELETE | `/api/v1/users/{userId}/addresses/{addressId}` | cookie `access_token` | Remove endereço |
+
+### Regra de negócio: endereço padrão único
+
+Um usuário só pode ter **um** endereço com `is_default=true` por vez. O schema (`is_default
+BOOLEAN`, tabela `addresses`) não impõe essa unicidade — quem garante é a aplicação:
+`AddressJpaRepository.clearDefaultByUserId(userId)` roda um `UPDATE` em massa zerando
+`is_default` de todos os endereços do usuário antes de persistir o novo/atualizado endereço com
+`is_default=true`, tanto em `ManageAddressUseCaseImpl.createAddress` quanto em `updateAddress`.
+Criar/atualizar um endereço com `is_default=false` (ou omitindo o campo) não dispara essa limpeza
+e não afeta o endereço padrão existente. O método `clearDefaultByUserId` usa
+`@Modifying(clearAutomatically = true, flushAutomatically = true)`: sem isso, o bulk `UPDATE`
+(que não passa pelo persistence context do Hibernate) deixaria a entidade já carregada em memória
+com um snapshot desatualizado, quebrando a idempotência de "marcar como padrão um endereço que já
+é padrão" — o `save()` subsequente não detectaria mudança e o banco ficaria sem nenhum endereço
+padrão.
 
 ## Endpoints internos (não roteados pelo Gateway, rede Docker apenas)
 

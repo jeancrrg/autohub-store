@@ -12,7 +12,7 @@ public interface AddressJpaRepository extends JpaRepository<AddressJpaEntity, UU
 
     List<AddressJpaEntity> findAllByUserId(UUID userId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE AddressJpaEntity a SET a.isDefault = false WHERE a.userId = :userId")
     void clearDefaultByUserId(@Param("userId") UUID userId);
 

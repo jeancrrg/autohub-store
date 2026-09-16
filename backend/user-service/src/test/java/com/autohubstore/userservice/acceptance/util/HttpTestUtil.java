@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
@@ -87,6 +88,15 @@ public class HttpTestUtil {
                     .content(jsonMapper.writeValueAsString(body)));
         } catch (Exception ex) {
             throw new HttpAcceptanceTestException("Falha ao executar PUT autenticado em " + path, ex);
+        }
+    }
+
+    public ResultActions executeGetAuthenticated(String path, UUID authenticatedUserId) {
+        try {
+            return mockMvc.perform(get(path)
+                    .cookie(buildAccessTokenCookie(authenticatedUserId)));
+        } catch (Exception ex) {
+            throw new HttpAcceptanceTestException("Falha ao executar GET autenticado em " + path, ex);
         }
     }
 

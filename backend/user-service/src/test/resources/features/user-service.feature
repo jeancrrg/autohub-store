@@ -38,6 +38,37 @@ Funcionalidade: User Service
     Quando o cliente enviar a requisicao de criacao de endereco para esse usuario
     Entao o cliente deve receber resposta com status 201
 
+  Cenario: Endereco padrao unico ao atualizar outro endereco como padrao
+    Dado que exista um usuario cadastrado com um endereco padrao
+    Quando o cliente enviar a requisicao de atualizacao de outro endereco marcando-o como padrao
+    Entao o cliente deve receber resposta com status 200
+    E o endereco anterior nao deve mais estar marcado como padrao
+
+  Cenario: Endereco padrao unico ao criar novo endereco como padrao
+    Dado que exista um usuario cadastrado com um endereco padrao
+    Quando o cliente enviar a requisicao de criacao de um novo endereco marcando-o como padrao
+    Entao o cliente deve receber resposta com status 201
+    E o endereco anterior nao deve mais estar marcado como padrao
+
+  Cenario: Endereco nao padrao nao afeta o endereco padrao existente
+    Dado que exista um usuario cadastrado com um endereco padrao
+    Quando o cliente enviar a requisicao de criacao de um novo endereco sem marca-lo como padrao
+    Entao o cliente deve receber resposta com status 201
+    E o endereco padrao existente deve continuar marcado como padrao
+
+  Cenario: Primeiro endereco do usuario cadastrado diretamente como padrao
+    Dado que exista um usuario cadastrado sem nenhum endereco
+    Quando o cliente enviar a requisicao de criacao do primeiro endereco marcando-o como padrao
+    Entao o cliente deve receber resposta com status 201
+    E o endereco criado deve estar marcado como padrao
+
+  Cenario: Marcar como padrao um endereco que ja e padrao e idempotente
+    Dado que exista um usuario cadastrado com um endereco padrao
+    Quando o cliente enviar novamente a requisicao de atualizacao do endereco padrao marcando-o como padrao
+    Entao o cliente deve receber resposta com status 200
+    E o endereco padrao deve continuar marcado como padrao apos consultar novamente
+    E o endereco que nao e padrao nao deve ser afetado
+
   Cenario: Remocao de endereco existente
     Dado que exista um usuario cadastrado com um endereco cadastrado
     Quando o cliente enviar a requisicao de remocao desse endereco

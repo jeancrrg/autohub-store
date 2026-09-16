@@ -12,6 +12,8 @@ public interface ManageAddressUseCase {
 
     AddressResponse createAddress(UUID userId, AddressRequest request);
 
+    AddressResponse updateAddress(UUID userId, UUID addressId, AddressRequest request);
+
     void deleteAddress(UUID userId, UUID addressId);
 
 }

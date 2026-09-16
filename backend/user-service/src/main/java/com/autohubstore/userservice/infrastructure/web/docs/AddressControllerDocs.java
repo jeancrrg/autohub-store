@@ -78,6 +78,41 @@ public interface AddressControllerDocs {
     );
 
     @Operation(
+            summary = "Atualizar endereço de entrega",
+            description = "Atualiza os dados de um endereço existente do usuário. "
+                    + "Se `isDefault = true`, o endereço padrão anterior é automaticamente desmarcado; "
+                    + "marcar como padrão um endereço que já é o padrão é idempotente."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Endereço atualizado com sucesso",
+                    content = @Content(schema = @Schema(implementation = AddressResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Dados inválidos (campos obrigatórios ausentes ou CEP mal formatado)",
+                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Usuário ou endereço não encontrado, "
+                            + "ou o endereço não pertence ao usuário",
+                    content = @Content(schema = @Schema(ref = "#/components/schemas/ProblemDetail"))
+            )
+    })
+    @RequestBody(
+            description = "Dados atualizados do endereço. CEP no formato `00000-000`.",
+            required = true,
+            content = @Content(schema = @Schema(implementation = AddressRequest.class))
+    )
+    ResponseEntity<AddressResponse> updateAddress(
+            @Parameter(description = "UUID do usuário", required = true) UUID userId,
+            @Parameter(description = "UUID do endereço", required = true) UUID addressId,
+            AddressRequest request
+    );
+
+    @Operation(
             summary = "Remover endereço",
             description = "Remove um endereço de entrega do usuário. "
                     + "O endereço deve pertencer ao usuário informado."

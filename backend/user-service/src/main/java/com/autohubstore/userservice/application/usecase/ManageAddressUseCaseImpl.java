@@ -50,8 +50,29 @@ public class ManageAddressUseCaseImpl implements ManageAddressUseCase {
 
     @Override
     @Transactional
+    public AddressResponse updateAddress(UUID userId, UUID addressId, AddressRequest request) {
+        ensureUserExists(userId);
+        Address address = findOwnedAddress(userId, addressId);
+
+        if (request.isDefault()) {
+            addressRepository.clearDefaultByUserId(userId);
+        }
+
+        addressMapper.updateDomainFromRequest(request, address);
+
+        return addressMapper.toResponse(addressRepository.save(address));
+    }
+
+    @Override
+    @Transactional
     public void deleteAddress(UUID userId, UUID addressId) {
         ensureUserExists(userId);
+        Address address = findOwnedAddress(userId, addressId);
+
+        addressRepository.delete(address);
+    }
+
+    private Address findOwnedAddress(UUID userId, UUID addressId) {
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new AddressNotFoundException(addressId.toString()));
 
@@ -59,7 +80,7 @@ public class ManageAddressUseCaseImpl implements ManageAddressUseCase {
             throw new AddressNotFoundException(addressId.toString());
         }
 
-        addressRepository.delete(address);
+        return address;
     }
 
     private void ensureUserExists(UUID userId) {
