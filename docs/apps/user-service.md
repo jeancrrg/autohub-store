@@ -1,6 +1,6 @@
 # User Service
 
-**Build Tool:** Maven | **Arquitetura:** Clean Architecture | **Porta:** 8003 | **Status:** Em implementação (ver § Evidências)
+**Build Tool:** Maven | **Arquitetura:** Clean Architecture | **Porta:** 8003 | **Status:** Concluído (ver § Evidências)
 
 **Código:** `backend/user-service/` | **Spec:** [docs/planning/specs/03-user-service.md](../planning/specs/03-user-service.md)
 | **DER:** [docs/planning/der/user-service.mmd](../planning/der/user-service.mmd)
@@ -196,18 +196,40 @@ mvn package          # build final (target/user-service.jar)
 snyk test --all-sub-projects --detection-depth=6
 ```
 
-## Evidências da última execução (backend-engineer, 2026-09-14)
+## Evidências da última execução (backend-engineer, 2026-09-15)
 
 | Item | Status | Evidência |
 |---|---|---|
-| Testes unitários (`mvn test`) | ✅ | 17 testes, 0 falhas (`target/surefire-reports/com.autohubstore.userservice.unit.*`) |
-| Testes de aceitação (Cucumber) | ❌ **bloqueado no ambiente de execução deste agente** | Suíte escrita e compila (`CucumberConfig`, `CucumberTest`, 9 cenários em `user-service.feature`); Testcontainers falha com `IllegalStateException: Could not find a valid Docker environment`, mesmo com `docker ps`/`docker info` respondendo normalmente via CLI no mesmo host — indica que o daemon Docker (named pipe do Docker Desktop) não está acessível a partir do processo Java neste sandbox de execução específico. Precisa ser re-executado por quality-analyst ou pelo usuário num terminal com acesso direto ao Docker Desktop. |
-| Cobertura ≥ 70% | ❌ **não verificável sem a suíte de aceitação** | Rodando só os unitários, cobertura de instrução ≈ 23% (esperado — persistence/web/config só são exercitados pelos testes de aceitação, que não rodaram neste ambiente) |
+| Testes unitários (`mvn test`) | ✅ | 21 testes, 0 falhas (`target/surefire-reports/com.autohubstore.userservice.unit.*`) — inclui `FindUserUseCaseImplTest`, adicionado nesta rodada para cobrir `FindUserUseCaseImpl` (antes sem teste próprio) |
+| Testes de aceitação (Cucumber) | ✅ | 11 cenários/exemplos em `user-service.feature`, 0 falhas (`CucumberTest`, Testcontainers subindo PostgreSQL, Kafka e Redis via Docker Desktop local sem problema, Flyway migrando o schema normalmente) |
+| Cobertura ≥ 70% | ✅ | 83,88% de cobertura de linha combinada (unitário + aceitação) — `target/site/jacoco/jacoco.csv` (333 linhas cobertas / 397 totais), acima do gate `jacoco.line.ratio.minimum=0.70` do `pom.xml` |
 | `checkstyle:check` | ✅ | `mvn checkstyle:check` → `BUILD SUCCESS`, 0 violações (produção + testes) |
-| `snyk test --all-sub-projects --detection-depth=6` | ✅ | `Tested 157 dependencies for known issues, no vulnerable paths found.` — 15 vulnerabilidades corrigidas via `dependencyManagement` (`jackson-databind` 2.21.6/`tools.jackson.core:jackson-databind` 3.1.6, `zstd-jni` 1.5.7-14) e exclusão de `org.xerial.snappy:snappy-java` (sem versão corrigida disponível; codec não usado — `KafkaProducerConfig` não configura `compression-type`) |
-| `mvn clean package` | ⚠️ | Build compila e empacota com sucesso rodando só os testes unitários (`-Dtest=...unit.**`); com a suíte completa (default), falha pelo mesmo bloqueio de Docker descrito acima |
+| `snyk test --all-sub-projects --detection-depth=6` | ✅ | `Tested 159 dependencies for known issues, no vulnerable paths found.` |
+| `mvn clean package` | ✅ | Build compila, roda a suíte completa (32 testes) e empacota com sucesso (`target/user-service.jar`) |
 | DER atualizado | ✅ | `docs/planning/der/user-service.mmd` já refletia `users`/`addresses`; adicionado campo `role` que faltava na tabela `USERS` (schema Flyway não foi alterado) |
 | `docs/apps/user-service.md` | ✅ | Este arquivo |
+
+### Correção aplicada nesta rodada (revalidação do quality-analyst)
+
+A execução anterior (2026-09-14) reportava a suíte de aceitação como bloqueada por "Docker
+environment não acessível" — diagnóstico incorreto. A causa real era um bug de compatibilidade
+Jackson: `pom.xml` está em `spring-boot-starter-parent` `4.0.8`, cujo `JacksonAutoConfiguration`
+expõe beans do tipo `tools.jackson.databind.json.JsonMapper` (Jackson 3), não
+`com.fasterxml.jackson.databind.ObjectMapper` (Jackson 2, presente no classpath só como
+dependência `runtime` transitiva de `jjwt-jackson`). `HttpTestUtil` injetava
+`@Autowired ObjectMapper` (Jackson 2), sem bean correspondente no contexto — o
+`ApplicationContext` inteiro do módulo de aceitação falhava ao subir
+(`UnsatisfiedDependencyException`), derrubando os 11 cenários de uma vez, não por falha de
+infraestrutura Docker (que funcionou normalmente: Postgres, Kafka e Redis subiram via
+Testcontainers sem qualquer erro de conectividade). Corrigido trocando o tipo injetado para
+`tools.jackson.databind.json.JsonMapper` em `HttpTestUtil`.
+
+Corrigido também: `PUT /api/v1/users/{id}` e `POST /api/v1/users/{id}/addresses` exigem usuário
+autenticado (`SecurityConfig` — `anyRequest().authenticated()`), mas os cenários de atualização de
+perfil e criação/remoção de endereço disparavam a requisição sem cookie `access_token`, retornando
+`403`. `HttpTestUtil` ganhou `executePostAuthenticated`/`executePutAuthenticated`/
+`executeDeleteAuthenticated`, que geram um JWT válido (mesma chave `jwt.secret` da aplicação) e o
+anexam como cookie `access_token`, simulando um cliente já autenticado pelo Auth Service/Gateway.
 
 ### Refatoração realizada
 
@@ -220,10 +242,3 @@ file major version 69; `0.8.12` falha ao instrumentar), regra `LINE COVEREDRATIO
 request ganharam `message` explícita em toda anotação Bean Validation (antes usavam mensagem
 default do framework).
 
-### Ação pendente para o quality-analyst / usuário
-
-Re-executar `mvn test` (ou `mvn verify`) em um ambiente onde o daemon Docker esteja acessível ao
-processo Java (ex.: terminal local fora deste sandbox) para confirmar os cenários de aceitação e a
-cobertura ≥ 70%. O código da suíte está pronto e compilando; não há indício de problema de
-implementação, apenas de conectividade Testcontainers→Docker neste ambiente específico de execução
-do agente.

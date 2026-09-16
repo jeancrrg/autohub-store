@@ -83,8 +83,8 @@ public class UserServiceAcceptanceSteps {
     public void givenThereIsARegisteredUserWithARegisteredAddress() {
         givenThereIsARegisteredUser();
         Map<String, Object> addressBody = buildAddressBody();
-        String responseBody = readBody(httpTestUtil
-                .executePost(USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses", addressBody));
+        String responseBody = readBody(httpTestUtil.executePostAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses", addressBody, registeredUserId));
         registeredAddressId = UUID.fromString(extractJsonField(responseBody));
     }
 
@@ -92,19 +92,20 @@ public class UserServiceAcceptanceSteps {
     public void whenTheClientSendsTheProfileUpdateRequestWithANewName() {
         Map<String, Object> body = new HashMap<>();
         body.put("full_name", UPDATED_FULL_NAME);
-        lastResult = httpTestUtil.executePut(USERS_ENDPOINT_PATH + "/" + registeredUserId, body);
+        lastResult = httpTestUtil.executePutAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId, body, registeredUserId);
     }
 
     @Quando("o cliente enviar a requisicao de criacao de endereco para esse usuario")
     public void whenTheClientSendsTheAddressCreationRequestForThatUser() {
-        lastResult = httpTestUtil.executePost(
-                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses", buildAddressBody());
+        lastResult = httpTestUtil.executePostAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses", buildAddressBody(), registeredUserId);
     }
 
     @Quando("o cliente enviar a requisicao de remocao desse endereco")
     public void whenTheClientSendsTheAddressRemovalRequest() {
-        lastResult = httpTestUtil.executeDelete(
-                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses/" + registeredAddressId);
+        lastResult = httpTestUtil.executeDeleteAuthenticated(
+                USERS_ENDPOINT_PATH + "/" + registeredUserId + "/addresses/" + registeredAddressId, registeredUserId);
     }
 
     @Quando("o auth-service enviar a requisicao interna de verificacao de credenciais com a senha correta")
