@@ -5,6 +5,9 @@ spring:
     virtual:
       enabled: true
 
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5434/catalog_db}
     username: ${DB_USERNAME:catalog_user}

@@ -22,8 +22,12 @@ public interface ProductMapper {
     ProductResponse toResponse(Product product, String categoryName, String brandName, String brandSlug,
                                 List<ProductImageResponse> images);
 
+    @Mapping(target = "categoryId", source = "resolvedCategoryId")
+    @Mapping(target = "brandId", source = "resolvedBrandId")
+    @Mapping(target = "sku", source = "resolvedSku")
     @Mapping(target = "status", ignore = true)
-    Product toEntity(CreateProductRequest request, UUID categoryId, UUID brandId, String sku, String slug);
+    Product toEntity(CreateProductRequest request, UUID resolvedCategoryId, UUID resolvedBrandId, String resolvedSku,
+                      String slug);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "categoryId", ignore = true)

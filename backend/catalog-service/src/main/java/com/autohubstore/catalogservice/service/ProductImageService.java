@@ -3,6 +3,8 @@ package com.autohubstore.catalogservice.service;
 import com.autohubstore.catalogservice.domain.entity.ProductImage;
 import com.autohubstore.catalogservice.domain.dto.response.ProductImageResponse;
 import com.autohubstore.catalogservice.domain.mapper.ProductImageMapper;
+import com.autohubstore.catalogservice.exception.ImageStorageException;
+import com.autohubstore.catalogservice.exception.ImageTooLargeException;
 import com.autohubstore.catalogservice.exception.ProductNotFoundException;
 import com.autohubstore.catalogservice.exception.UnsupportedImageTypeException;
 import com.autohubstore.catalogservice.repository.ProductImageRepository;
@@ -11,12 +13,16 @@ import com.autohubstore.catalogservice.repository.ProductRepository;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
+import io.minio.errors.MinioException;
+
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,25 +30,18 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class ProductImageService {
-
-    private final ProductRepository productRepository;
-    private final ProductImageRepository productImageRepository;
-    private final ProductImageMapper productImageMapper;
-    private final MinioClient minioClient;
-
-    public ProductImageService(ProductRepository productRepository, ProductImageRepository productImageRepository,
-                                ProductImageMapper productImageMapper, MinioClient minioClient) {
-        this.productRepository = productRepository;
-        this.productImageRepository = productImageRepository;
-        this.productImageMapper = productImageMapper;
-        this.minioClient = minioClient;
-    }
 
     private static final Set<String> ALLOWED_CONTENT_TYPES =
             Set.of("image/jpeg", "image/png", "image/webp");
 
     private static final long MAX_FILE_SIZE_BYTES = 5L * 1024 * 1024;
+
+    private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
+    private final ProductImageMapper productImageMapper;
+    private final MinioClient minioClient;
 
     @Value("${spring.minio.bucket}")
     private String bucket;
@@ -98,7 +97,7 @@ public class ProductImageService {
             throw new UnsupportedImageTypeException(file.getContentType());
         }
         if (file.getSize() > MAX_FILE_SIZE_BYTES) {
-            throw new UnsupportedImageTypeException("arquivo excede 5MB: " + file.getOriginalFilename());
+            throw new ImageTooLargeException(file.getOriginalFilename());
         }
     }
 
@@ -107,11 +106,12 @@ public class ProductImageService {
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucket)
                     .object(objectKey)
-                    .stream(input, file.getSize(), -1)
+                    .stream(input, file.getSize(), -1L)
                     .contentType(file.getContentType())
                     .build());
-        } catch (Exception e) {
-            throw new UnsupportedImageTypeException("falha ao enviar arquivo pro storage: " + e.getMessage());
+        }
+        catch (MinioException | IOException e) {
+            throw new ImageStorageException("falha ao enviar arquivo pro storage: " + e.getMessage(), e);
         }
     }
 
@@ -121,8 +121,9 @@ public class ProductImageService {
                     .bucket(bucket)
                     .object(objectKey)
                     .build());
-        } catch (Exception e) {
-            throw new UnsupportedImageTypeException("falha ao remover arquivo do storage: " + e.getMessage());
+        }
+        catch (MinioException e) {
+            throw new ImageStorageException("falha ao remover arquivo do storage: " + e.getMessage(), e);
         }
     }
 

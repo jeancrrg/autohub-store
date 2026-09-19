@@ -3,7 +3,6 @@ package com.autohubstore.catalogservice.domain.dto.request;
 import com.autohubstore.catalogservice.domain.enums.ProductStatus;
 
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -18,9 +17,6 @@ public record UpdateProductRequest(
 
         @DecimalMin(value = "0.0", inclusive = true, message = "Preço não pode ser negativo")
         BigDecimal price,
-
-        @Min(value = 0, message = "Quantidade em estoque não pode ser negativa")
-        Integer stockQuantity,
 
         UUID categoryId,
 

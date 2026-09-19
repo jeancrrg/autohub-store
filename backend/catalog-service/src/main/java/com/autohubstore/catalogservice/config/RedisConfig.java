@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
@@ -34,7 +35,7 @@ public class RedisConfig {
         redisObjectMapper.findAndRegisterModules();
         redisObjectMapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL,
+                ObjectMapper.DefaultTyping.EVERYTHING,
                 JsonTypeInfo.As.PROPERTY);
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
@@ -47,7 +48,10 @@ public class RedisConfig {
         cacheConfigurations.put(CACHE_PRODUCTS, defaultConfig.entryTtl(PRODUCT_TTL));
         cacheConfigurations.put(CACHE_PRODUCTS_BY_CATEGORY, defaultConfig.entryTtl(PRODUCTS_BY_CATEGORY_TTL));
 
-        return RedisCacheManager.builder(connectionFactory)
+        RedisCacheWriter cacheWriter = RedisCacheWriter.create(connectionFactory,
+                configurer -> configurer.immediateWrites(true));
+
+        return RedisCacheManager.builder(cacheWriter)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();

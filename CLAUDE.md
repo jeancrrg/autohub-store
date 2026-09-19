@@ -521,6 +521,7 @@ Detalhes completos: `docs/planning/action-plan.md`
 | ADR-006 | Clean/Hexagonal Architecture | Domínio testável sem Spring |
 | ADR-007 | Cassandra para Analytics (pós-MVP) | Otimizado para alta escrita, COUNTER nativo |
 | ADR-008 | OpenTelemetry | Vendor-neutral, CNCF standard, nativo Spring Boot 3.x |
+| ADR-009 | Risco residual aceito — CVE `snappy-java` no Catalog Service | Dependência transitiva obrigatória do `io.minio:minio:9.0.1`, sem patch/upgrade disponível na data da decisão; detalhe completo em [docs/planning/specs/04-catalog-service.md § Exceção Snyk Aceita](docs/planning/specs/04-catalog-service.md#exceção-snyk-aceita--cve-snappy-java) |
 
 ---
 

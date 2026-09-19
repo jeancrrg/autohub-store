@@ -159,8 +159,7 @@ public class ProductService {
                 product.getPrice(),
                 category.getId(),
                 category.getName(),
-                product.getStatus(),
-                null
+                product.getStatus()
         );
     }
 

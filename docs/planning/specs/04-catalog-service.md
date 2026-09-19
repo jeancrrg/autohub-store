@@ -22,11 +22,30 @@ consomem `catalog.product-created`/`updated` para busca full-text e fitment peç
 Sem um catálogo centralizado, cada serviço precisaria manter sua própria cópia de nome, preço e
 categoria de produto, gerando inconsistência entre o que o cliente vê e o que é cobrado. O Catalog
 Service resolve isso concentrando os dados descritivos do produto com cache para leitura rápida.
-Usado diretamente pelo cliente final (navegação e busca por categoria) e pelo administrador (CRUD
-de produtos/categorias/imagens); consumido também pelo Cart Service (OpenFeign, validação de
-produto/preço) e depende do Inventory Service (OpenFeign) para exibir disponibilidade. Valor de
-negócio: reduz latência de navegação via cache Redis, mantém SKU e slug como identificadores de
-negócio estáveis, e desacopla estoque (alta concorrência) da leitura de catálogo.
+Usado diretamente pelo cliente final (navegação e busca por categoria/marca) e pelo administrador
+(CRUD de produtos/categorias/imagens); consumido também pelo Cart Service (OpenFeign, validação de
+produto/preço). Nesta versão (Fase 3) o Catalog Service **não** depende do Inventory Service — essa
+dependência (OpenFeign, para exibir disponibilidade) só entra na Fase 5, quando o Inventory Service
+existir. Valor de negócio: reduz latência de navegação via cache Redis, mantém SKU e slug como
+identificadores de negócio estáveis, e desacopla estoque (alta concorrência) da leitura de catálogo.
+
+> **Decisão de escopo — `stockQuantity` fica fora do Catalog Service até a Fase 5.** O Inventory
+> Service ainda não existe (Catalog é Fase 3, Inventory é Fase 5 do roadmap) — não há hoje nenhuma
+> fonte real para resolver disponibilidade de estoque. Decisão confirmada: **remover o campo
+> `stockQuantity`** de `CreateProductRequest`, `UpdateProductRequest`, `ProductResponse` e do evento
+> `ProductChangedEvent` — nenhum destes DTOs/eventos carrega esse campo nesta versão do serviço. A
+> chamada OpenFeign ao Inventory Service (e o campo de disponibilidade de estoque na resposta) só
+> volta a existir quando o Inventory Service for criado na Fase 5; até lá, "disponibilidade em
+> estoque" não é responsabilidade do Catalog Service. Detalhe da decisão e do estado do código no
+> momento desta revalidação em
+> [Estado real da integração com Inventory Service](#estado-real-da-integração-com-inventory-service).
+
+> **Marca (Brand) como entidade de catálogo.** Produto tem `brandId` obrigatório (`NOT NULL`),
+> referenciando uma marca (`brands`). Diferente de Categoria, **Marca é somente leitura nesta
+> versão** — existe endpoint `GET /api/v1/catalog/brands` (listagem) e resolução por id ao
+> criar/atualizar produto, mas não há `POST`/`PUT`/`DELETE` de marca; o catálogo de marcas é
+> populado só via seed Flyway (`V2__seed_brands.sql`). Ver
+> [Marca (Brand)](#marca-brand) para detalhe completo.
 
 ## Use Cases
 
@@ -34,18 +53,21 @@ negócio estáveis, e desacopla estoque (alta concorrência) da leitura de catá
   automotivas que atendam minha necessidade.
 - Como cliente final, quero ver os detalhes de um produto pelo slug amigável, para acessar a página
   do produto por uma URL legível e compartilhável.
-- Como cliente final, quero ver a badge de disponibilidade em estoque na página do produto, para
-  saber se posso comprar antes de adicionar ao carrinho.
 - Como administrador, quero cadastrar um novo produto com SKU e slug gerados/validados
   automaticamente, para publicá-lo no catálogo sem colisão de identificadores.
+- Como administrador, quero vincular o produto a uma marca (`brandId`) já cadastrada no catálogo,
+  para exibir a marca correta na ficha do produto e permitir navegação por marca.
+- Como cliente final, quero listar as marcas cadastradas, para reconhecer fabricantes conhecidos
+  antes de abrir a ficha do produto.
 - Como administrador, quero fazer upload de uma ou mais imagens para um produto já criado, para
   completar a ficha do produto em um fluxo de dois passos.
 - Como administrador, quero remover uma imagem específica de um produto, para corrigir a galeria
   sem recriar o produto inteiro.
 - Como administrador, quero atualizar ou remover um produto existente, para manter o catálogo
   atualizado.
-- Como administrador, quero criar e organizar categorias em hierarquia pai/filho, para estruturar a
-  navegação do catálogo.
+- Como administrador, quero criar categorias com nome e slug únicos, para estruturar a navegação do
+  catálogo por categoria (lista plana nesta versão — sem hierarquia pai/filho; ver nota em
+  [Schema do Banco](#schema-do-banco-flyway)).
 - Como Inventory Service, quero ser avisado da criação de um produto via evento Kafka
   `catalog.product-created`, para inicializar o registro de estoque correspondente.
 
@@ -59,20 +81,30 @@ negócio estáveis, e desacopla estoque (alta concorrência) da leitura de catá
 | Upload de imagem válida | Produto já criado, sem imagens | Admin chama `POST /api/v1/catalog/products/{id}/images` com arquivo `image/png` de até 5MB | Serviço grava o objeto no MinIO, persiste registro em `product_images` com `is_primary=true` na primeira imagem, e retorna 201 |
 | Upload de imagem inválida | Produto já criado | Admin envia arquivo `application/pdf` ou maior que 5MB | Serviço rejeita com 415 (tipo) ou 413 (tamanho), sem gravar no MinIO |
 | Atualização invalida cache | Produto já em cache | Admin chama `PUT /api/v1/catalog/products/{id}` alterando o preço | Serviço atualiza o registro, aplica `@CacheEvict` na chave `product:{id}` e evento `catalog.product-updated` é publicado com o novo preço |
-| Integração com Inventory Service | Produto criado, Inventory Service consumindo `catalog.product-created` | Cliente consulta `GET /api/v1/catalog/products/{id}` | Resposta inclui `stockQuantity` obtido via OpenFeign ao Inventory Service |
+| Listagem de marcas | Marcas seedadas via Flyway (`V2__seed_brands.sql`) | Cliente chama `GET /api/v1/catalog/brands` | Serviço retorna 200 com a lista de marcas ordenada alfabeticamente por `name` |
+| Criação de produto com marca existente | Marca (`brandId`) e categoria existentes | Admin chama `POST /api/v1/catalog/products` informando `brandId` válido | Serviço cria o produto vinculado à marca e retorna `brandName`/`brandSlug` resolvidos no `ProductResponse` |
+| Criação de produto com marca inexistente | `brandId` não corresponde a nenhuma marca cadastrada | Admin chama `POST /api/v1/catalog/products` com esse `brandId` | Serviço retorna 404 (`BrandNotFoundException`), sem criar produto nem publicar evento |
+| Atualização de marca do produto | Produto já criado, nova marca (`brandId`) existente | Admin chama `PUT /api/v1/catalog/products/{id}` alterando `brandId` | Serviço resolve e persiste a nova marca, invalida cache do produto e publica `catalog.product-updated` |
+| Resposta de produto sem estoque | Produto criado normalmente | Cliente chama `GET /api/v1/catalog/products/{id}` | `ProductResponse` **não** contém `stockQuantity` nem nenhum campo de disponibilidade de estoque — Catalog Service não resolve estoque nesta versão (ver [Estado real da integração com Inventory Service](#estado-real-da-integração-com-inventory-service)) |
+| Criação de categoria (lista plana) | Nenhuma categoria com o mesmo `slug` cadastrada | Admin chama `POST /api/v1/catalog/categories` com `name` válido | Serviço cria a categoria sem nenhuma noção de categoria pai/filho, gera `slug` e retorna 201 |
 
 ## Banco de Dados: PostgreSQL (`catalog_db`) + Redis (cache) + MinIO (imagens)
 
 ## Responsabilidades
 
-- CRUD completo de produtos (admin) — dados descritivos: nome, descrição, preço, categoria, imagens
-- CRUD de categorias (hierarquia pai/filho)
+- CRUD completo de produtos (admin) — dados descritivos: nome, descrição, preço, categoria, marca, imagens
+- CRUD de categorias — **lista plana nesta versão, sem hierarquia pai/filho**; ver nota em [Schema do Banco](#schema-do-banco-flyway)
+- Listagem de marcas (admin/cliente final) — **somente leitura**, sem CRUD; ver [Marca (Brand)](#marca-brand)
 - Gerar e validar identificadores de produto: `sku` (código de negócio) e `slug` (URL amigável) — ver [Identificadores de Produto](#identificadores-de-produto-sku-slug-e-id)
 - Upload/remoção de imagens de produto (MinIO) — ver [Upload de Imagens](#upload-de-imagens-minio)
 - Listagem paginada de produtos com filtro por categoria
 - Cache de produtos no Redis (TTL 5 minutos)
-- Consultar disponibilidade de estoque no Inventory Service (OpenFeign) para exibir badge "em estoque"
 - Publicar: `catalog.product-created`, `catalog.product-updated`, `catalog.product-viewed`
+
+> **Fora de escopo nesta versão (Fase 3):** disponibilidade de estoque (`stockQuantity`) e a
+> integração OpenFeign com o Inventory Service. Catalog Service não resolve nem expõe estoque —
+> essa responsabilidade só entra na Fase 5, quando o Inventory Service existir. Ver
+> [Estado real da integração com Inventory Service](#estado-real-da-integração-com-inventory-service).
 
 > Contrato completo de integração com o frontend (paginação, erros, fluxo de upload) está
 > detalhado em [docs/integration/frontend-backend-integration.md](../../integration/frontend-backend-integration.md).
@@ -148,12 +180,14 @@ GET    /api/v1/catalog/products/{id}                  # Detalhes por id (UUID) �
 GET    /api/v1/catalog/products/slug/{slug}           # Detalhes por slug (usado pela URL pública do frontend)
 GET    /api/v1/catalog/categories                     # Lista categorias
 GET    /api/v1/catalog/categories/{id}/products       # Produtos por categoria
+GET    /api/v1/catalog/brands                         # Lista marcas (ordenada por name) — somente leitura
 
 # Admin (requer role ADMIN via JWT)
 POST   /api/v1/catalog/products                       # Criar produto (sem imagem)
 PUT    /api/v1/catalog/products/{id}                  # Atualizar produto
 DELETE /api/v1/catalog/products/{id}                  # Remover produto
 POST   /api/v1/catalog/categories                     # Criar categoria
+# Não existe POST/PUT/DELETE de marca nesta versão — ver "Marca (Brand)"
 
 # Admin — imagens (fluxo em 2 passos, ver seção Upload de Imagens)
 POST   /api/v1/catalog/products/{id}/images           # Upload multipart (1..N arquivos)
@@ -181,6 +215,27 @@ Três identificadores com papéis distintos, nunca usados um pelo outro:
 memorável, e URLs com UUID cru são ruins pra SEO. SKU serve pra operação (suporte/logística), slug
 serve pra navegação/SEO — nunca a mesma string.
 
+## Marca (Brand)
+
+Entidade simples de catálogo (`brands`), independente de `Category`. Cada `Product` referencia
+exatamente uma marca via `brand_id` (`NOT NULL`) — assim como `category_id`, resolvida no
+`ProductService` (nunca via join automático) e montada no `ProductResponse` como `brandId`,
+`brandName`, `brandSlug`.
+
+**Escopo implementado — somente leitura:**
+- `GET /api/v1/catalog/brands` → lista todas as marcas, ordenadas alfabeticamente por `name`
+  (`findAllByOrderByNameAsc`). Não paginado (volume de marcas é baixo, mesmo padrão de
+  `GET /categories`).
+- Resolução por `id` ao criar (`POST /products`) ou atualizar (`PUT /products/{id}`) produto — se o
+  `brandId` informado não existir, o serviço responde `404 Not Found` (`BrandNotFoundException`).
+- **Não há** `POST`/`PUT`/`DELETE` de marca nesta versão — o catálogo de marcas é fechado, populado
+  só via seed Flyway (`V2__seed_brands.sql`, ~19 marcas cobrindo as 10 categorias do MVP). Cadastro
+  de marca via API é evolução futura, fora do escopo atual — não fazer sem antes confirmar com o
+  software-architect/product-owner, para não abrir escrita descontrolada num identificador de
+  negócio compartilhado por todos os produtos.
+
+**Schema:** ver tabela `brands` em [Schema do Banco (Flyway)](#schema-do-banco-flyway).
+
 ## Upload de Imagens (MinIO)
 
 Fluxo de cadastro é sempre em **2 passos**: cria produto primeiro (sem imagem), depois faz upload
@@ -207,46 +262,87 @@ por arquivo — rejeitar com `413`/`415` (Problem Details) fora disso.
 
 ## Schema do Banco (Flyway)
 
+> **Decisão de escopo — categoria é lista plana nesta versão.** `categories` **não tem** coluna
+> `parent_id` — é lista plana, sem hierarquia pai/filho. Decisão confirmada: manter o schema como
+> está (4 migrações, `V1`-`V4`, abaixo) e **não** adicionar `parent_id` nesta revalidação —
+> hierarquia de categorias fica registrada como incremento futuro (evolução pós-conclusão do
+> serviço), a ser especificado com o software-architect/product-owner só quando houver necessidade
+> de negócio concreta (ex.: navegação por subcategoria). Use Cases e Critérios de Aceite desta spec
+> já refletem essa decisão — nenhum cenário depende de `parent_id`.
+
 ### V1__create_catalog_schema.sql
 
 ```sql
-CREATE TABLE categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) NOT NULL,
-    slug VARCHAR(100) NOT NULL UNIQUE,
-    parent_id UUID REFERENCES categories(id),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE brands (
+    id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    name       VARCHAR(100) NOT NULL,
+    slug       VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_brands_slug ON brands(slug);
+
+
+CREATE TABLE categories (
+    id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    name       VARCHAR(100) NOT NULL,
+    slug       VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_categories_slug ON categories(slug);
+
 
 CREATE TABLE products (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sku VARCHAR(50) NOT NULL UNIQUE,
-    slug VARCHAR(255) NOT NULL UNIQUE,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
-    category_id UUID NOT NULL REFERENCES categories(id),
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    id             UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
+    name           VARCHAR(255)   NOT NULL,
+    sku            VARCHAR(50)    NOT NULL UNIQUE,
+    slug           VARCHAR(255)   NOT NULL UNIQUE,
+    description    TEXT,
+    price          NUMERIC(10,2)  NOT NULL CHECK (price >= 0),
+    brand_id       UUID NOT NULL REFERENCES brands(id),
+    category_id    UUID           NOT NULL REFERENCES categories(id),
+    status         VARCHAR(20)    NOT NULL DEFAULT 'ACTIVE',
+    created_at     TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ    NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_products_sku ON products(sku);
-CREATE INDEX idx_products_slug ON products(slug);
+CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_products_status   ON products(status);
+CREATE INDEX idx_products_sku      ON products(sku);
+CREATE INDEX idx_products_slug     ON products(slug);
 
 -- estoque (stock_quantity) vive no Inventory Service, chaveado por product_id (UUID desta tabela)
 
 CREATE TABLE product_images (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    url VARCHAR(1024) NOT NULL,
-    is_primary BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID         NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    url        VARCHAR(1024) NOT NULL,
+    is_primary BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_products_category ON products(category_id);
-CREATE INDEX idx_products_status ON products(status);
+CREATE INDEX idx_product_images_product_id ON product_images(product_id);
 ```
+
+### V2__seed_brands.sql
+
+Seed de ~19 marcas (`INSERT INTO brands (id, name, slug, created_at) VALUES ...`), cobrindo as
+categorias do MVP (ex.: Sparco/Metal Horse em Acessórios, Brembo em Freios, NGK/Bosch/AFP em Motor,
+K&N/FuelTech/Pro Line em Performance, Michelin/Goodyear em Pneus, BBS/Enkei/OZ Racing em Rodas,
+Eibach/D2 Racing em Suspensão, OSRAM/Philips em Iluminação, Vonixx/Cadillac em Limpeza).
+
+### V3__seed_categories.sql
+
+Seed das 10 categorias do MVP (`INSERT INTO categories (id, name, slug, created_at) VALUES ...`):
+Acessórios, Escapamento, Freios, Iluminação, Limpeza, Motor, Performance, Pneus, Rodas, Suspensão.
+
+### V4__seed_products.sql
+
+Seed de produtos de exemplo, cada um resolvendo `category_id`/`brand_id` via subquery por `slug`
+(`(SELECT id FROM categories WHERE slug = '...')`, `(SELECT id FROM brands WHERE slug = '...')`) —
+cobre os três valores de `status` (`ACTIVE`, `INACTIVE`, `OUT_OF_STOCK`) e todas as combinações
+categoria/marca seedadas em `V2`/`V3`.
 
 ## Eventos Kafka Publicados
 
@@ -266,8 +362,10 @@ CREATE INDEX idx_products_status ON products(status);
 }
 ```
 
-> Ao criar produto (`catalog.product-created`), o Inventory Service consome o evento e cria o
-> registro de estoque inicial (`stockQuantity = 0` até admin ajustar via Inventory Service).
+> Quando o Inventory Service existir (Fase 5), ele passa a consumir `catalog.product-created` para
+> criar o registro de estoque inicial correspondente ao `productId`. O payload publicado pelo
+> Catalog Service **não carrega `stockQuantity`** — a quantidade inicial é responsabilidade do
+> Inventory Service, não do Catalog Service.
 
 **Tópico `catalog.product-viewed`:**
 
@@ -291,36 +389,145 @@ Usar `@CacheEvict` ao atualizar ou deletar produto.
 
 ## Estrutura de Pacotes (MVC)
 
+> Estrutura abaixo reflete o código real (`backend/catalog-service/src/main/java/`), não a proposta
+> original desta spec — divergências relevantes: pacote `domain/` (não `model/`) com subpastas
+> `entity/`, `dto/request/`, `dto/response/`, `mapper/`, `enums/`, `projection/`; `controller/docs/`
+> com as interfaces `*ControllerDocs` (Springdoc); `exception/handler/` para o
+> `@ControllerAdvice`; entidade/serviço/controller de `Brand` (leitura); **não existe** pacote
+> `external/` nem `InventoryServiceClient` — ver
+> [Estado real da integração com Inventory Service](#estado-real-da-integração-com-inventory-service).
+
 ```
 com.autohubstore.catalogservice/
 ├── controller/
-│   ├── ProductController.java          # CRUD produtos + listagem pública
-│   └── CategoryController.java         # CRUD categorias
+│   ├── ProductController.java              # CRUD produtos + listagem pública
+│   ├── CategoryController.java             # CRUD categorias + produtos por categoria
+│   ├── BrandController.java                # GET /brands — somente leitura
+│   └── docs/
+│       ├── ProductControllerDocs.java      # Interface Springdoc (Operation/ApiResponses)
+│       ├── CategoryControllerDocs.java
+│       └── BrandControllerDocs.java
 ├── service/
-│   ├── ProductService.java             # Lógica de negócio de produto + cache
-│   ├── CategoryService.java            # Lógica de negócio de categoria
-│   └── SlugGenerator.java              # Slugify de name + resolução de colisão
+│   ├── ProductService.java                 # Lógica de negócio de produto + cache + sku/slug
+│   ├── ProductImageService.java            # Upload/remoção de imagens (MinIO)
+│   ├── CategoryService.java                # Lógica de negócio de categoria
+│   └── BrandService.java                   # findBrands, findEntityOrThrow — sem escrita
 ├── repository/
-│   ├── ProductRepository.java          # JpaRepository<Product, UUID>
-│   └── CategoryRepository.java         # JpaRepository<Category, UUID>
-├── model/
-│   ├── Product.java                    # @Entity
-│   ├── Category.java                   # @Entity
-│   ├── ProductImage.java               # @Entity
-│   ├── ProductStatus.java              # Enum: ACTIVE, INACTIVE, OUT_OF_STOCK
-│   ├── CreateProductRequest.java       # DTO entrada (sku opcional — gerado se vazio)
-│   ├── UpdateProductRequest.java       # DTO entrada
-│   └── ProductResponse.java            # DTO saída (sku, slug, stockQuantity lido do Inventory)
+│   ├── ProductRepository.java              # JpaRepository<Product, UUID>
+│   ├── ProductImageRepository.java         # JpaRepository<ProductImage, UUID>
+│   ├── CategoryRepository.java             # JpaRepository<Category, UUID>
+│   └── BrandRepository.java                # JpaRepository<Brand, UUID> — findAllByOrderByNameAsc
+├── domain/
+│   ├── entity/
+│   │   ├── Product.java                    # @Entity — brandId, categoryId como UUID simples
+│   │   ├── Category.java                   # @Entity — sem parent_id (lista plana, ver Schema)
+│   │   ├── ProductImage.java               # @Entity
+│   │   └── Brand.java                      # @Entity — id, name, slug, createdAt
+│   ├── enums/
+│   │   └── ProductStatus.java              # Enum: ACTIVE, INACTIVE, OUT_OF_STOCK
+│   ├── dto/
+│   │   ├── request/
+│   │   │   ├── CreateProductRequest.java   # sku opcional (gerado se vazio); brandId obrigatório
+│   │   │   ├── UpdateProductRequest.java   # todos os campos opcionais, inclui brandId
+│   │   │   └── CreateCategoryRequest.java
+│   │   └── response/
+│   │       ├── ProductResponse.java        # inclui brandId/brandName/brandSlug, images
+│   │       ├── ProductImageResponse.java
+│   │       ├── CategoryResponse.java       # inclui productCount
+│   │       └── BrandResponse.java          # id, name, slug — sem write DTO (não há criação)
+│   ├── mapper/
+│   │   ├── ProductMapper.java              # MapStruct — toEntity/toResponse/updateEntityFromRequest
+│   │   ├── CategoryMapper.java
+│   │   ├── ProductImageMapper.java
+│   │   └── BrandMapper.java                # MapStruct — só toResponse (sem toEntity)
+│   └── projection/
+│       └── CategoryProductCountProjection.java
 ├── messaging/
-│   └── CatalogEventPublisher.java      # KafkaTemplate producer
+│   ├── CatalogEventPublisher.java          # KafkaTemplate producer
+│   ├── ProductChangedEvent.java            # payload de product-created/updated
+│   └── ProductViewedEvent.java             # payload de product-viewed
 ├── exception/
-│   └── GlobalExceptionHandler.java     # @ControllerAdvice
-├── external/
-│   └── InventoryServiceClient.java     # @FeignClient(name = "inventory-service")
+│   ├── ProductNotFoundException.java
+│   ├── ProductSkuAlreadyExistsException.java
+│   ├── CategoryNotFoundException.java
+│   ├── CategorySlugAlreadyExistsException.java
+│   ├── BrandNotFoundException.java
+│   ├── UnsupportedImageTypeException.java
+│   ├── SecurityInitializationException.java
+│   └── handler/
+│       └── GlobalExceptionHandler.java     # @RestControllerAdvice (ProblemDetail)
 └── config/
-    ├── RedisConfig.java                # CacheManager Redis
-    └── KafkaProducerConfig.java
+    ├── RedisConfig.java                    # CacheManager Redis (nomes de cache)
+    ├── KafkaProducerConfig.java
+    ├── MinioConfig.java                    # Client MinIO (bucket catalog-images)
+    ├── OpenApiConfig.java                  # Springdoc
+    └── SecurityConfig.java                 # Spring Security (roles ADMIN em endpoints admin)
 ```
+
+## Estado real da integração com Inventory Service
+
+**Decisão confirmada:** opção (b) — **remover `stockQuantity` agora** de todo DTO/evento do Catalog
+Service e reintroduzir a integração só quando o Inventory Service existir (Fase 5 do roadmap;
+Catalog é Fase 3, criado antes do Inventory). Não faz sentido manter o campo ou criar
+`InventoryServiceClient` (`@FeignClient`) hoje — apontaria para um serviço que ainda não existe.
+Catalog Service não tem, e não deve ter nesta versão, nenhuma noção de disponibilidade de estoque.
+
+**Ação concluída pelo backend-engineer — decisão aplicada de forma completa no código, verificada
+por revalidação independente do quality-analyst.** Levantamento anterior havia apontado remoção só
+parcial; numa rodada de correção de bugs de build/testes do catalog-service, o backend-engineer
+resolveu a pendência (achado extra, fora do escopo original daquela correção) e removeu o campo dos
+arquivos que ainda o mantinham:
+
+| Arquivo | Estado do campo `stockQuantity` |
+|---|---|
+| `domain/dto/request/CreateProductRequest.java` | Removido |
+| `domain/dto/request/UpdateProductRequest.java` | Removido |
+| `domain/dto/response/ProductResponse.java` | Removido |
+| `messaging/ProductChangedEvent.java` | Removido |
+
+Na remoção, ficou confirmado que os pontos abaixo também não têm mais referência solta ao campo:
+
+- `ProductMapper` (`updateEntityFromRequest`, `toResponse`) — sem leitura/atribuição de
+  `stockQuantity`.
+- `CatalogEventPublisher`/lugar que monta `ProductChangedEvent` — payload publicado em
+  `catalog.product-created`/`catalog.product-updated` sem o campo.
+- Testes unitários/aceitação — nenhum monta request/response/evento com `stockQuantity`.
+- `Product` (entidade JPA) já **não tem** coluna `stock_quantity` — nada a fazer na entidade nem no
+  schema Flyway (isso não mudou).
+
+Nenhum cenário de teste (unitário ou aceitação) deve depender de `stockQuantity` — ver Critérios de
+Aceite ("Resposta de produto sem estoque"). A integração real com o Inventory Service (client
+OpenFeign, campo de disponibilidade na resposta) só volta à spec como use case novo na Fase 5.
+
+## Exceção Snyk Aceita — CVE `snappy-java`
+
+**Decisão registrada em ADR-009 ([CLAUDE.md § Decisões Arquiteturais](../../../CLAUDE.md#decisões-arquiteturais-adrs)).**
+Item 5 (Snyk `ok: true`) do [Critério de Conclusão de Microsserviço](../action-plan.md#critério-de-conclusão-de-microsserviço)
+fica com uma exceção formal e documentada para o Catalog Service — não é vulnerabilidade
+suprimida/ignorada, é risco residual aceito conscientemente pelo usuário.
+
+- **CVE:** `SNYK-JAVA-ORGXERIALSNAPPY-19778376` — Out-of-bounds Write, severidade **High**.
+- **Dependência afetada:** `org.xerial.snappy:snappy-java@1.1.10.8`.
+- **Por que existe no projeto:** é dependência transitiva **obrigatória** de `io.minio:minio:9.0.1`
+  — o client MinIO referencia a classe `SnappyFramedOutputStream` de forma incondicional dentro do
+  seu `Builder` (`NoClassDefFoundError` se a lib for excluída, confirmado por decompilação de
+  bytecode durante a revalidação do serviço). Não é dependência de conveniência que possa ser
+  simplesmente removida.
+- **Situação na data da decisão (2026-09-16):** `1.1.10.8` é a última versão publicada de
+  `snappy-java`; o próprio Snyk reporta explicitamente "No upgrade or patch available" — não existe
+  hoje nenhuma versão corrigida para pinar.
+- **Decisão do usuário:** aceitar o risco residual, sem suprimir/ignorar a vulnerabilidade via
+  `.snyk` policy nem qualquer outro mecanismo de mascaramento — ela continua aparecendo no relatório
+  Snyk do serviço, visível e rastreável.
+- **Gatilho de revisão:** reexecutar `snyk test --all-sub-projects --detection-depth=6` no
+  catalog-service a cada revalidação/entrega subsequente do serviço. Assim que uma versão corrigida
+  de `snappy-java` for publicada, ou o Snyk indicar patch disponível, atualizar a dependência
+  imediatamente e remover esta exceção do ADR-009 e desta seção. Alternativa a considerar nessa
+  revisão futura: avaliar troca do client MinIO (`io.minio:minio`) por versão/lib que não dependa
+  incondicionalmente de `snappy-java`.
+- **Enquanto a exceção estiver ativa:** o item 5 da [Tabela de evidência](../action-plan.md#tabela-de-evidência--obrigatória-ao-final)
+  do Catalog Service deve ser reportado como "⚠️ Pendência aceita (ADR-009)", nunca como ✅ liso nem
+  como ❌ sem contexto.
 
 ## Variáveis de Ambiente
 
@@ -380,7 +587,7 @@ checkstyle {
 
 ## Estratégia de Testes
 
-- **Unitários:** `ProductService` (CRUD, lógica de cache hit/miss), `CategoryService`
+- **Unitários:** `ProductService` (CRUD, lógica de cache hit/miss, resolução de `brandId`/`categoryId`), `CategoryService`, `BrandService` (listagem, `findEntityOrThrow`)
 - **Integração:** Testcontainers (PostgreSQL + Redis + Kafka); criar produto → verificar cache e evento publicado
 - **Cache:** Testar que segunda leitura do mesmo produto vem do Redis (sem hit no banco)
 

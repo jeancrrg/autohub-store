@@ -3,8 +3,11 @@ package com.autohubstore.catalogservice.exception.handler;
 import com.autohubstore.catalogservice.exception.BrandNotFoundException;
 import com.autohubstore.catalogservice.exception.CategoryNotFoundException;
 import com.autohubstore.catalogservice.exception.CategorySlugAlreadyExistsException;
+import com.autohubstore.catalogservice.exception.ImageStorageException;
+import com.autohubstore.catalogservice.exception.ImageTooLargeException;
 import com.autohubstore.catalogservice.exception.ProductNotFoundException;
 import com.autohubstore.catalogservice.exception.ProductSkuAlreadyExistsException;
+import com.autohubstore.catalogservice.exception.UnsupportedImageTypeException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -72,6 +75,31 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problem.setTitle("Conflict");
         problem.setDetail(ex.getMessage());
+        return problem;
+    }
+
+    @ExceptionHandler(UnsupportedImageTypeException.class)
+    public ProblemDetail handleUnsupportedImageType(UnsupportedImageTypeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        problem.setTitle("Unsupported Media Type");
+        problem.setDetail(ex.getMessage());
+        return problem;
+    }
+
+    @ExceptionHandler(ImageTooLargeException.class)
+    public ProblemDetail handleImageTooLarge(ImageTooLargeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.PAYLOAD_TOO_LARGE);
+        problem.setTitle("Payload Too Large");
+        problem.setDetail(ex.getMessage());
+        return problem;
+    }
+
+    @ExceptionHandler(ImageStorageException.class)
+    public ProblemDetail handleImageStorage(ImageStorageException ex) {
+        log.error("Falha ao acessar o storage de imagens", ex);
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        problem.setTitle("Internal Server Error");
+        problem.setDetail("Falha ao processar imagem do produto");
         return problem;
     }
 

@@ -1,11 +1,20 @@
 %% Catalog Service — catalog_db (PostgreSQL). Estoque (stock_quantity) NÃO vive aqui —
-%% é responsabilidade do Inventory Service, referenciado só por product_id.
+%% é responsabilidade do Inventory Service (Fase 5, ainda não criado); Catalog hoje não tem
+%% nenhuma integração real (nem OpenFeign) com Inventory — ver
+%% docs/planning/specs/04-catalog-service.md § Estado real da integração com Inventory Service.
+%% Categoria é lista plana nesta versão (sem hierarquia pai/filho) — diverge do PRD original,
+%% ver mesma spec § Schema do Banco (Flyway) para a divergência registrada.
 erDiagram
+    BRANDS {
+        uuid id PK
+        string name
+        string slug UK
+        timestamptz created_at
+    }
     CATEGORIES {
         uuid id PK
         string name
         string slug UK
-        uuid parent_id FK "auto-relacionamento, categoria pai"
         timestamptz created_at
     }
     PRODUCTS {
@@ -15,6 +24,7 @@ erDiagram
         string name
         string description
         numeric price
+        uuid brand_id FK
         uuid category_id FK
         string status
         timestamptz created_at
@@ -28,6 +38,6 @@ erDiagram
         timestamptz created_at
     }
 
-    CATEGORIES ||--o{ CATEGORIES : "categoria pai de"
+    BRANDS ||--o{ PRODUCTS : "identifica"
     CATEGORIES ||--o{ PRODUCTS : "classifica"
     PRODUCTS ||--o{ PRODUCT_IMAGES : "possui"
